@@ -1,6 +1,4 @@
-content_types:
-  page:
-    priority: 0.5
+content_types: []
 
 home:
   index: true
@@ -9,5 +7,5 @@ home:
 custom:
   - contact:
     path: contact
-    index: false
+    index: true
     priority: 0.3

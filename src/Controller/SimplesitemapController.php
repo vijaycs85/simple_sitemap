@@ -41,25 +41,27 @@ class SimplesitemapController {
         $output .= "<url><loc>" . $base_url . '/' . $page['path'] . "</loc><priority>" . $page['priority'] . "</priority></url>";
       }
     }
+    if (count($content_types) > 0) {
 
-    //todo: D8 entityQuery doesn't seem to take multiple OR conditions, that's why that ugly db_select.
-/*    $query = \Drupal::entityQuery('node')
-      ->condition('status', 1)
-      ->condition('type', array_keys($content_types));
-    $nids = $query->execute();*/
-    $query = db_select('node_field_data', 'n')
-      ->fields('n', array('nid', 'type'))
-      ->condition('status', 1);
-    $db_or = db_or();
-    foreach($content_types as $machine_name => $options) {
-      $db_or->condition('type', $machine_name);
-    }
-    $query->condition($db_or);
-    $nids = $query->execute()->fetchAllAssoc('nid');
+      //todo: D8 entityQuery doesn't seem to take multiple OR conditions, that's why that ugly db_select.
+  /*    $query = \Drupal::entityQuery('node')
+        ->condition('status', 1)
+        ->condition('type', array_keys($content_types));
+      $nids = $query->execute();*/
+      $query = db_select('node_field_data', 'n')
+        ->fields('n', array('nid', 'type'))
+        ->condition('status', 1);
+      $db_or = db_or();
+      foreach($content_types as $machine_name => $options) {
+        $db_or->condition('type', $machine_name);
+      }
+      $query->condition($db_or);
+      $nids = $query->execute()->fetchAllAssoc('nid');
 
-    foreach($nids as $nid => $node) {
-      $link_url = Url::fromRoute('entity.node.canonical', array('node' => $nid), array('absolute' => TRUE));
-      $output .= "<url><loc>" . $link_url->toString() . "</loc><priority>" . $content_types[$node->type]['priority'] .  "</priority></url>";
+      foreach($nids as $nid => $node) {
+        $link_url = Url::fromRoute('entity.node.canonical', array('node' => $nid), array('absolute' => TRUE));
+        $output .= "<url><loc>" . $link_url->toString() . "</loc><priority>" . $content_types[$node->type]['priority'] .  "</priority></url>";
+      }
     }
 
     $output .= "</urlset>";
