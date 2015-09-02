@@ -1,0 +1,13 @@
+content_types:
+  page:
+    priority: 0.5
+
+home:
+  index: true
+  priority: 1
+
+custom:
+  - contact:
+    path: contact
+    index: false
+    priority: 0.3
