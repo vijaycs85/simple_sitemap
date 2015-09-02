@@ -3,27 +3,22 @@
 function simplesitemap_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_type_edit_form') {
 
-    // Setting defaults.
-    $index_content_checked = FALSE;
-    $priority = 0.5;
-
     $content_types = \Drupal::config('simplesitemap.settings')->get('content_types');
-    if (isset($content_types[$form['type']['#default_value']]['index'])) {
-      $index_content_checked = $content_types[$form['type']['#default_value']]['index'] ? TRUE : FALSE;
-      if (isset($content_types[$form['type']['#default_value']]['priority']))
-        $priority = $content_types[$form['type']['#default_value']]['priority'];
-    }
 
     $form['simplesitemap'] = array(
       '#group' => 'additional_settings',
       '#title' => 'Simple XML sitemap',
       '#type' => 'details'
     );
+
+    $index_content_checked = isset($content_types[$form['type']['#default_value']]['index']) ? $content_types[$form['type']['#default_value']]['index'] : FALSE;
     $form['simplesitemap']['simplesitemap_index_content'] = array(
       '#type' => 'checkbox',
       '#title' => 'Index content of this type',
       '#default_value' => $index_content_checked,
     );
+
+    $priority = isset($content_types[$form['type']['#default_value']]['priority']) ? $content_types[$form['type']['#default_value']]['priority'] : 0.5;
     $form['simplesitemap']['simplesitemap_priority'] = array(
       '#type' => 'select',
       '#title' => 'Priority',

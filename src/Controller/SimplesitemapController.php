@@ -22,25 +22,21 @@ class SimplesitemapController {
     $config = \Drupal::config('simplesitemap.settings');
     $content_types = $config->get('content_types');
 
-//    $config->set('content_types', array('blog'));
-//    $config->save();
-
     $output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
     <urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">";
 
     global $base_url;
 
     $home = $config->get('home');
-    if ($home['index']) {
+    if ($home['index'])
       $output .= "<url><loc>" . $base_url . "</loc><priority>" . $home['priority'] .  "</priority></url>";
-    }
 
     $custom = $config->get('custom');
     foreach($custom as $page) {
-      if ($page['index']) {
+      if ($page['index'])
         $output .= "<url><loc>" . $base_url . '/' . $page['path'] . "</loc><priority>" . $page['priority'] . "</priority></url>";
-      }
     }
+
     if (count($content_types) > 0) {
 
       //todo: D8 entityQuery doesn't seem to take multiple OR conditions, that's why that ugly db_select.
