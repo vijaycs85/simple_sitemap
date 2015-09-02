@@ -7,5 +7,5 @@ home:
 custom:
   - contact:
     path: contact
-    index: true
+    index: false
     priority: 0.3
