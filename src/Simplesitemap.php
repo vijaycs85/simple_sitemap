@@ -13,27 +13,37 @@ use Drupal\Core\Url;
  */
 class Simplesitemap {
 
-  private $config;
   private $sitemap;
+  private $content_types;
+  private $custom;
   private $lang;
-  private $priority_default = 0.5;
 
   function __construct() {
     $this->set_current_lang();
     $this->set_config();
   }
 
-  private function set_current_lang() {
-    $this->lang = \Drupal::languageManager()->getCurrentLanguage();
+  private function set_current_lang($language = NULL) {
+    $this->lang = is_null($language) ? \Drupal::languageManager()->getCurrentLanguage() : $language;
   }
 
   private function set_config() {
-    $this->config = \Drupal::config('simplesitemap.settings');
-    $this->sitemap = $this->config->get('sitemap_' . $this->lang->getId());
+    $config = \Drupal::config('simplesitemap.settings');
+    $this->sitemap = $config->get('sitemap_' . $this->lang->getId());
+    $this->content_types = $config->get('content_types');
+    $this->custom = $config->get('custom');
   }
 
   private function save_sitemap() {
-    \Drupal::service('config.factory')->getEditable('simplesitemap.settings')->set('sitemap_' . $this->lang->getId(), $this->sitemap)->save();
+    $this->save_config('sitemap_' . $this->lang->getId(), $this->sitemap);
+  }
+
+  public function save_content_types($content_types) {
+    $this->save_config('content_types', $content_types);
+  }
+
+  private function save_config($key, $value) {
+    \Drupal::service('config.factory')->getEditable('simplesitemap.settings')->set($key, $value)->save();
     $this->set_config();
   }
 
@@ -44,18 +54,19 @@ class Simplesitemap {
   private function generate_sitemap() {
 
     $output = '';
-    $config = $this->config;
 
     // Add custom links according to config file.
-    $custom = $config->get('custom');
-    foreach ($custom as $page) {
+    foreach ($this->custom as $page) {
       if ($page['index']) {
-        $output .= $this->add_xml_link_markup(Url::fromUserInput($page['path'], array('language' => $this->lang, 'absolute' => TRUE))->toString(), $page['priority']);
+        $output .= $this->add_xml_link_markup(Url::fromUserInput($page['path'], array(
+          'language' => $this->lang,
+          'absolute' => TRUE
+        ))->toString(), $page['priority']);
       }
     }
 
     // Add node links according to content type settings.
-    $content_types = $config->get('content_types');
+    $content_types = $this->content_types;
     if (count($content_types) > 0) {
 
       //todo: D8 entityQuery doesn't seem to take multiple OR conditions, that's why that ugly db_select.
@@ -76,7 +87,10 @@ class Simplesitemap {
       $nids = $query->execute()->fetchAllAssoc('nid');
 
       foreach ($nids as $nid => $node) {
-        $output .= $this->add_xml_link_markup(Url::fromRoute('entity.node.canonical', array('node' => $nid), array('language' => $this->lang, 'absolute' => TRUE))->toString(), $content_types[$node->type]['priority']);
+        $output .= $this->add_xml_link_markup(Url::fromRoute('entity.node.canonical', array('node' => $nid), array(
+          'language' => $this->lang,
+          'absolute' => TRUE
+        ))->toString(), $content_types[$node->type]['priority']);
       }
     }
 
@@ -87,13 +101,8 @@ class Simplesitemap {
     $this->save_sitemap();
   }
 
-  public function set_content_types($content_types) {
-    \Drupal::service('config.factory')->getEditable('simplesitemap.settings')->set('content_types', $content_types)->save();
-    $this->set_config();
-  }
-
   public function get_content_types() {
-    return $this->config->get('content_types');
+    return $this->content_types;
   }
 
   public function get_sitemap() {
@@ -105,12 +114,12 @@ class Simplesitemap {
 
   public function generate_all_sitemaps() {
     foreach(\Drupal::languageManager()->getLanguages() as $language) {
-      $this->lang = $language;
+      $this->set_current_lang($language);
       $this->generate_sitemap();
     }
   }
 
-  public function get_priority_select_values() {
+  public static function get_priority_select_values() {
     foreach(range(0, 10) as $value) {
       $value = $value / 10;
       $options[(string)$value] = (string)$value;
@@ -118,7 +127,7 @@ class Simplesitemap {
     return $options;
   }
 
-  public function get_priority_default() {
-    return $this->priority_default;
+  public static function get_priority_default() {
+    return $priority_default = 0.5;
   }
 }

@@ -9,7 +9,7 @@ use Drupal\simplesitemap\Simplesitemap;
 /**
  * Implements hook_form_alter.
  */
-function simplesitemap_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+function simplesitemap_form_alter(&$form, $form_state, $form_id) {
   if ($form_id == 'node_type_edit_form') {
 
     $sitemap = new Simplesitemap;
@@ -62,7 +62,7 @@ function simplesitemap_bundle_form_submit($form, &$form_state) {
     $content_types[$form['type']['#default_value']]['priority'] = $values['simplesitemap_priority'];
 
     // Save new content type settings.
-    $sitemap->set_content_types($content_types);
+    $sitemap->save_content_types($content_types);
 
     // Regenerate sitemaps for all languages and save them into strings for performance reason (pseudo caching).
     $sitemap->generate_all_sitemaps();
