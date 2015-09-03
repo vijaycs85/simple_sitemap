@@ -1,11 +1,12 @@
 content_types: []
 
-home:
-  index: true
-  priority: 1
-
 custom:
-  - contact:
-    path: contact
+  home:
+    path: /
+    index: true
+    priority: 1
+
+  contact:
+    path: /contact
     index: false
-    priority: 0.3
+    priority: 0.5

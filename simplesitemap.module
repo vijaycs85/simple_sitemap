@@ -1,9 +1,21 @@
 <?php
+/**
+ * @file
+ * Main module file containing hooks.
+ */
 
+use Drupal\simplesitemap\Simplesitemap;
+
+/**
+ * Implements hook_form_alter.
+ */
 function simplesitemap_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_type_edit_form') {
 
-    $content_types = \Drupal::config('simplesitemap.settings')->get('content_types');
+    $sitemap = new Simplesitemap;
+
+    // Get current content type sitemap settings.
+    $content_types = $sitemap->get_content_types();
 
     $form['simplesitemap'] = array(
       '#group' => 'additional_settings',
@@ -18,28 +30,52 @@ function simplesitemap_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $
       '#default_value' => $index_content_checked,
     );
 
-    $priority = isset($content_types[$form['type']['#default_value']]['priority']) ? $content_types[$form['type']['#default_value']]['priority'] : 0.5;
+    $priority = isset($content_types[$form['type']['#default_value']]['priority']) ? $content_types[$form['type']['#default_value']]['priority'] : $sitemap->get_priority_default();
     $form['simplesitemap']['simplesitemap_priority'] = array(
       '#type' => 'select',
       '#title' => 'Priority',
+      '#options' => $sitemap->get_priority_select_values(),
       '#default_value' => $priority,
       '#description' => 'The priority nodes of this content type will have in the eyes of search engine bots.',
     );
-    foreach(range(0, 10) as $value) {
-      $value = $value / 10;
-      $options[(string)$value] = (string)$value;
-    }
-    $form['simplesitemap']['simplesitemap_priority']['#options'] = $options;
 
+    // Add submission handler.
     $form['actions']['submit']['#submit'][] = 'simplesitemap_bundle_form_submit';
   }
 }
 
+/**
+ * Form submission handler callback.
+ */
 function simplesitemap_bundle_form_submit($form, &$form_state) {
   $values = $form_state->getValues();
-  $config = \Drupal::service('config.factory')->getEditable('simplesitemap.settings');
-  $content_types = $config->get('content_types');
-  $content_types[$form['type']['#default_value']]['index'] = $values['simplesitemap_index_content'];
-  $content_types[$form['type']['#default_value']]['priority'] = $values['simplesitemap_priority'];
-  $config->set('content_types', $content_types)->save();
+
+  // Only make changes in DB if sitemap settings actually changed.
+  if ($form['simplesitemap']['simplesitemap_index_content']['#default_value'] != $form['simplesitemap']['simplesitemap_index_content']['#value'] || $form['simplesitemap']['simplesitemap_priority']['#default_value'] != $form['simplesitemap']['simplesitemap_priority']['#value']) {
+
+    $sitemap = new Simplesitemap;
+
+    // Get current content type sitemap settings.
+    $content_types = $sitemap->get_content_types();
+
+    $content_types[$form['type']['#default_value']]['index'] = $values['simplesitemap_index_content'];
+    $content_types[$form['type']['#default_value']]['priority'] = $values['simplesitemap_priority'];
+
+    // Save new content type settings.
+    $sitemap->set_content_types($content_types);
+
+    // Regenerate sitemaps for all languages and save them into strings for performance reason (pseudo caching).
+    $sitemap->generate_all_sitemaps();
+  }
 }
+
+/**
+ * Implements hook_cron.
+ */
+function simplesitemap_cron() {
+
+  // Regenerate sitemaps for all languages and save them into strings for performance reasons (pseudo caching).
+  $sitemap = new Simplesitemap;
+  $sitemap->generate_all_sitemaps();
+}
+

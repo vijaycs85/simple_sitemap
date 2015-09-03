@@ -1,7 +1,6 @@
 simplesitemap.sitemap:
  path: '/sitemap.xml'
  defaults:
-   _controller: '\Drupal\simplesitemap\Controller\SimplesitemapController::generate_sitemap'
-   _title: 'XML Sitemap'
+   _controller: '\Drupal\simplesitemap\Controller\SimplesitemapController::get_sitemap'
  requirements:
    _permission: 'access content'
