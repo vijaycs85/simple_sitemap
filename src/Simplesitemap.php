@@ -28,14 +28,56 @@ class Simplesitemap {
   }
 
   private function set_config() {
+    $this->get_config_from_db();
+    $this->get_sitemap_from_db();
+  }
+
+  // Get sitemap from database.
+  private function get_sitemap_from_db() {
+    $result = db_select('simplesitemap', 's')
+      ->fields('s', array('sitemap_string'))
+      ->condition('language_code', $this->lang->getId())
+      ->execute()->fetchAll();
+    $this->sitemap = !empty($result[0]->sitemap_string) ? $result[0]->sitemap_string : NULL;
+  }
+
+  // Get sitemap settings from configuration storage.
+  private function get_config_from_db() {
     $config = \Drupal::config('simplesitemap.settings');
-    $this->sitemap = $config->get('sitemap_' . $this->lang->getId());
     $this->content_types = $config->get('content_types');
     $this->custom = $config->get('custom');
   }
 
   private function save_sitemap() {
-    $this->save_config('sitemap_' . $this->lang->getId(), $this->sitemap);
+
+    //todo: db_merge not working in D8(?), this is why the following queries are needed:
+//    db_merge('simplesitemap')
+//      ->key(array('language_code', $this->lang->getId()))
+//      ->fields(array(
+//        'language_code' => $this->lang->getId(),
+//        'sitemap_string' => $this->sitemap,
+//      ))
+//      ->execute();
+    $exists_query = db_select('simplesitemap')
+      ->condition('language_code', $this->lang->getId())
+      ->countQuery()->execute()->fetchField();
+
+    if ($exists_query > 0) {
+      db_update('simplesitemap')
+        ->fields(array(
+          'sitemap_string' => $this->sitemap,
+        ))
+        ->condition('language_code', $this->lang->getId())
+        ->execute();
+    }
+    else {
+      db_insert('simplesitemap')
+        ->fields(array(
+          'language_code' => $this->lang->getId(),
+          'sitemap_string' => $this->sitemap,
+        ))
+        ->execute();
+    }
   }
 
   public function save_content_types($content_types) {
@@ -56,7 +98,8 @@ class Simplesitemap {
     $output = '';
 
     // Add custom links according to config file.
-    foreach ($this->custom as $page) {
+    $custom = $this->custom;
+    foreach ($custom as $page) {
       if ($page['index']) {
         $output .= $this->add_xml_link_markup(Url::fromUserInput($page['path'], array(
           'language' => $this->lang,
@@ -117,6 +160,7 @@ class Simplesitemap {
       $this->set_current_lang($language);
       $this->generate_sitemap();
     }
+    //todo: Delete sitemaps the languages of which have been disabled/removed.
   }
 
   public static function get_priority_select_values() {
