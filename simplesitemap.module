@@ -5,17 +5,24 @@
  */
 
 use Drupal\simplesitemap\Simplesitemap;
+use Drupal\simplesitemap\SitemapGenerator;
 
 /**
  * Implements hook_form_alter.
  */
 function simplesitemap_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-  if ($form_id == 'node_type_edit_form') {
+
+  $form_entity = Simplesitemap::get_form_entity($form_state);
+  $entity_type_name = Simplesitemap::get_entity_type_name($form_entity);
+
+  if ($entity_type_name != FALSE && Simplesitemap::get_plugin_path($entity_type_name)) {
+
+    $bundle_name = $form_entity->Id();
 
     $sitemap = new Simplesitemap;
 
     // Get current content type sitemap settings.
-    $content_types = $sitemap->get_content_types();
+    $entity_types = $sitemap->get_entity_types();
 
     $form['simplesitemap'] = array(
       '#group' => 'additional_settings',
@@ -23,49 +30,55 @@ function simplesitemap_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $
       '#type' => 'details'
     );
 
-    $index_content_checked = isset($content_types[$form['type']['#default_value']]['index']) ? $content_types[$form['type']['#default_value']]['index'] : FALSE;
+    $index_content_checked = isset($entity_types[$entity_type_name][$bundle_name]['index']) ? $entity_types[$entity_type_name][$bundle_name]['index'] : FALSE;
     $form['simplesitemap']['simplesitemap_index_content'] = array(
       '#type' => 'checkbox',
       '#title' => 'Index content of this type',
       '#default_value' => $index_content_checked,
     );
 
-    $priority = isset($content_types[$form['type']['#default_value']]['priority']) ? $content_types[$form['type']['#default_value']]['priority'] : $sitemap->get_priority_default();
+    $priority = isset($entity_types[$entity_type_name][$bundle_name]['priority']) ? $entity_types[$entity_type_name][$bundle_name]['priority'] : SitemapGenerator::PRIORITY_DEFAULT;
     $form['simplesitemap']['simplesitemap_priority'] = array(
       '#type' => 'select',
       '#title' => 'Priority',
-      '#options' => $sitemap->get_priority_select_values(),
+      '#options' => SitemapGenerator::get_priority_select_values(),
       '#default_value' => $priority,
-      '#description' => 'The priority nodes of this content type will have in the eyes of search engine bots.',
+      '#description' => 'The priority entities of this bundle will have in the eyes of search engine bots.',
     );
 
     // Add submission handler.
-    $form['actions']['submit']['#submit'][] = 'simplesitemap_bundle_form_submit';
+    $form['actions']['submit']['#submit'][] = 'simplesitemap_entity_form_submit';
   }
 }
 
 /**
- * Form submission handler callback.
+ * Form submission handler called in hook_form_alter.
  */
-function simplesitemap_bundle_form_submit($form, &$form_state) {
-  $values = $form_state->getValues();
+function simplesitemap_entity_form_submit($form, &$form_state) {
 
   // Only make changes in DB if sitemap settings actually changed.
   if ($form['simplesitemap']['simplesitemap_index_content']['#default_value'] != $form['simplesitemap']['simplesitemap_index_content']['#value'] || $form['simplesitemap']['simplesitemap_priority']['#default_value'] != $form['simplesitemap']['simplesitemap_priority']['#value']) {
 
+    $entity = Simplesitemap::get_form_entity($form_state);
+    $entity_type_name = Simplesitemap::get_entity_type_name($entity);
+    $bundle_name = $entity->Id();
+
     $sitemap = new Simplesitemap;
 
-    // Get current content type sitemap settings.
-    $content_types = $sitemap->get_content_types();
+    // Get current entity type sitemap settings.
+    $entity_types = $sitemap->get_entity_types();
 
-    $content_types[$form['type']['#default_value']]['index'] = $values['simplesitemap_index_content'];
-    $content_types[$form['type']['#default_value']]['priority'] = $values['simplesitemap_priority'];
+    $values = $form_state->getValues();
+    $entity_types[$entity_type_name][$bundle_name]['index'] = $values['simplesitemap_index_content'];
+    $entity_types[$entity_type_name][$bundle_name]['priority'] = $values['simplesitemap_priority'];
 
-    // Save new content type settings.
-    $sitemap->save_content_types($content_types);
+    // Save new entity type settings.
+    $sitemap->save_entity_types($entity_types);
 
     // Regenerate sitemaps for all languages and save them into strings for performance reason (pseudo caching).
     $sitemap->generate_all_sitemaps();
+
+    drupal_set_message(t('XML sitemaps have been regenerated for all languages.'));
   }
 }
 
