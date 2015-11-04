@@ -28,7 +28,7 @@ abstract class EntityLinkGenerator {
       foreach ($links as &$link) {
         $link = SitemapGenerator::add_xml_link_markup($link, $bundle_settings['priority']);
       }
-      $this->entity_links += $links;
+      $this->entity_links = array_merge($this->entity_links, $links);
     }
     return $this->entity_links;
   }
