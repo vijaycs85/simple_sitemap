@@ -20,7 +20,7 @@ use Drupal\simplesitemap\LinkGenerators\EntityLinkGenerator;
 use Drupal\Core\Url;
 
 /**
- * Node class.
+ * node class.
  */
 class node extends EntityLinkGenerator {
 

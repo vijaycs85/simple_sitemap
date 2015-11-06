@@ -14,7 +14,7 @@ use Drupal\simplesitemap\LinkGenerators\EntityLinkGenerator;
 use Drupal\Core\Url;
 
 /**
- * EntityLinkGenerator class.
+ * taxonomy_term class.
  */
 class taxonomy_term extends EntityLinkGenerator {
 

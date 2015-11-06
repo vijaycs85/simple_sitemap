@@ -68,7 +68,7 @@ class SitemapGenerator {
   private function generate_custom_links() {
     $link_generator = new CustomLinkGenerator();
     $links = $link_generator->get_custom_links($this->custom , $this->language);
-    $this->links += $links;
+    $this->links = array_merge($this->links, $links);
   }
 
   // Add entity type links.
@@ -80,7 +80,7 @@ class SitemapGenerator {
         $class_name = "Drupal\\simplesitemap\\LinkGenerators\\EntityTypeLinkGenerators\\$entity_type";
         $link_generator = new $class_name();
         $links = $link_generator->get_entity_links($entity_type, $bundles, $this->language);
-        $this->links += $links;
+        $this->links = array_merge($this->links, $links);
       }
     }
   }
