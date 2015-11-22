@@ -5,6 +5,8 @@
  * Module install functions creating a database table.
  */
 
+use Drupal\Core\Database\Database;
+
 /**
  * Implements hook_schema().
  */
@@ -16,7 +18,7 @@ function simplesitemap_schema() {
         'description' => 'Language code of the sitemap used as unique identifier.',
         'type' => 'varchar',
         'not null' => TRUE,
-        'length' => 2,
+        'length' => 12,
       ),
       'sitemap_string' => array(
         'description' => 'XML sitemap string.',
@@ -28,4 +30,14 @@ function simplesitemap_schema() {
     'primary key' => array('language_code'),
   );
   return $schema;
+}
+
+/**
+ * Altering the {simplesitemap} language_code table field to hold longer strings.
+ */
+function simplesitemap_update_8101() {
+  db_change_field('simplesitemap', 'language_code', 'language_code', array(
+    'type' => 'varchar',
+    'not null' => TRUE,
+    'length' => 12,));
 }
