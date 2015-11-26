@@ -41,11 +41,11 @@ class SitemapGenerator {
   }
 
   public function set_entity_types($entity_types) {
-    $this->entity_types = $entity_types;
+    $this->entity_types = is_array($entity_types) ? $entity_types : array();
   }
 
   public function set_custom_links($custom) {
-    $this->custom = $custom;
+    $this->custom = is_array($custom) ? $custom : array();
   }
 
   public function set_sitemap_lang($language) {
