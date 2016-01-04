@@ -5,8 +5,6 @@
  * Module install functions creating a database table.
  */
 
-use Drupal\Core\Database\Database;
-
 /**
  * Implements hook_schema().
  */
@@ -37,7 +35,7 @@ function simplesitemap_schema() {
  */
 function simplesitemap_install() {
   $base_url = $GLOBALS['base_url'];
-  drupal_set_message(t("You can now include content into the <a href='@sitemap_url' target='_blank'>XML sitemap</a> by visiting the corresponding entity type edit pages (e.g. <a href='@content_type_url' target='_blank'>content type</a> and <a href='@taxonomy_vocabulary_url' target='_blank'>taxonomy vocabulary</a> pages.)", array('@sitemap_url' => "$base_url/sitemap.xml", '@content_type_url' => "$base_url/admin/structure/types", '@taxonomy_vocabulary_url' => "$base_url/admin/structure/taxonomy")));
+  drupal_set_message(t("You can now include content into the <a href='@sitemap_url' target='_blank'>XML sitemap</a> by visiting the corresponding entity type edit pages (e.g. <a href='@content_type_url' target='_blank'>content type</a> and <a href='@taxonomy_vocabulary_url' target='_blank'>taxonomy vocabulary</a> pages.<br/>Custom links can be added on <a href='@config_url' target='_blank'>this configuration page</a>.)", array('@sitemap_url' => "$base_url/sitemap.xml", '@content_type_url' => "$base_url/admin/structure/types", '@taxonomy_vocabulary_url' => "$base_url/admin/structure/taxonomy", '@config_url' => "$base_url/admin/config/search/simplesitemap/custom")));
 }
 
 /**

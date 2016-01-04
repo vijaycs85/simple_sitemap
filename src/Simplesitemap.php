@@ -72,6 +72,10 @@ class Simplesitemap {
     $this->save_config('entity_types', $entity_types);
   }
 
+  public function save_custom_links($custom_links) {
+    $this->save_config('custom', $custom_links);
+  }
+
   private function save_config($key, $value) {
     \Drupal::service('config.factory')->getEditable('simplesitemap.settings')->set($key, $value)->save();
     $this->set_config();
@@ -139,5 +143,9 @@ class Simplesitemap {
 
   public function get_entity_types() {
     return $this->config->get('entity_types');
+  }
+
+  public function get_custom_links() {
+    return $this->config->get('custom');
   }
 }
