@@ -43,7 +43,13 @@ function simplesitemap_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $
       '#title' => 'Priority',
       '#options' => SitemapGenerator::get_priority_select_values(),
       '#default_value' => $priority,
-      '#description' => 'The priority entities of this bundle will have in the eyes of search engine bots.',
+    );
+
+    $form['simplesitemap']['simplesitemap_rebuild_now'] = array(
+      '#type' => 'checkbox',
+      '#title' => 'Rebuild sitemap after hitting Save',
+      '#description' => 'This setting will rebuild the whole sitemap including the changes made on this entity type.<br/>Otherwise the sitemap will be rebuilt on next cron run.',
+      '#default_value' => FALSE,
     );
 
     // Add submission handler.
@@ -56,14 +62,14 @@ function simplesitemap_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $
  */
 function simplesitemap_entity_form_submit($form, &$form_state) {
 
+  $sitemap = new Simplesitemap;
+
   // Only make changes in DB if sitemap settings actually changed.
   if ($form['simplesitemap']['simplesitemap_index_content']['#default_value'] != $form['simplesitemap']['simplesitemap_index_content']['#value'] || $form['simplesitemap']['simplesitemap_priority']['#default_value'] != $form['simplesitemap']['simplesitemap_priority']['#value']) {
 
     $entity = Simplesitemap::get_form_entity($form_state);
     $entity_type_name = Simplesitemap::get_entity_type_name($entity);
     $bundle_name = $entity->Id();
-
-    $sitemap = new Simplesitemap;
 
     // Get current entity type sitemap settings.
     $entity_types = $sitemap->get_entity_types();
@@ -74,7 +80,9 @@ function simplesitemap_entity_form_submit($form, &$form_state) {
 
     // Save new entity type settings.
     $sitemap->save_entity_types($entity_types);
+  }
 
+  if ($form['simplesitemap']['simplesitemap_rebuild_now']['#value']) {
     // Regenerate sitemaps for all languages and save them into strings for performance reason (pseudo caching).
     $sitemap->generate_all_sitemaps();
   }
