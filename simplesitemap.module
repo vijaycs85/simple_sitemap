@@ -41,6 +41,7 @@ function simplesitemap_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $
     $form['simplesitemap']['simplesitemap_priority'] = array(
       '#type' => 'select',
       '#title' => 'Priority',
+      '#description' => 'The priority entities of this bundle will have in the eyes of search engine bots.',
       '#options' => SitemapGenerator::get_priority_select_values(),
       '#default_value' => $priority,
     );
