@@ -92,15 +92,15 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
 
     $sitemap = new Simplesitemap;
     $custom_links_string = str_replace("\r\n", "\n", $form_state->getValue('custom_links'));
-    $custom_links = array_filter(explode("\n", $custom_links_string), 'trim');
+    $custom_links_string_lines = array_filter(explode("\n", $custom_links_string), 'trim');
     $custom_link_config = array();
-    foreach($custom_links as $link_setting) {
-      $settings = explode(' ', $link_setting, 2);
-      $custom_link_config[]['path'] = $settings[0];
-      if (isset($settings[1])) {
+    foreach($custom_links_string_lines as $line) {
+      $line_settings = explode(' ', $line, 2);
+      $custom_link_config[]['path'] = $line_settings[0];
+      if (isset($line_settings[1])) {
         end($custom_link_config);
         $key = key($custom_link_config);
-        $custom_link_config[$key]['priority'] = number_format((float)$settings[1], 1, '.', '');
+        $custom_link_config[$key]['priority'] = number_format((float)$line_settings[1], 1, '.', '');
       }
     }
     $sitemap->save_custom_links($custom_link_config);

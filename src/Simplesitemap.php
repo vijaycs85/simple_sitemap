@@ -32,6 +32,12 @@ class Simplesitemap {
 
   public static function get_entity_type_name($entity) {
     if (method_exists($entity, 'getEntityType')) {
+      if (!$entity_type_name = $entity->getEntityType()->getBundleOf()) {
+
+        if (method_exists($entity, 'getEntityTypeId')) {
+          return $entity->getEntityTypeId();
+        }
+      }
       return $entity->getEntityType()->getBundleOf();
     }
     return FALSE;
@@ -107,6 +113,7 @@ class Simplesitemap {
       $this->sitemap = $generator->generate_sitemap();
       $this->save_sitemap();
     }
+    drupal_set_message(t('XML sitemaps have been regenerated for all languages.'));
   }
 
   private function save_sitemap() {
