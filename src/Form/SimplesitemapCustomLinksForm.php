@@ -58,6 +58,14 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
       '#prefix' => t('Add custom internal drupal paths to the XML sitemap and specify their priorities.'),
       '#description' => t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with an '/' You can add a priority (0.0 - 1.0) by appending it to the path after a space. The home page with the highest priority would be <em>/ 1</em>, the contact page with a medium priority would be <em>/contact 0.5</em>."),
     );
+
+    $form['simplesitemap_custom']['simplesitemap_rebuild_now'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Rebuild sitemap after hitting Save'),
+      '#description' => t('This setting will rebuild the whole sitemap including the above changes.<br/>Otherwise the sitemap will be rebuilt on next cron run.'),
+      '#default_value' => FALSE,
+    );
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -104,7 +112,10 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
       }
     }
     $sitemap->save_custom_links($custom_link_config);
-    $sitemap->generate_all_sitemaps();
-    parent::submitForm($form, $form_state);
+
+    // Regenerate sitemaps according to user setting.
+    if ($form_state->getValue('simplesitemap_rebuild_now')) {
+      $sitemap->generate_all_sitemaps();
+    }
   }
 }
