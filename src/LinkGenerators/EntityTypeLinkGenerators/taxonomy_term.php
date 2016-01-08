@@ -20,7 +20,6 @@ class taxonomy_term extends EntityLinkGenerator {
 
   function get_entity_bundle_links($entity_type, $bundle, $language) {
 
-    //todo: check what happens if none existent.
     $results = db_query("SELECT tid FROM {taxonomy_term_field_data} WHERE vid = :vid", array(':vid' => $bundle))
       ->fetchAllAssoc('tid');
 
