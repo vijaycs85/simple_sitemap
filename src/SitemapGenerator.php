@@ -36,8 +36,11 @@ class SitemapGenerator {
     return $options;
   }
 
-  public static function add_xml_link_markup($url, $priority) {
-    return "<url><loc>" . $url . "</loc><priority>" . $priority . "</priority></url>";
+  public static function add_xml_link_markup($url, $priority = NULL, $lastmod = NULL) {
+    return "<url><loc>" . $url . "</loc>"
+    . (!is_null($priority) ? ("<priority>" . $priority . "</priority>") : '')
+    . (!is_null($lastmod) ? ("<lastmod>" . $lastmod . "</lastmod>") : '')
+    . "</url>";
   }
 
   public function set_entity_types($entity_types) {

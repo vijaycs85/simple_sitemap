@@ -20,14 +20,13 @@ class taxonomy_term extends EntityLinkGenerator {
 
   function get_entity_bundle_links($entity_type, $bundle, $language) {
 
-    $ids = array();
-    $query = \Drupal::entityQuery($entity_type)
-      ->condition('vid', $bundle);
-    $ids += $query->execute();
+    //todo: check what happens if none existent.
+    $results = db_query("SELECT tid FROM {taxonomy_term_field_data} WHERE vid = :vid", array(':vid' => $bundle))
+      ->fetchAllAssoc('tid');
 
     $urls = array();
-    foreach ($ids as $id => $entity) {
-      $urls[] = Url::fromRoute("entity.$entity_type.canonical", array('taxonomy_term' => $id), array(
+    foreach ($results as $id => $changed) {
+      $urls[$id] = Url::fromRoute("entity.$entity_type.canonical", array('taxonomy_term' => $id), array(
         'language' => $language,
         'absolute' => TRUE
       ))->toString();

@@ -26,19 +26,11 @@ class menu extends EntityLinkGenerator {
     foreach ($routes as $id => $entity) {
       if (empty($entity->route_name))
         continue;
-      if (!empty($route_parameters = unserialize($entity->route_parameters))) {
-        $key = key($route_parameters);
-        $urls[] = Url::fromRoute($entity->route_name, array($key => $route_parameters[$key]), array(
-          'language' => $language,
-          'absolute' => TRUE
-        ))->toString();
-      }
-      else {
-        $urls[] = Url::fromRoute($entity->route_name, array(), array(
-          'language' => $language,
-          'absolute' => TRUE
-        ))->toString();
-      }
+      $options = !empty($route_parameters = unserialize($entity->route_parameters)) ? array(key($route_parameters) => $route_parameters[key($route_parameters)]) : array();
+      $urls[] = Url::fromRoute($entity->route_name, $options, array(
+        'language' => $language,
+        'absolute' => TRUE
+      ))->toString();
     }
     return $urls;
   }

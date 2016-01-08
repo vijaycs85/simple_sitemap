@@ -25,16 +25,13 @@ use Drupal\Core\Url;
 class node extends EntityLinkGenerator {
 
   function get_entity_bundle_links($entity_type, $bundle, $language) {
-
-    $ids = array();
-    $query = \Drupal::entityQuery($entity_type)
-      ->condition('status', 1)
-      ->condition('type', $bundle);
-    $ids += $query->execute();
+    $results = db_query("SELECT nid FROM {node_field_data} WHERE status = 1 AND type = :type", array(':type' => $bundle))
+      ->fetchAllAssoc('nid');
 
     $urls = array();
-    foreach ($ids as $id => $entity) {
-      $urls[] = Url::fromRoute("entity.$entity_type.canonical", array('node' => $id), array(
+    foreach ($results as $id => $changed) {
+
+      $urls[$id] = Url::fromRoute("entity.$entity_type.canonical", array('node' => $id), array(
         'language' => $language,
         'absolute' => TRUE
       ))->toString();
