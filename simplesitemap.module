@@ -26,30 +26,30 @@ function simplesitemap_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $
 
     $form['simplesitemap'] = array(
       '#group' => 'additional_settings',
-      '#title' => 'Simple XML sitemap',
+      '#title' => t('Simple XML sitemap'),
       '#type' => 'details'
     );
 
     $index_content_checked = isset($entity_types[$entity_type_name][$bundle_name]['index']) ? $entity_types[$entity_type_name][$bundle_name]['index'] : FALSE;
     $form['simplesitemap']['simplesitemap_index_content'] = array(
       '#type' => 'checkbox',
-      '#title' => 'Index content of this type',
+      '#title' => t('Index content of this type'),
       '#default_value' => $index_content_checked,
     );
 
     $priority = isset($entity_types[$entity_type_name][$bundle_name]['priority']) ? $entity_types[$entity_type_name][$bundle_name]['priority'] : SitemapGenerator::PRIORITY_DEFAULT;
     $form['simplesitemap']['simplesitemap_priority'] = array(
       '#type' => 'select',
-      '#title' => 'Priority',
-      '#description' => 'The priority entities of this bundle will have in the eyes of search engine bots.',
+      '#title' => t('Priority'),
+      '#description' => t('The priority entities of this bundle will have in the eyes of search engine bots.'),
       '#options' => SitemapGenerator::get_priority_select_values(),
       '#default_value' => $priority,
     );
 
     $form['simplesitemap']['simplesitemap_rebuild_now'] = array(
       '#type' => 'checkbox',
-      '#title' => 'Rebuild sitemap after hitting Save',
-      '#description' => 'This setting will rebuild the whole sitemap including the changes made on this entity type.<br/>Otherwise the sitemap will be rebuilt on next cron run.',
+      '#title' => t('Rebuild sitemap after hitting Save'),
+      '#description' => t('This setting will rebuild the whole sitemap including the above changes.<br/>Otherwise the sitemap will be rebuilt on next cron run.'),
       '#default_value' => FALSE,
     );
 
