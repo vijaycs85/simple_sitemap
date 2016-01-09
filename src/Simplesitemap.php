@@ -30,19 +30,6 @@ class Simplesitemap {
     return FALSE;
   }
 
-  public static function get_entity_type_name($entity) {
-    if (method_exists($entity, 'getEntityType')) {
-      if (!$entity_type_name = $entity->getEntityType()->getBundleOf()) {
-
-        if (method_exists($entity, 'getEntityTypeId')) {
-          return $entity->getEntityTypeId();
-        }
-      }
-      return $entity->getEntityType()->getBundleOf();
-    }
-    return FALSE;
-  }
-
   public static function get_plugin_path($entity_type_name) {
     $class_path = drupal_get_path('module', 'simplesitemap') . '/' . self::SITEMAP_PLUGIN_PATH . '/' . $entity_type_name . '.php';
     if (file_exists($class_path)) {

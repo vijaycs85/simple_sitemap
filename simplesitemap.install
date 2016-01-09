@@ -39,11 +39,28 @@ function simplesitemap_install() {
 }
 
 /**
- * Altering the {simplesitemap} language_code table field to hold longer strings.
+ * Update: Altering the {simplesitemap} language_code table field to hold longer strings.
  */
 function simplesitemap_update_8101() {
   db_change_field('simplesitemap', 'language_code', 'language_code', array(
     'type' => 'varchar',
     'not null' => TRUE,
     'length' => 12,));
+}
+
+/**
+ * Update: Changing config settings according to new config structure.
+ */
+function simplesitemap_update_8102() {
+  $entity_types = \Drupal::config('simplesitemap.settings')->get('entity_types');
+  $entity_types = is_array($entity_types) ? $entity_types : array();
+  if (isset($entity_types['node'])) {
+    $entity_types['node_type'] = $entity_types['node'];
+    unset($entity_types['node']);
+  }
+  if (isset($entity_types['taxonomy_term'])) {
+    $entity_types['taxonomy_vocabulary'] = $entity_types['taxonomy_term'];
+    unset($entity_types['taxonomy_term']);
+  }
+  \Drupal::service('config.factory')->getEditable('simplesitemap.settings')->set('entity_types', $entity_types)->save();
 }

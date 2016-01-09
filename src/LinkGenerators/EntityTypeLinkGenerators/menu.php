@@ -4,7 +4,7 @@
  * Contains \Drupal\simplesitemap\LinkGenerators\EntityTypeLinkGenerators\menu.
  *
  * Plugin for menu entity link generation.
- * See \Drupal\simplesitemap\LinkGenerators\CustomLinkGenerator\node for more
+ * See \Drupal\simplesitemap\LinkGenerators\CustomLinkGenerator\node_type for more
  * documentation.
  */
 
@@ -18,7 +18,7 @@ use Drupal\Core\Url;
  */
 class menu extends EntityLinkGenerator {
 
-  function get_entity_bundle_links($entity_type, $bundle, $language) {
+  function get_entity_bundle_links($bundle, $language) {
     $routes = db_query("SELECT mlid, route_name, route_parameters FROM {menu_tree} WHERE menu_name = :menu_name and enabled = 1", array(':menu_name' => $bundle))
       ->fetchAllAssoc('mlid');
 
