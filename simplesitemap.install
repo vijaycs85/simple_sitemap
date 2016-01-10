@@ -74,5 +74,5 @@ function simplesitemap_update_8103() {
     'type' => 'serial',
     'not null' => TRUE
   ), array('primary key' => array('id')));
-  drupal_set_message('The sitemap needs to be regenerated manually or via cron run.');
+  return t('Before the sitemap can be accessed, it must be regenerated manually or via cron run.');
 }
