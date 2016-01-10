@@ -9,6 +9,7 @@
 namespace Drupal\simplesitemap;
 
 use Drupal\simplesitemap\LinkGenerators\CustomLinkGenerator;
+use \Drupal\Component\Utility\Html;
 
 /**
  * SitemapGenerator class.
@@ -37,7 +38,7 @@ class SitemapGenerator {
   }
 
   public static function add_xml_link_markup($url, $priority = NULL, $lastmod = NULL) {
-    return "<url><loc>" . $url . "</loc>"
+    return "<url><loc>" . Html::escape($url) . "</loc>"
     . (!is_null($priority) ? ("<priority>" . $priority . "</priority>") : '')
     . (!is_null($lastmod) ? ("<lastmod>" . $lastmod . "</lastmod>") : '')
     . "</url>";
