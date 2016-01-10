@@ -115,7 +115,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
 
     // Regenerate sitemaps according to user setting.
     if ($form_state->getValue('simplesitemap_rebuild_now')) {
-      $sitemap->generate_all_sitemaps();
+      $sitemap->generate_sitemap();
     }
   }
 }

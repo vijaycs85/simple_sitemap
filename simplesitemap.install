@@ -12,11 +12,10 @@ function simplesitemap_schema() {
   $schema['simplesitemap'] = array(
     'description' => 'Holds XML sitemaps as strings for quick retrieval.',
     'fields' => array(
-      'language_code' => array(
-        'description' => 'Language code of the sitemap used as unique identifier.',
-        'type' => 'varchar',
+      'id' => array(
+        'description' => 'Sitemap chunk unique identifier.',
+        'type' => 'serial',
         'not null' => TRUE,
-        'length' => 12,
       ),
       'sitemap_string' => array(
         'description' => 'XML sitemap string.',
@@ -25,7 +24,7 @@ function simplesitemap_schema() {
         'not null' => TRUE,
       ),
     ),
-    'primary key' => array('language_code'),
+    'primary key' => array('id'),
   );
   return $schema;
 }
@@ -49,7 +48,7 @@ function simplesitemap_update_8101() {
 }
 
 /**
- * Update: Changing config settings according to new config structure.
+ * Changing config settings according to new config structure.
  */
 function simplesitemap_update_8102() {
   $entity_types = \Drupal::config('simplesitemap.settings')->get('entity_types');
@@ -63,4 +62,17 @@ function simplesitemap_update_8102() {
     unset($entity_types['taxonomy_term']);
   }
   \Drupal::service('config.factory')->getEditable('simplesitemap.settings')->set('entity_types', $entity_types)->save();
+}
+
+/**
+ * Modifying database structure to hold one multilingual sitemap.
+ */
+function simplesitemap_update_8103() {
+  db_truncate('simplesitemap')->execute();
+  db_drop_primary_key('simplesitemap');
+  db_change_field('simplesitemap', 'language_code', 'id', array(
+    'type' => 'serial',
+    'not null' => TRUE
+  ), array('primary key' => array('id')));
+  drupal_set_message('The sitemap needs to be regenerated manually or via cron run.');
 }

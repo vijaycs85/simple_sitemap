@@ -18,14 +18,18 @@ abstract class EntityLinkGenerator {
 
   private $entity_links = array();
 
-  public function get_entity_links($entity_type, $bundles, $language) {
+  public function get_entity_links($entity_type, $bundles, $languages) {
+    $i = 0;
     foreach($bundles as $bundle => $bundle_settings) {
       if (!$bundle_settings['index']) {
         continue;
       }
-      $links = $this->get_entity_bundle_links($bundle, $language);
+      $links = $this->get_entity_bundle_links($bundle, $languages);
       foreach ($links as $id => $link) {
-        $this->entity_links[] = SitemapGenerator::add_xml_link_markup($link, $bundle_settings['priority'], $this->get_lastmod($entity_type, $id));
+        $this->entity_links[$i]['url'] = $link;
+        $this->entity_links[$i]['priority'] = $bundle_settings['priority'];
+        $this->entity_links[$i]['lastmod'] = $this->get_lastmod($entity_type, $id);
+        $i++;
       }
     }
     return $this->entity_links;
@@ -45,5 +49,5 @@ abstract class EntityLinkGenerator {
     return isset($lastmod[0]) ? date_iso8601($lastmod[0]) : NULL;
   }
 
-  abstract function get_entity_bundle_links($bundle, $language);
+  abstract function get_entity_bundle_links($bundle, $languages);
 }

@@ -90,7 +90,7 @@ function simplesitemap_entity_form_submit($form, &$form_state) {
 
   // Regenerate sitemaps according to user setting.
   if ($form['simplesitemap']['simplesitemap_rebuild_now']['#value']) {
-    $sitemap->generate_all_sitemaps();
+    $sitemap->generate_sitemap();
   }
 }
 
@@ -101,6 +101,6 @@ function simplesitemap_cron() {
 
   // Regenerate sitemaps for all languages and save them into strings for performance reasons (pseudo caching).
   $sitemap = new Simplesitemap;
-  $sitemap->generate_all_sitemaps();
+  $sitemap->generate_sitemap();
 }
 
