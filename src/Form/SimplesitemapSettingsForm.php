@@ -9,6 +9,7 @@ namespace Drupal\simplesitemap\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\simplesitemap\Simplesitemap;
 
 /**
  * SimplesitemapSettingsFrom
@@ -33,23 +34,25 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    $form['simplesitemap_custom'] = array(
+
+    $form['simplesitemap_settings']['rebuild'] = array(
+      '#title' => t('Rebuild sitemap'),
       '#type' => 'fieldset',
-      '#title' => t('No settings'),
-      '#description' => t('There are no settings here yet. Visit the other tab.'),
+      '#markup' => '<p>' . t('This will rebuild the XML sitemap for all languages.') . '</p>',
     );
-    return parent::buildForm($form, $form_state);
+
+    $form['simplesitemap_settings']['rebuild']['rebuild_submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Rebuild sitemap'),
+      '#submit' => array('::rebuild_sitemap'),
+      '#validate' => array(), // Skip form-level validator.
+    );
+
+    return $form;
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function validateForm(array &$form, FormStateInterface $form_state) {
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
+  public function rebuild_sitemap(array &$form, FormStateInterface $form_state) {
+    $sitemap = new Simplesitemap;
+    $sitemap->generate_sitemap();
   }
 }

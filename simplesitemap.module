@@ -10,7 +10,7 @@ use Drupal\simplesitemap\SitemapGenerator;
 /**
  * Implements hook_form_alter.
  */
-function simplesitemap_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+function simplesitemap_form_alter(&$form, $form_state, $form_id) {
 
   $form_entity = Simplesitemap::get_form_entity($form_state);
   if (!$form_entity)
@@ -104,3 +104,18 @@ function simplesitemap_cron() {
   $sitemap->generate_sitemap();
 }
 
+/**
+ * Implements hook_entity_bundle_delete().
+ */
+function simplesitemap_entity_bundle_delete($entity_type_id, $bundle) {
+  $sitemap = new Simplesitemap;
+  $entity_types = $sitemap->get_entity_types();
+  $bundle_entity_type_id = \Drupal::entityManager()->getDefinition($entity_type_id)->getBundleEntityType();
+
+  if (isset($entity_types[$bundle_entity_type_id][$bundle])) {
+    unset($entity_types[$bundle_entity_type_id][$bundle]);
+    $sitemap->save_entity_types($entity_types);
+    drupal_set_message(t("You may want to <a href='@url'>rebuild</a> your XML sitemap now. Otherwise it will be rebuilt on the next cron run.", array('@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap')));
+
+  }
+}

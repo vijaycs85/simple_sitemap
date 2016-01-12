@@ -49,14 +49,15 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
 
     $form['simplesitemap_custom'] = array(
       '#title' => t('Custom links'),
+      '#type' => 'fieldset',
+      '#markup' => '<p>' . t('Add custom internal drupal paths and their priorities to the XML sitemap.') . '</p>',
     );
 
     $form['simplesitemap_custom']['custom_links'] = array(
       '#type' => 'textarea',
-      '#title' => '<span class="element-invisibule">' . t('Relative Drupal paths') . '</span>',
+      '#title' => t('Relative Drupal paths'),
       '#default_value' => $setting_string,
-      '#prefix' => t('Add custom internal drupal paths to the XML sitemap and specify their priorities.'),
-      '#description' => t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with an '/' You can add a priority (0.0 - 1.0) by appending it to the path after a space. The home page with the highest priority would be <em>/ 1</em>, the contact page with a medium priority would be <em>/contact 0.5</em>."),
+      '#description' => t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with a '/' You can optionally add a priority (0.0 - 1.0) by appending it to the path after a space. The home page with the highest priority would be <em>/ 1</em>, the contact page with a medium priority would be <em>/contact 0.5</em>."),
     );
 
     $form['simplesitemap_custom']['simplesitemap_rebuild_now'] = array(
