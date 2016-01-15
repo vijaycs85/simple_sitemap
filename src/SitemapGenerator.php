@@ -28,9 +28,11 @@ class SitemapGenerator {
   private $custom;
   private $links;
   private $languages;
+  private $default_language_id;
 
   function __construct() {
     $this->languages = \Drupal::languageManager()->getLanguages();
+    $this->default_language_id = \Drupal::languageManager()->getDefaultLanguage()->getId();
     $this->links = array();
   }
 
@@ -51,12 +53,43 @@ class SitemapGenerator {
     $this->custom = is_array($custom) ? $custom : array();
   }
 
-  public function generate_sitemap() {
+  public function generate_sitemap($max_links = NULL) {
 
     $this->generate_custom_links();
     $this->generate_entity_links();
 
-    $default_language_id = \Drupal::languageManager()->getDefaultLanguage()->getId();
+    $sitemaps = array();
+    if (!empty($max_links) && count($this->links) > 0) {
+      foreach(array_chunk($this->links, $max_links) as $sitemap_id => $sitemap_links) {
+        $sitemaps[] = $this->generate_sitemap_chunk($sitemap_links);
+      }
+    }
+    else {
+      $sitemaps[] = $this->generate_sitemap_chunk($this->links);
+    }
+    return $sitemaps;
+  }
+
+  public function generate_sitemap_index($sitemap) {
+    $writer = new XMLWriter();
+    $writer->openMemory();
+    $writer->setIndent(TRUE);
+    $writer->startDocument(self::XML_VERSION, self::ENCODING);
+    $writer->startElement('sitemapindex');
+    $writer->writeAttribute('xmlns', self::XMLNS);
+
+    foreach ($sitemap as $sitemap_id => $sitemap_string) {
+      $writer->startElement('sitemap');
+      $writer->writeElement('loc', $GLOBALS['base_url'] . '/sitemaps/' . $sitemap_id . '/' . 'sitemap.xml');
+      //todo: lastmod
+      $writer->endElement();
+    }
+    $writer->endElement();
+    $writer->endDocument();
+    return $writer->outputMemory();
+  }
+
+  private function generate_sitemap_chunk($sitemap_links) {
 
     $writer = new XMLWriter();
     $writer->openMemory();
@@ -66,20 +99,20 @@ class SitemapGenerator {
     $writer->writeAttribute('xmlns', self::XMLNS);
     $writer->writeAttribute('xmlns:xhtml', self::XMLNS_XHTML);
 
-    foreach ($this->links as $link) {
+    foreach ($sitemap_links as $link) {
       $writer->startElement('url');
 
       // Adding url to standard language.
-      $writer->writeElement('loc', $link['url'][$default_language_id]);
+      $writer->writeElement('loc', $link['url'][$this->default_language_id]);
 
       // Adding alternate urls (other languages).
       if (count($link['url']) > 1) {
         foreach($link['url'] as $language_id => $localised_url) {
-            $writer->startElement('xhtml:link');
-            $writer->writeAttribute('rel', 'alternate');
-            $writer->writeAttribute('hreflang', $language_id);
-            $writer->writeAttribute('href', $localised_url);
-            $writer->endElement();
+          $writer->startElement('xhtml:link');
+          $writer->writeAttribute('rel', 'alternate');
+          $writer->writeAttribute('hreflang', $language_id);
+          $writer->writeAttribute('href', $localised_url);
+          $writer->endElement();
         }
       }
 

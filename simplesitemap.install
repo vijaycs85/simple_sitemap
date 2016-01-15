@@ -14,7 +14,8 @@ function simplesitemap_schema() {
     'fields' => array(
       'id' => array(
         'description' => 'Sitemap chunk unique identifier.',
-        'type' => 'serial',
+        'type' => 'int',
+        'size' => 'small',
         'not null' => TRUE,
       ),
       'sitemap_string' => array(
@@ -74,5 +75,18 @@ function simplesitemap_update_8103() {
     'type' => 'serial',
     'not null' => TRUE
   ), array('primary key' => array('id')));
+  return t('Before the sitemap can be accessed, it must be regenerated manually or via cron run.');
+}
+
+/**
+ * Modifying database structure to accommodate sitemap chunks.
+ */
+function simplesitemap_update_8104() {
+  db_truncate('simplesitemap')->execute();
+  db_change_field('simplesitemap', 'id', 'id', array(
+    'type' => 'int',
+    'size' => 'small',
+    'not null' => TRUE,
+  ));
   return t('Before the sitemap can be accessed, it must be regenerated manually or via cron run.');
 }
