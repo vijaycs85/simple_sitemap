@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\xmlsitemap\Form\SimplesitemapSettingsForm.
+ * Contains \Drupal\simplesitemap\Form\SimplesitemapSettingsForm.
  */
 
 namespace Drupal\simplesitemap\Form;

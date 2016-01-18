@@ -9,7 +9,6 @@
  */
 
 namespace Drupal\simplesitemap\LinkGenerators;
-use Drupal\simplesitemap\SitemapGenerator;
 
 /**
  * EntityLinkGenerator abstract class.

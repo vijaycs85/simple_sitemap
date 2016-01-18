@@ -9,7 +9,6 @@
 namespace Drupal\simplesitemap\LinkGenerators;
 
 use Drupal\Core\Url;
-use Drupal\simplesitemap\SitemapGenerator;
 
 /**
  * CustomLinkGenerator class.
