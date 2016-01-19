@@ -16,6 +16,12 @@ class SimplesitemapController {
 
   /**
    * Returns the whole sitemap, a requested sitemap chunk, or the sitemap index file.
+   *
+   * @param int $sitemap_id
+   *  Id of the sitemap chunk.
+   *
+   * @return object Response
+   *  Returns an XML response.
    */
   public function get_sitemap($sitemap_id = NULL) {
 

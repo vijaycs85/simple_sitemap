@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Module install functions creating a database table.
+ * Module install and update procedures.
  */
 
 /**
@@ -19,9 +19,15 @@ function simplesitemap_schema() {
         'not null' => TRUE,
       ),
       'sitemap_string' => array(
-        'description' => 'XML sitemap string.',
+        'description' => 'XML sitemap chunk string.',
         'type' => 'text',
         'size' => 'big',
+        'not null' => TRUE,
+      ),
+      'generated' => array(
+        'description' => 'Timestamp of sitemap chunk generation.',
+        'type' => 'int',
+        'default' => 0,
         'not null' => TRUE,
       ),
     ),
@@ -62,7 +68,8 @@ function simplesitemap_update_8102() {
     $entity_types['taxonomy_vocabulary'] = $entity_types['taxonomy_term'];
     unset($entity_types['taxonomy_term']);
   }
-  \Drupal::service('config.factory')->getEditable('simplesitemap.settings')->set('entity_types', $entity_types)->save();
+  \Drupal::service('config.factory')->getEditable('simplesitemap.settings')
+    ->set('entity_types', $entity_types)->save();
 }
 
 /**
@@ -88,5 +95,19 @@ function simplesitemap_update_8104() {
     'size' => 'small',
     'not null' => TRUE,
   ));
+  \Drupal::service('config.factory')->getEditable('simplesitemap.settings')
+    ->set('settings', array('max_links' => 2000))->save();
   return t('Before the sitemap can be accessed, it must be regenerated manually or via cron run.');
+}
+
+/**
+ * Modifying database structure to accommodate sitemap chunk timestamps.
+ */
+function simplesitemap_update_8105() {
+  db_add_field('simplesitemap', 'generated', array(
+    'description' => 'Timestamp of sitemap chunk generation.',
+    'type' => 'int',
+    'default' => 0,
+    'not null' => TRUE,
+  ));
 }

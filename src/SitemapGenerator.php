@@ -36,6 +36,11 @@ class SitemapGenerator {
     $this->links = array();
   }
 
+  /**
+   * Gets the values needed to display the priority dropdown setting.
+   *
+   * @return array $options
+   */
   public static function get_priority_select_values() {
     $options = array();
     foreach(range(0, self::PRIORITY_HIGHEST) as $value) {
@@ -53,23 +58,46 @@ class SitemapGenerator {
     $this->custom = is_array($custom) ? $custom : array();
   }
 
+  /**
+   * Generates and returns the sitemap.
+   *
+   * @param int $max_links
+   *  This number dictates how many sitemap chunks are to be created.
+   *
+   * @return array $sitemaps.
+   */
   public function generate_sitemap($max_links = NULL) {
 
     $this->generate_custom_links();
     $this->generate_entity_links();
 
+    $timestamp = time();
     $sitemaps = array();
     if (!empty($max_links) && count($this->links) > 0) {
       foreach(array_chunk($this->links, $max_links) as $sitemap_id => $sitemap_links) {
-        $sitemaps[] = $this->generate_sitemap_chunk($sitemap_links);
+        $sitemaps[] = (object)[
+          'sitemap_string' => $this->generate_sitemap_chunk($sitemap_links),
+          'generated' => $timestamp,
+        ];
       }
     }
     else {
-      $sitemaps[] = $this->generate_sitemap_chunk($this->links);
+      $sitemaps[] = (object)[
+        'sitemap_string' => $this->generate_sitemap_chunk($this->links),
+        'generated' => $timestamp,
+      ];
     }
     return $sitemaps;
   }
 
+  /**
+   * Generates and returns the sitemap index.
+   *
+   * @param array $sitemap
+   *  All sitemap chunks keyed by the chunk ID.
+   *
+   * @return string sitemap index
+   */
   public function generate_sitemap_index($sitemap) {
     $writer = new XMLWriter();
     $writer->openMemory();
@@ -78,10 +106,11 @@ class SitemapGenerator {
     $writer->startElement('sitemapindex');
     $writer->writeAttribute('xmlns', self::XMLNS);
 
-    foreach ($sitemap as $sitemap_id => $sitemap_string) {
+    foreach ($sitemap as $chunk_id => $chunk_data) {
       $writer->startElement('sitemap');
-      $writer->writeElement('loc', $GLOBALS['base_url'] . '/sitemaps/' . $sitemap_id . '/' . 'sitemap.xml');
-      //todo: lastmod
+      $writer->writeElement('loc', $GLOBALS['base_url'] . '/sitemaps/'
+        . $chunk_id . '/' . 'sitemap.xml');
+      $writer->writeElement('lastmod', date_iso8601($chunk_data->generated));
       $writer->endElement();
     }
     $writer->endElement();
@@ -89,6 +118,14 @@ class SitemapGenerator {
     return $writer->outputMemory();
   }
 
+  /**
+   * Generates and returns a sitemap chunk.
+   *
+   * @param array $sitemap_links
+   *  All links with their translation and settings.
+   *
+   * @return string sitemap chunk
+   */
   private function generate_sitemap_chunk($sitemap_links) {
 
     $writer = new XMLWriter();
@@ -105,7 +142,7 @@ class SitemapGenerator {
       // Adding url to standard language.
       $writer->writeElement('loc', $link['url'][$this->default_language_id]);
 
-      // Adding alternate urls (other languages).
+      // Adding alternate urls (other languages) if any.
       if (count($link['url']) > 1) {
         foreach($link['url'] as $language_id => $localised_url) {
           $writer->startElement('xhtml:link');
@@ -116,12 +153,12 @@ class SitemapGenerator {
         }
       }
 
-      // Add priority.
+      // Add priority if any.
       if (!is_null($link['priority'])) {
         $writer->writeElement('priority', $link['priority']);
       }
 
-      // Add lastmod.
+      // Add lastmod if any.
       if (!is_null($link['lastmod'])) {
         $writer->writeElement('lastmod', $link['lastmod']);
       }
@@ -131,14 +168,18 @@ class SitemapGenerator {
     return $writer->outputMemory();
   }
 
-  // Add custom links.
+  /**
+   * Gets custom links.
+   */
   private function generate_custom_links() {
     $link_generator = new CustomLinkGenerator();
     $links = $link_generator->get_custom_links($this->custom , $this->languages);
     $this->links = array_merge($this->links, $links);
   }
 
-  // Add entity type links.
+  /**
+   * Gets entity type links.
+   */
   private function generate_entity_links() {
     foreach($this->entity_types as $entity_type => $bundles) {
       $class_path = Simplesitemap::get_plugin_path($entity_type);

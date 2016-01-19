@@ -11,7 +11,8 @@
 namespace Drupal\simplesitemap\LinkGenerators;
 
 /**
- * EntityLinkGenerator abstract class.
+ * EntityLinkGenerator class.
+ * @abstract
  */
 abstract class EntityLinkGenerator {
 
@@ -34,6 +35,14 @@ abstract class EntityLinkGenerator {
     return $this->entity_links;
   }
 
+  /**
+   * Gets lastmod date for an entity.
+   *
+   * @param string $entity_type
+   * @param int $id
+   *  ID of the entity.
+   * @return string lastmod date or NULL if none.
+   */
   private function get_lastmod($entity_type, $id) {
     switch ($entity_type) {
       case 'node_type':
@@ -48,5 +57,16 @@ abstract class EntityLinkGenerator {
     return isset($lastmod[0]) ? date_iso8601($lastmod[0]) : NULL;
   }
 
+  /**
+   * Returns an array of all urls to this bundle.
+   *
+   * @param string $bundle
+   *  Machine name of the bundle, eg. 'page'.
+   * @param array $languages
+   *  Array of Drupal language objects.
+   * @return array $urls
+   *
+   * @abstract
+   */
   abstract function get_entity_bundle_links($bundle, $languages);
 }

@@ -15,6 +15,14 @@ use Drupal\Core\Url;
  */
 class CustomLinkGenerator {
 
+  /**
+   * Returns an array of all urls of the custom paths.
+   *
+   * @param array $custom_paths
+   * @param array $languages
+   *  Array of Drupal language objects.
+   * @return array $urls
+   */
   public function get_custom_links($custom_paths, $languages) {
     $links = array();
     foreach($custom_paths as $i => $custom_path) {

@@ -89,6 +89,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
     $settings = $sitemap->get_settings();
     $settings['max_links'] = $form_state->getValue('max_links');
     $sitemap->save_settings($settings);
+    parent::submitForm($form, $form_state);
   }
 
   public function rebuild_sitemap(array &$form, FormStateInterface $form_state) {

@@ -18,6 +18,9 @@ use Drupal\Core\Url;
  */
 class menu extends EntityLinkGenerator {
 
+  /**
+   * {@inheritdoc}
+   */
   function get_entity_bundle_links($bundle, $languages) {
     $routes = db_query("SELECT mlid, route_name, route_parameters FROM {menu_tree} WHERE menu_name = :menu_name and enabled = 1", array(':menu_name' => $bundle))
       ->fetchAllAssoc('mlid');

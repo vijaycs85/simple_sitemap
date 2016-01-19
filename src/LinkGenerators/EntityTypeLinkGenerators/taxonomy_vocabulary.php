@@ -18,8 +18,10 @@ use Drupal\Core\Url;
  */
 class taxonomy_vocabulary extends EntityLinkGenerator {
 
+  /**
+   * {@inheritdoc}
+   */
   function get_entity_bundle_links($bundle, $languages) {
-
     $results = db_query("SELECT tid FROM {taxonomy_term_field_data} WHERE vid = :vid", array(':vid' => $bundle))
       ->fetchAllAssoc('tid');
 

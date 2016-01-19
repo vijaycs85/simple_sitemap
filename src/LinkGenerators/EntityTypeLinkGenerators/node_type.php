@@ -25,9 +25,13 @@ use Drupal\Core\Url;
  */
 class node_type extends EntityLinkGenerator {
 
+  /**
+   * {@inheritdoc}
+   */
   function get_entity_bundle_links($bundle, $languages) {
     $results = db_query("SELECT nid FROM {node_field_data} WHERE status = 1 AND type = :type", array(':type' => $bundle))
       ->fetchAllAssoc('nid');
+
     $urls = array();
     foreach ($results as $id => $changed) {
       foreach($languages as $language) {
