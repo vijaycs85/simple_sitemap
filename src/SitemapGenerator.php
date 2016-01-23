@@ -77,14 +77,14 @@ class SitemapGenerator {
       foreach(array_chunk($this->links, $max_links) as $sitemap_id => $sitemap_links) {
         $sitemaps[] = (object)[
           'sitemap_string' => $this->generate_sitemap_chunk($sitemap_links),
-          'generated' => $timestamp,
+          'sitemap_created' => $timestamp,
         ];
       }
     }
     else {
       $sitemaps[] = (object)[
         'sitemap_string' => $this->generate_sitemap_chunk($this->links),
-        'generated' => $timestamp,
+        'sitemap_created' => $timestamp,
       ];
     }
     return $sitemaps;
@@ -110,7 +110,7 @@ class SitemapGenerator {
       $writer->startElement('sitemap');
       $writer->writeElement('loc', $GLOBALS['base_url'] . '/sitemaps/'
         . $chunk_id . '/' . 'sitemap.xml');
-      $writer->writeElement('lastmod', date_iso8601($chunk_data->generated));
+      $writer->writeElement('lastmod', date_iso8601($chunk_data->sitemap_created));
       $writer->endElement();
     }
     $writer->endElement();

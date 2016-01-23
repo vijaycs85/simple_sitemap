@@ -160,12 +160,12 @@ class Simplesitemap {
       $values[] = array(
         'id' => $chunk_id,
         'sitemap_string' => $chunk_data->sitemap_string,
-        'generated' =>  $chunk_data->generated,
+        'sitemap_created' =>  $chunk_data->sitemap_created,
       );
     }
 
     $query = db_insert('simplesitemap')
-      ->fields(array('id', 'sitemap_string', 'generated'));
+      ->fields(array('id', 'sitemap_string', 'sitemap_created'));
     foreach ($values as $record) {
       $query->values($record);
     }
