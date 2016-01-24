@@ -116,11 +116,8 @@ function simplesitemap_update_8105() {
  * Changing column name to 'sitemap_created', as 'generated' is a reserved word since MySQL 5.7.6.
  */
 function simplesitemap_update_8106() {
-  db_change_field('simplesitemap', 'generated', 'sitemap_created', array(
-    'description' => 'Timestamp of sitemap chunk generation.',
-    'type' => 'int',
-    'default' => 0,
-    'not null' => TRUE,
-  ));
+  // Omitting the high level DB API to be able to escape the column name.
+  Drupal\Core\Database\Database::getConnection()
+    ->query("alter table {simplesitemap} CHANGE `generated` sitemap_created int(11) NOT NULL");
 }
 
