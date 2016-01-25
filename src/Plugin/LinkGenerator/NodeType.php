@@ -3,7 +3,7 @@
  * @file
  * Contains \Drupal\simplesitemap\Plugin\LinkGenerator\NodeType.
  *
- * Plugin for taxonomy term entity link generation.
+ * Plugin for node entity link generation.
  */
 
 namespace Drupal\simplesitemap\Plugin\LinkGenerator;
