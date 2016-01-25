@@ -19,7 +19,12 @@ function simplesitemap_form_alter(&$form, $form_state, $form_id) {
     return;
 
   $entity_type_id = $form_entity->getEntityTypeId();
-  if (!Simplesitemap::get_plugin_path($entity_type_id))
+
+  //todo: wrap into helper function
+  // Return if a sitemap plugin of this entity type does not exist.
+  $manager = \Drupal::service('plugin.manager.simplesitemap');
+  $plugins = $manager->getDefinitions();
+  if (!isset($plugins[$entity_type_id]))
     return;
 
   $bundle_name = $form_entity->Id();

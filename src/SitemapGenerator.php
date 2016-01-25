@@ -8,7 +8,6 @@
 
 namespace Drupal\simplesitemap;
 
-use Drupal\simplesitemap\LinkGenerators\CustomLinkGenerator;
 use \XMLWriter;
 
 /**
@@ -181,13 +180,16 @@ class SitemapGenerator {
    * Gets entity type links.
    */
   private function generate_entity_links() {
-    foreach($this->entity_types as $entity_type => $bundles) {
-      $class_path = Simplesitemap::get_plugin_path($entity_type);
-      if ($class_path !== FALSE) {
-        require_once $class_path;
-        $class_name = "Drupal\\simplesitemap\\LinkGenerators\\EntityTypeLinkGenerators\\$entity_type";
-        $link_generator = new $class_name();
-        $links = $link_generator->get_entity_links($entity_type, $bundles, $this->languages);
+
+    $manager = \Drupal::service('plugin.manager.simplesitemap');
+    $plugins = $manager->getDefinitions();
+
+    foreach ($plugins as $link_generator_plugin) {
+      if (isset($this->entity_types[$link_generator_plugin['id']])) {
+        $instance = $manager->createInstance($link_generator_plugin['id']);
+        $links = $instance->get_entity_links($link_generator_plugin['id'],
+          $this->entity_types[$link_generator_plugin['id']],
+          $this->languages);
         $this->links = array_merge($this->links, $links);
       }
     }

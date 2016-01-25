@@ -13,8 +13,6 @@ namespace Drupal\simplesitemap;
  */
 class Simplesitemap {
 
-  const SITEMAP_PLUGIN_PATH = 'src/LinkGenerators/EntityTypeLinkGenerators';
-
   private $config;
   private $sitemap;
 
@@ -33,21 +31,6 @@ class Simplesitemap {
       && method_exists($form_state->getFormObject(), 'getEntity')) {
       $entity = $form_state->getFormObject()->getEntity();
       return $entity;
-    }
-    return FALSE;
-  }
-
-  /**
-   * Returns path of a sitemap plugin.
-   *
-   * @param string $entity_type_name
-   * @return string $class_path or FALSE if non-existent.
-   */
-  public static function get_plugin_path($entity_type_name) {
-    $class_path = drupal_get_path('module', 'simplesitemap')
-      . '/' . self::SITEMAP_PLUGIN_PATH . '/' . $entity_type_name . '.php';
-    if (file_exists($class_path)) {
-      return $class_path;
     }
     return FALSE;
   }

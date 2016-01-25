@@ -1,23 +1,20 @@
 <?php
 /**
  * @file
- * Contains \Drupal\simplesitemap\LinkGenerators\EntityLinkGenerator.
- *
- * Abstract class to be extended for plugin creation.
- * See \Drupal\simplesitemap\LinkGenerators\CustomLinkGenerator\node for more
- * documentation.
+ * Contains \Drupal\simplesitemap\LinkGeneratorBase.
  */
 
-namespace Drupal\simplesitemap\LinkGenerators;
+namespace Drupal\simplesitemap;
 
-/**
- * EntityLinkGenerator class.
- * @abstract
- */
-abstract class EntityLinkGenerator {
+use Drupal\Component\Plugin\PluginBase;
+
+abstract class LinkGeneratorBase extends PluginBase implements LinkGeneratorInterface {
 
   private $entity_links = array();
 
+  /**
+   * {@inheritdoc}
+   */
   public function get_entity_links($entity_type, $bundles, $languages) {
     $i = 0;
     foreach($bundles as $bundle => $bundle_settings) {

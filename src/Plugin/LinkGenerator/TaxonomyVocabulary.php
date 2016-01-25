@@ -1,22 +1,25 @@
 <?php
 /**
  * @file
- * Contains \Drupal\simplesitemap\LinkGenerators\EntityTypeLinkGenerators\taxonomy_vocabulary.
+ * Contains \Drupal\simplesitemap\LinkGenerator\TaxonomyVocabulary.
  *
  * Plugin for taxonomy term entity link generation.
- * See \Drupal\simplesitemap\LinkGenerators\CustomLinkGenerator\node_type for more
- * documentation.
  */
 
-namespace Drupal\simplesitemap\LinkGenerators\EntityTypeLinkGenerators;
+namespace Drupal\simplesitemap\Plugin\LinkGenerator;
 
-use Drupal\simplesitemap\LinkGenerators\EntityLinkGenerator;
+use Drupal\simplesitemap\Annotation\LinkGenerator;
+use Drupal\simplesitemap\LinkGeneratorBase;
 use Drupal\Core\Url;
 
 /**
- * taxonomy_vocabulary class.
+ * TaxonomyVocabulary class.
+ *
+ * @LinkGenerator(
+ *   id = "taxonomy_vocabulary"
+ * )
  */
-class taxonomy_vocabulary extends EntityLinkGenerator {
+class TaxonomyVocabulary extends LinkGeneratorBase {
 
   /**
    * {@inheritdoc}

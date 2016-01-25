@@ -6,7 +6,7 @@
  * Generates custom sitemap links provided by the user.
  */
 
-namespace Drupal\simplesitemap\LinkGenerators;
+namespace Drupal\simplesitemap;
 
 use Drupal\Core\Url;
 
