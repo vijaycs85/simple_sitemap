@@ -24,19 +24,14 @@ class TaxonomyVocabulary extends LinkGeneratorBase {
   /**
    * {@inheritdoc}
    */
-  function get_entity_bundle_links($bundle, $languages) {
+  function get_entity_bundle_paths($bundle) {
     $results = db_query("SELECT tid FROM {taxonomy_term_field_data} WHERE vid = :vid", array(':vid' => $bundle))
       ->fetchAllAssoc('tid');
 
-    $urls = array();
+    $paths = array();
     foreach ($results as $id => $changed) {
-      foreach($languages as $language) {
-        $urls[$id][$language->getId()] = Url::fromRoute("entity.taxonomy_term.canonical", array('taxonomy_term' => $id), array(
-          'language' => $language,
-          'absolute' => TRUE
-        ))->toString();
-      }
+        $paths[$id] = Url::fromRoute("entity.taxonomy_term.canonical", array('taxonomy_term' => $id), array())->getInternalPath();
     }
-    return $urls;
+    return $paths;
   }
 }

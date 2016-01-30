@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Contains SimplesitemapManager.
+ * Contains \Drupal\simplesitemap\SimplesitemapManager.
  */
 
 namespace Drupal\simplesitemap;

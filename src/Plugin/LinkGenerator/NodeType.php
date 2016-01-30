@@ -24,19 +24,14 @@ class NodeType extends LinkGeneratorBase {
   /**
    * {@inheritdoc}
    */
-  function get_entity_bundle_links($bundle, $languages) {
+  function get_entity_bundle_paths($bundle) {
     $results = db_query("SELECT nid FROM {node_field_data} WHERE status = 1 AND type = :type", array(':type' => $bundle))
       ->fetchAllAssoc('nid');
 
-    $urls = array();
+    $paths = array();
     foreach ($results as $id => $changed) {
-      foreach($languages as $language) {
-        $urls[$id][$language->getId()] = Url::fromRoute("entity.node.canonical", array('node' => $id), array(
-          'language' => $language,
-          'absolute' => TRUE
-        ))->toString();
-      }
+      $paths[$id] = Url::fromRoute("entity.node.canonical", array('node' => $id), array())->getInternalPath();
     }
-    return $urls;
+    return $paths;
   }
 }

@@ -10,35 +10,38 @@ use Drupal\Component\Plugin\PluginBase;
 
 abstract class LinkGeneratorBase extends PluginBase implements LinkGeneratorInterface {
 
-  private $entity_links = array();
+  private $entity_paths = array();
 
   /**
    * {@inheritdoc}
    */
-  public function get_entity_links($entity_type, $bundles, $languages) {
+  public function get_entity_paths($entity_type, $bundles) {
     $i = 0;
     foreach($bundles as $bundle => $bundle_settings) {
       if (!$bundle_settings['index']) {
         continue;
       }
-      $links = $this->get_entity_bundle_links($bundle, $languages);
-      foreach ($links as $id => $link) {
-        $this->entity_links[$i]['url'] = $link;
-        $this->entity_links[$i]['priority'] = $bundle_settings['priority'];
-        $this->entity_links[$i]['lastmod'] = $this->get_lastmod($entity_type, $id);
+      $paths = $this->get_entity_bundle_paths($bundle);
+      foreach ($paths as $id => $link) {
+        $this->entity_paths[$i]['path'] = $link;
+        $this->entity_paths[$i]['priority'] = $bundle_settings['priority'];
+        $this->entity_paths[$i]['lastmod'] = $this->get_lastmod($entity_type, $id);
         $i++;
       }
     }
-    return $this->entity_links;
+    return $this->entity_paths;
   }
 
   /**
    * Gets lastmod date for an entity.
    *
    * @param string $entity_type
+   *  E.g. 'node_type', 'taxonomy_vocabulary'.
    * @param int $id
    *  ID of the entity.
-   * @return string lastmod date or NULL if none.
+   *
+   * @return string
+   *  Lastmod date or NULL if none.
    */
   private function get_lastmod($entity_type, $id) {
     switch ($entity_type) {
@@ -59,11 +62,11 @@ abstract class LinkGeneratorBase extends PluginBase implements LinkGeneratorInte
    *
    * @param string $bundle
    *  Machine name of the bundle, eg. 'page'.
-   * @param array $languages
-   *  Array of Drupal language objects.
-   * @return array $urls
+   *
+   * @return array $paths
+   *  A numeric array of Drupal internal paths like node/1/edit or user/1
    *
    * @abstract
    */
-  abstract function get_entity_bundle_links($bundle, $languages);
+  abstract function get_entity_bundle_paths($bundle);
 }
