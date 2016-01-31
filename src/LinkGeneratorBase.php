@@ -39,7 +39,7 @@ abstract class LinkGeneratorBase extends PluginBase implements LinkGeneratorInte
 
         $this->entity_paths[$i]['path'] = $path['path'];
         $this->entity_paths[$i]['priority'] = !empty($path['priority']) ? $path['priority'] : $bundle_settings['priority'];
-        $this->entity_paths[$i]['lastmod'] = !empty($path['lastmod']) && (int)$path['lastmod'] == $path['lastmod'] ? date_iso8601($path['lastmod']) : NULL;
+        $this->entity_paths[$i]['lastmod'] = isset($path['lastmod']) && is_numeric($path['lastmod']) ? date_iso8601($path['lastmod']) : NULL;
         $i++;
       }
     }
