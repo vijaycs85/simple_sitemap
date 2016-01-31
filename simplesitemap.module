@@ -14,20 +14,41 @@ use Drupal\simplesitemap\SitemapGenerator;
  */
 function simplesitemap_form_alter(&$form, $form_state, $form_id) {
 
-  $form_entity = Simplesitemap::get_form_entity($form_state);
-  if (!$form_entity)
-    return;
-
-  $entity_type_id = $form_entity->getEntityTypeId();
-
-  //todo: wrap into helper function
-  // Return if a sitemap plugin of this entity type does not exist.
+  // Get all simplesitemap plugins.
   $manager = \Drupal::service('plugin.manager.simplesitemap');
   $plugins = $manager->getDefinitions();
-  if (!isset($plugins[$entity_type_id]))
-    return;
 
-  $bundle_name = $form_entity->Id();
+  // Go through simplesitemap plugins and check if one of them declares usage
+  // of this particular form. If that's the case, get entity type id of the
+  // plugin definition and assume the bundle to be of the same name as the
+  // entity type id.
+  foreach($plugins as $plugin) {
+    if (isset($plugin['form_id']) && $plugin['form_id'] === $form_id) {
+      $entity_type_id = $plugin['id'];
+      $bundle_name = $entity_type_id;
+    }
+  }
+
+  // Else get entity type id and bundle name from the form if available and only
+  // if a simplesitemap plugin of the same entity type exists.
+  if (empty($entity_type_id)) {
+    $form_entity = Simplesitemap::get_form_entity($form_state);
+    if ($form_entity !== FALSE) {
+      $form_entity_type_id = $form_entity->getEntityTypeId();
+      if (isset($plugins[$form_entity_type_id])) {
+        if (!isset($plugins[$form_entity_type_id]['form_id'])
+          || $plugins[$form_entity_type_id]['form_id'] === $form_id) {
+          $entity_type_id = $form_entity_type_id;
+          $bundle_name = $form_entity->Id();
+        }
+      }
+    }
+  }
+
+  // If both methods of getting simplesitemap configuration for this form
+  // failed, return.
+  if (empty($entity_type_id))
+    return;
 
   $sitemap = new Simplesitemap;
 
@@ -63,6 +84,9 @@ function simplesitemap_form_alter(&$form, $form_state, $form_id) {
     '#default_value' => FALSE,
   );
 
+  $form['#simplesitemap']['entity_type_id'] = $entity_type_id;
+  $form['#simplesitemap']['bundle_name'] = $bundle_name;
+
   // Add submission handler.
   $form['actions']['submit']['#submit'][] = 'simplesitemap_entity_form_submit';
 
@@ -74,16 +98,14 @@ function simplesitemap_form_alter(&$form, $form_state, $form_id) {
 function simplesitemap_entity_form_submit($form, &$form_state) {
 
   $sitemap = new Simplesitemap;
-
   $values = $form_state->getValues();
 
   // Only make changes in DB if sitemap settings actually changed.
   if ($values['simplesitemap_index_content'] != $form['simplesitemap']['simplesitemap_index_content']['#default_value']
     || $values['simplesitemap_priority'] != $form['simplesitemap']['simplesitemap_priority']['#default_value']) {
 
-    $form_entity = Simplesitemap::get_form_entity($form_state);
-    $entity_type_id = $form_entity->getEntityTypeId();
-    $bundle_name = $form_entity->Id();
+    $entity_type_id = $form['#simplesitemap']['entity_type_id'];
+    $bundle_name = $form['#simplesitemap']['bundle_name'];
 
     // Get current entity type sitemap settings.
     $entity_types = $sitemap->get_entity_types();

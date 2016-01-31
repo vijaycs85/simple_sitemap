@@ -28,7 +28,7 @@ class Menu extends LinkGeneratorBase {
     $routes = db_query("SELECT mlid, route_name, route_parameters FROM {menu_tree} WHERE menu_name = :menu_name and enabled = 1", array(':menu_name' => $bundle))
       ->fetchAllAssoc('mlid');
 
-    //todo: Url::getRouteParameters()?
+    //todo: Use Url::getRouteParameters()?
     $paths = array();
     foreach ($routes as $id => $entity) {
       if (empty($entity->route_name))
@@ -37,8 +37,8 @@ class Menu extends LinkGeneratorBase {
       $options = !empty($route_parameters = unserialize($entity->route_parameters))
         ? array(key($route_parameters) => $route_parameters[key($route_parameters)]) : array();
 
-      $paths[$id] = Url::fromRoute($entity->route_name, $options, array(
-      ))->getInternalPath();
+      $paths[$id]['path'] = Url::fromRoute($entity->route_name, $options, array())->getInternalPath();
+      //todo: Implement lastmod for menu items.
     }
     return $paths;
   }
