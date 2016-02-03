@@ -31,13 +31,13 @@ abstract class LinkGeneratorBase extends PluginBase implements LinkGeneratorInte
       }
 
       foreach($paths as $id => $path) {
-        // Some error catching.
         if (!isset($path['path']) || !is_string($path['path'])) { // Error catching; careful, path can be empty.
           $this->register_error(self::PLUGIN_ERROR_MESSAGE);
           return $this->entity_paths;
         }
 
         $this->entity_paths[$i]['path'] = $path['path'];
+        $this->entity_paths[$i]['options'] = !empty($path['options']) ? $path['options'] : array();
         $this->entity_paths[$i]['priority'] = !empty($path['priority']) ? $path['priority'] : $bundle_settings['priority'];
         $this->entity_paths[$i]['lastmod'] = isset($path['lastmod']) && is_numeric($path['lastmod']) ? date_iso8601($path['lastmod']) : NULL;
         $i++;
@@ -60,10 +60,14 @@ abstract class LinkGeneratorBase extends PluginBase implements LinkGeneratorInte
    *
    * @return array $paths
    *  A numeric array of Drupal internal path data sets containing the path and
-   *  lastmod info:
+   *  optionally lastmod and link options:
    *  array(
-   *    path => 'drupal/internal/path/to/content', // required
-   *    lastmod => '1234567890' // content changed unix date, optional
+   *    'path' => 'drupal/internal/path/to/content', // required
+   *    'options' => array( // optional
+   *      'query' => array('page' => '1'),
+   *      'fragment' => 'my-anchor-id',
+   *    ),
+   *    'lastmod' => '1234567890' // optional: content changed unix date
    *  )
    *
    * @abstract

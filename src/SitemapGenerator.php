@@ -103,7 +103,9 @@ class SitemapGenerator {
       foreach($this->languages as $language) {
         $this->links[$i]['url'][$language->getId()] = Url::fromUserInput('/' . $link['path'], array(
           'language' => $language,
-          'absolute' => TRUE
+          'absolute' => TRUE,
+          'query' => !empty($link['options']['query']) ? $link['options']['query'] : array(),
+          'fragment' => !empty($link['options']['fragment']) ? $link['options']['fragment'] : '',
         ))->toString();
       }
     }
