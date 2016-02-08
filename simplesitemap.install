@@ -5,6 +5,46 @@
  */
 
 /**
+ * Implements hook_requirements().
+ */
+function simplesitemap_requirements($phase) {
+  $requirements = array();
+
+  if (!extension_loaded('xmlwriter')) {
+    $requirements['simplesitemap_php_extensions'] = array(
+      'title' => t('Simple XML sitemap PHP extensions'),
+      'value' => t('Missing PHP xmlwriter extension'),
+      'description' => t("In order to be able to generate sitemaps, the Simple XML sitemap module requires the <em>xmlwriter</em> PHP extension to be enabled."),
+      'severity' => REQUIREMENT_ERROR,
+    );
+  }
+
+  switch($phase) {
+    case 'runtime':
+      $sitemap = new \Drupal\simplesitemap\Simplesitemap();
+      $generated_ago = $sitemap->get_generated_ago();
+      if (!$generated_ago) {
+        $value = t('Not available');
+        $description = t("The sitemap has not been generated yet. Run cron, or <a href='@generate'>generate</a> the sitemap manually.", array('@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'));
+        $severity = REQUIREMENT_WARNING;
+      }
+      else {
+        $value = t('XML sitemap is available');
+        $description = t("The <a href='@sitemap'>XML sitemap</a> was generated @ago ago. <a href='@generate'>Regenerate</a>.", array('@ago' => $generated_ago, '@sitemap' => $GLOBALS['base_url'] . '/sitemap.xml', '@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'));
+        $severity = REQUIREMENT_INFO;
+      }
+      $requirements['simplesitemap_generated'] = array(
+        'title' => 'Simple XML sitemap',
+        'value' => $value,
+        'description' => $description,
+        'severity' => $severity,
+      );
+      break;
+  }
+  return $requirements;
+}
+
+/**
  * Implements hook_schema().
  */
 function simplesitemap_schema() {

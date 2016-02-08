@@ -184,4 +184,12 @@ class Simplesitemap {
     $settings[$name] = $setting;
     $this->save_config('settings', $settings);
   }
+
+  public function get_generated_ago() {
+    if (isset($this->sitemap[0]->sitemap_created)) {
+      return \Drupal::service('date.formatter')
+        ->formatInterval(REQUEST_TIME - $this->sitemap[0]->sitemap_created);
+    }
+    return FALSE;
+  }
 }

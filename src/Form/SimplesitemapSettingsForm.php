@@ -37,16 +37,16 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
 
     $sitemap = new Simplesitemap;
 
-    $form['simplesitemap_settings']['rebuild'] = array(
-      '#title' => t('Rebuild sitemap'),
+    $form['simplesitemap_settings']['regenerate'] = array(
+      '#title' => t('Regenerate sitemap'),
       '#type' => 'fieldset',
-      '#markup' => '<p>' . t('This will rebuild the XML sitemap for all languages.') . '</p>',
+      '#markup' => '<p>' . t('This will regenerate the XML sitemap for all languages.') . '</p>',
     );
 
-    $form['simplesitemap_settings']['rebuild']['rebuild_submit'] = array(
+    $form['simplesitemap_settings']['regenerate']['regenerate_submit'] = array(
       '#type' => 'submit',
-      '#value' => t('Rebuild sitemap'),
-      '#submit' => array('::rebuild_sitemap'),
+      '#value' => t('Regenerate sitemap'),
+      '#submit' => array('::generate_sitemap'),
       '#validate' => array(), // Skip form-level validator.
     );
 
@@ -97,7 +97,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
     parent::submitForm($form, $form_state);
   }
 
-  public function rebuild_sitemap(array &$form, FormStateInterface $form_state) {
+  public function generate_sitemap(array &$form, FormStateInterface $form_state) {
     $sitemap = new Simplesitemap;
     $sitemap->generate_sitemap();
   }
