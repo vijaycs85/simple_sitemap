@@ -185,6 +185,12 @@ class Simplesitemap {
     $this->save_config('settings', $settings);
   }
 
+  /**
+   * Returns a 'time ago' string of last timestamp generation.
+   * 
+   * @return mixed
+   *  Formatted timestamp of last sitemap generation, otherwise FALSE.
+   */
   public function get_generated_ago() {
     if (isset($this->sitemap[0]->sitemap_created)) {
       return \Drupal::service('date.formatter')
