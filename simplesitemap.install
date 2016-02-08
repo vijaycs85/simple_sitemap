@@ -120,3 +120,11 @@ function simplesitemap_update_8106() {
     ->query("alter table {simplesitemap} CHANGE `generated` sitemap_created int(11) NOT NULL");
 }
 
+/**
+ * Setting the new cron generation setting to TRUE by default.
+ */
+function simplesitemap_update_8107() {
+  \Drupal::service('config.factory')->getEditable('simplesitemap.settings')
+    ->set('settings', array('cron_generate' => TRUE))->save();
+}
+
