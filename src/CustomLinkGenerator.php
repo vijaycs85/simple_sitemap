@@ -19,6 +19,7 @@ class CustomLinkGenerator {
    * @param array $custom_paths
    *
    * @return array $urls
+   *
    */
   public function get_custom_paths($custom_paths) {
     $paths = array();
@@ -26,7 +27,8 @@ class CustomLinkGenerator {
       if (!isset($custom_path['index']) || $custom_path['index']) {
         $paths[$i]['path'] = substr($custom_path['path'], 1);
         $paths[$i]['priority'] = isset($custom_path['priority']) ? $custom_path['priority'] : NULL;
-        $paths[$i]['lastmod'] = NULL; //todo: implement
+        $paths[$i]['lastmod'] = NULL; //todo: implement lastmod
+        //todo: get url parameters and page fragment into $paths[$i]['settings'] so that future hook implementations can alter the array instead of having to do string processing.
       }
     }
     return $paths;

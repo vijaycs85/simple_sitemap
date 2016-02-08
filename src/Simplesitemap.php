@@ -20,10 +20,16 @@ class Simplesitemap {
     $this->initialize();
   }
 
+  private function initialize() {
+    $this->get_config_from_db();
+    $this->get_sitemap_from_db();
+  }
+
   /**
    * Returns an the form entity object.
    *
    * @param object $form_state
+   *
    * @return object $entity or FALSE if non-existent.
    */
   public static function get_form_entity($form_state) {
@@ -35,50 +41,36 @@ class Simplesitemap {
     return FALSE;
   }
 
-  private function initialize() {
-    $this->get_config_from_db();
-    $this->get_sitemap_from_db();
-  }
-
-  // Get sitemap from database.
+  /**
+   * Gets sitemap from db.
+   */
   private function get_sitemap_from_db() {
     $this->sitemap = db_query("SELECT * FROM {simplesitemap}")->fetchAllAssoc('id');
   }
+
   /**
-   * Gets sitemap settings from configuration storage.
+   * Gets sitemap settings from the configuration storage.
    */
   private function get_config_from_db() {
     $this->config = \Drupal::config('simplesitemap.settings');
   }
 
   /**
-   * Saves entity type sitemap settings to db.
-   *
-   * @param array $entity_types
+   * Gets a specific sitemap configuration from the configuration storage.
    */
-  public function save_entity_types($entity_types) {
-    $this->save_config('entity_types', $entity_types);
+  public function get_config($key) {
+    return $this->config->get($key);
   }
 
   /**
-   * Saves the sitemap custom links settings to db.
+   * Saves a specific sitemap configuration to db.
    *
-   * @param array $custom_links
+   * @param string $key
+   *  Configuration key, like 'entity_links'.
+   * @param mixed $value
+   *  The configuration to be saved.
    */
-  public function save_custom_links($custom_links) {
-    $this->save_config('custom', $custom_links);
-  }
-
-  /**
-   * Saves other sitemap settings to db.
-   *
-   * @param array $settings
-   */
-  public function save_settings($settings) {
-    $this->save_config('settings', $settings);
-  }
-
-  private function save_config($key, $value) {
+  public function save_config($key, $value) {
     \Drupal::service('config.factory')->getEditable('simplesitemap.settings')
       ->set($key, $value)->save();
     $this->initialize();
@@ -124,10 +116,9 @@ class Simplesitemap {
    */
   public function generate_sitemap() {
     $generator = new SitemapGenerator();
-    $generator->set_custom_links($this->config->get('custom'));
-    $generator->set_entity_types($this->config->get('entity_types'));
-    $settings = $this->get_settings();
-    $this->sitemap = $generator->generate_sitemap($settings['max_links']);
+    $generator->set_custom_links($this->get_config('custom'));
+    $generator->set_entity_types($this->get_config('entity_types'));
+    $this->sitemap = $generator->generate_sitemap($this->get_setting('max_links'));
     $this->save_sitemap();
     drupal_set_message(t("The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.",
       array('@url' => $GLOBALS['base_url'] . '/sitemap.xml')));
@@ -156,7 +147,10 @@ class Simplesitemap {
   }
 
   /**
-   * Gets the sitemap index.
+   * Generates and returns the sitemap index as string.
+   *
+   * @return string
+   *  The sitemap index.
    */
   private function get_sitemap_index() {
     $generator = new SitemapGenerator();
@@ -164,23 +158,30 @@ class Simplesitemap {
   }
 
   /**
-   * Gets the sitemap entity type settings.
+   * Gets a specific sitemap setting.
+   *
+   * @param string $name
+   *  Name of the setting, like 'max_links'.
+   *
+   * @return mixed
+   *  The current setting from db or FALSE if setting does not exist.
    */
-  public function get_entity_types() {
-    return $this->config->get('entity_types');
+  public function get_setting($name) {
+    $settings = $this->get_config('settings');
+    return isset($settings[$name]) ? $settings[$name] : FALSE;
   }
 
   /**
-   * Gets the sitemap custom links settings.
+   * Saves a specific sitemap setting to db.
+   *
+   * @param $name
+   *  Setting name, like 'max_links'.
+   * @param $setting
+   *  The setting to be saved.
    */
-  public function get_custom_links() {
-    return $this->config->get('custom');
-  }
-
-  /**
-   * Gets other sitemap settings.
-   */
-  public function get_settings() {
-    return $this->config->get('settings');
+  public function save_setting($name, $setting) {
+    $settings = $this->get_config('settings');
+    $settings[$name] = $setting;
+    $this->save_config('settings', $settings);
   }
 }

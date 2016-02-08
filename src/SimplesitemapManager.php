@@ -30,6 +30,6 @@ class SimplesitemapManager extends DefaultPluginManager {
     parent::__construct('Plugin/LinkGenerator', $namespaces, $module_handler, 'Drupal\simplesitemap\LinkGeneratorInterface', 'Drupal\simplesitemap\Annotation\LinkGenerator');
 
     $this->alterInfo('simplesitemap_link_generators_info');
-    $this->setCacheBackend($cache_backend, 'simplesitemap_flavors');
+    $this->setCacheBackend($cache_backend, 'simplesitemap_link_generators');
   }
 }

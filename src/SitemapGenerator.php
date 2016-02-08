@@ -72,7 +72,6 @@ class SitemapGenerator {
     $this->generate_entity_paths();
     $this->generate_urls_from_paths();
 
-    $timestamp = time();
     $sitemaps = array();
 
     // Create sitemap chunks according to the max_links setting.
@@ -80,7 +79,7 @@ class SitemapGenerator {
       foreach(array_chunk($this->links, $max_links) as $sitemap_id => $sitemap_links) {
         $sitemaps[] = (object)[
           'sitemap_string' => $this->generate_sitemap_chunk($sitemap_links),
-          'sitemap_created' => $timestamp,
+          'sitemap_created' => REQUEST_TIME,
         ];
       }
     }
@@ -88,7 +87,7 @@ class SitemapGenerator {
     else {
       $sitemaps[] = (object)[
         'sitemap_string' => $this->generate_sitemap_chunk($this->links),
-        'sitemap_created' => $timestamp,
+        'sitemap_created' => REQUEST_TIME,
       ];
     }
     return $sitemaps;
@@ -199,13 +198,14 @@ class SitemapGenerator {
   }
 
   /**
-   * Makes all entity type link generating plugins add their paths.
+   * Lets all simple sitemap plugins add their paths to the sitemap.
    */
   private function generate_entity_paths() {
 
     $manager = \Drupal::service('plugin.manager.simplesitemap');
     $plugins = $manager->getDefinitions();
 
+    // Let all simplesitemap plugins generate add their links to the sitemap.
     foreach ($plugins as $link_generator_plugin) {
       if (isset($this->entity_types[$link_generator_plugin['id']])) {
         $instance = $manager->createInstance($link_generator_plugin['id']);

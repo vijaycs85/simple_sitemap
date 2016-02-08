@@ -36,7 +36,6 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     $sitemap = new Simplesitemap;
-    $settings = $sitemap->get_settings();
 
     $form['simplesitemap_settings']['rebuild'] = array(
       '#title' => t('Rebuild sitemap'),
@@ -63,7 +62,14 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#maxlength' => 5,
       '#size' => 5,
-      '#default_value' => $settings['max_links'],
+      '#default_value' => $sitemap->get_setting('max_links'),
+    );
+
+    $form['simplesitemap_settings']['settings']['cron_generate'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Regenerate the sitemap on every cron run'),
+      '#description' => t('Uncheck this if you intend to only regenerate the sitemap manually or via drush.'),
+      '#default_value' => $sitemap->get_setting('cron_generate'),
     );
 
     return parent::buildForm($form, $form_state);
@@ -86,9 +92,8 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $sitemap = new Simplesitemap;
-    $settings = $sitemap->get_settings();
-    $settings['max_links'] = $form_state->getValue('max_links');
-    $sitemap->save_settings($settings);
+    $sitemap->save_setting('max_links', $form_state->getValue('max_links'));
+    $sitemap->save_setting('cron_generate', $form_state->getValue('cron_generate'));
     parent::submitForm($form, $form_state);
   }
 

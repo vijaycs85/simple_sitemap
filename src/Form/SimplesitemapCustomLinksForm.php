@@ -37,7 +37,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
 
     $sitemap = new Simplesitemap;
     $setting_string = '';
-    foreach ($sitemap->get_custom_links() as $custom_link) {
+    foreach ($sitemap->get_config('custom') as $custom_link) {
 
       // todo: remove this statement after removing the index key from the configuration.
       if (isset($custom_link['index']) && $custom_link['index'] == 0)
@@ -112,7 +112,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
         $custom_link_config[$key]['priority'] = number_format((float)$line_settings[1], 1, '.', '');
       }
     }
-    $sitemap->save_custom_links($custom_link_config);
+    $sitemap->save_config('custom', $custom_link_config);
 
     parent::submitForm($form, $form_state);
 
