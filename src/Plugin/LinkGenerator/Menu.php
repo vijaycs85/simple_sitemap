@@ -33,14 +33,14 @@ class Menu extends LinkGeneratorBase {
       if (empty($entity->route_name))
         continue;
 
-      $paths[$id]['options'] = !empty($options = unserialize($entity->options)) ? $options : array();
-
-      //todo: Use Url::getRouteParameters()?
-      $route_parameters = !empty($route_parameters = unserialize($entity->route_parameters))
+      $options = !empty($options = unserialize($entity->options)) ? $options : array(); //todo: Use Url::getOptions()
+      $route_parameters = !empty($route_parameters = unserialize($entity->route_parameters)) //todo: Use Url::getRouteParameters()
         ? array(key($route_parameters) => $route_parameters[key($route_parameters)]) : array();
-
-      $paths[$id]['path'] = Url::fromRoute($entity->route_name, $route_parameters, $options)->getInternalPath();
-      //todo: Implement lastmod for menu items.
+      if (parent::access($url_object = Url::fromRoute($entity->route_name, $route_parameters, $options))) {
+        $paths[$id]['path'] = $url_object->getInternalPath();
+        $paths[$id]['options'] = $url_object->getOptions();
+        //todo: Implement lastmod for menu items.
+      }
     }
     return $paths;
   }

@@ -26,15 +26,68 @@ class Simplesitemap {
   }
 
   /**
-   * Returns an the form entity object.
+   * Gets the entity_type_id and bundle_name of the form object if available and only
+   * if the sitemap supports this entity type through an existing plugin.
+   *
+   * @param object $form_state
+   * @param string $form_id
+   *
+   * @return array containing the entity_type_id and the bundle_name of the
+   *  form object or FALSE if none found or not supported by an existing plugin.
+   */
+  public static function get_sitemap_form_entity_data($form_state, $form_id) {
+
+    // Get all simplesitemap plugins.
+    $manager = \Drupal::service('plugin.manager.simplesitemap');
+    $plugins = $manager->getDefinitions();
+
+    // Go through simplesitemap plugins and check if one of them declares usage
+    // of this particular form. If that's the case, get entity type id of the
+    // plugin definition and assume the bundle to be of the same name as the
+    // entity type id.
+    foreach($plugins as $plugin) {
+      if (isset($plugin['form_id']) && $plugin['form_id'] === $form_id) {
+        return array(
+          'entity_type_id' => $plugin['id'],
+          'bundle_name' => $plugin['id'],
+        );
+      }
+    }
+
+    // Else get entity type id and bundle name from the form if available and only
+    // if a simplesitemap plugin of the same entity type exists.
+    $form_entity = self::get_form_entity($form_state);
+    if ($form_entity !== FALSE) {
+      $form_entity_type_id = $form_entity->getEntityTypeId();
+      if (isset($plugins[$form_entity_type_id])) {
+        if (!isset($plugins[$form_entity_type_id]['form_id'])
+          || $plugins[$form_entity_type_id]['form_id'] === $form_id) {
+          return array(
+            'entity_type_id' => $form_entity_type_id,
+            'bundle_name' => $form_entity->Id(),
+          );
+        }
+      }
+    }
+
+    // If both methods of getting simplesitemap entity data for this form
+    // failed, return FALSE.
+    return FALSE;
+  }
+
+  /**
+   * Gets the object entity of the form if available.
    *
    * @param object $form_state
    *
-   * @return object $entity or FALSE if non-existent.
+   * @return object $entity or FALSE if non-existent or if form operation is
+   *  'delete'.
    */
-  public static function get_form_entity($form_state) {
-    if (!is_null($form_state->getFormObject())
-      && method_exists($form_state->getFormObject(), 'getEntity')) {
+  private static function get_form_entity($form_state) {
+    $form_object = $form_state->getFormObject();
+    if (!is_null($form_object)
+      && method_exists($form_state->getFormObject(), 'getEntity')
+      && $form_object->getOperation() !== 'delete') {
       $entity = $form_state->getFormObject()->getEntity();
       return $entity;
     }
@@ -57,6 +110,9 @@ class Simplesitemap {
 
   /**
    * Gets a specific sitemap configuration from the configuration storage.
+   *
+   * @return mixed
+   *  The requested configuration.
    */
   public function get_config($key) {
     return $this->config->get($key);
@@ -187,7 +243,7 @@ class Simplesitemap {
 
   /**
    * Returns a 'time ago' string of last timestamp generation.
-   * 
+   *
    * @return mixed
    *  Formatted timestamp of last sitemap generation, otherwise FALSE.
    */

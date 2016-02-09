@@ -31,8 +31,10 @@ class User extends LinkGeneratorBase {
 
     $paths = array();
     foreach ($results as $id => $data) {
-      $paths[$id]['path'] = Url::fromRoute("entity.user.canonical", array('user' => $id), array())->getInternalPath();
-      $paths[$id]['lastmod'] = $data->changed;
+      if (parent::access($url_obj = Url::fromRoute("entity.user.canonical", array('user' => $id), array()))) {
+        $paths[$id]['path'] = $url_obj->getInternalPath();
+        $paths[$id]['lastmod'] = $data->changed;
+      }
     }
     return $paths;
   }

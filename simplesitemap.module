@@ -13,42 +13,11 @@ use Drupal\simplesitemap\SitemapGenerator;
  * Adds sitemap settings to entity types that are supported via plugins.
  */
 function simplesitemap_form_alter(&$form, $form_state, $form_id) {
-
-  // Get all simplesitemap plugins.
-  $manager = \Drupal::service('plugin.manager.simplesitemap');
-  $plugins = $manager->getDefinitions();
-
-  // Go through simplesitemap plugins and check if one of them declares usage
-  // of this particular form. If that's the case, get entity type id of the
-  // plugin definition and assume the bundle to be of the same name as the
-  // entity type id.
-  foreach($plugins as $plugin) {
-    if (isset($plugin['form_id']) && $plugin['form_id'] === $form_id) {
-      $entity_type_id = $plugin['id'];
-      $bundle_name = $entity_type_id;
-    }
-  }
-
-  // Else get entity type id and bundle name from the form if available and only
-  // if a simplesitemap plugin of the same entity type exists.
-  if (empty($entity_type_id)) {
-    $form_entity = Simplesitemap::get_form_entity($form_state);
-    if ($form_entity !== FALSE) {
-      $form_entity_type_id = $form_entity->getEntityTypeId();
-      if (isset($plugins[$form_entity_type_id])) {
-        if (!isset($plugins[$form_entity_type_id]['form_id'])
-          || $plugins[$form_entity_type_id]['form_id'] === $form_id) {
-          $entity_type_id = $form_entity_type_id;
-          $bundle_name = $form_entity->Id();
-        }
-      }
-    }
-  }
-
-  // If both methods of getting simplesitemap configuration for this form
-  // failed, return.
-  if (empty($entity_type_id))
+  $sitemap_form_entity_data = Simplesitemap::get_sitemap_form_entity_data($form_state, $form_id);
+  if (empty($sitemap_form_entity_data))
     return;
+  $entity_type_id = $sitemap_form_entity_data['entity_type_id'];
+  $bundle_name = $sitemap_form_entity_data['bundle_name'];
 
   $sitemap = new Simplesitemap;
 

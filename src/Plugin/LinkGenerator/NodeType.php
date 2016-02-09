@@ -30,8 +30,10 @@ class NodeType extends LinkGeneratorBase {
 
     $paths = array();
     foreach ($results as $id => $data) {
-      $paths[$id]['path'] = Url::fromRoute("entity.node.canonical", array('node' => $id), array())->getInternalPath();
-      $paths[$id]['lastmod'] = $data->changed;
+      if (parent::access($url_object = Url::fromRoute("entity.node.canonical", array('node' => $id), array()))) {
+        $paths[$id]['path'] = $url_object->getInternalPath();
+        $paths[$id]['lastmod'] = $data->changed;
+      }
     }
     return $paths;
   }

@@ -7,18 +7,24 @@
 namespace Drupal\simplesitemap;
 
 use Drupal\Component\Plugin\PluginBase;
+use \Drupal\user\Entity\User;
 
 abstract class LinkGeneratorBase extends PluginBase implements LinkGeneratorInterface {
 
   private $entity_paths = array();
   private $current_entity_type;
+  private $anonymous_account;
+
   const PLUGIN_ERROR_MESSAGE = "The simplesitemap @plugin plugin has been omitted, as it does not return the required numeric array of path data sets. Each data sets must contain the required path element and optionally other elements, like lastmod.";
+  const ANONYMOUS_USER_ID = 0;
 
   /**
    * {@inheritdoc}
    */
   public function get_entity_paths($entity_type, $bundles) {
     $this->current_entity_type = $entity_type;
+    $this->anonymous_account = User::load(self::ANONYMOUS_USER_ID);
+
     $i = 0;
     foreach($bundles as $bundle => $bundle_settings) {
       if (!$bundle_settings['index'])
@@ -73,4 +79,8 @@ abstract class LinkGeneratorBase extends PluginBase implements LinkGeneratorInte
    * @abstract
    */
   abstract function get_entity_bundle_paths($bundle);
+
+  protected function access($url_object) {
+    return $url_object->access($this->anonymous_account); //todo: Add error checking.
+  }
 }
