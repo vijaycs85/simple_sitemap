@@ -26,4 +26,4 @@ simplesitemap.settings_custom:
      _form: '\Drupal\simplesitemap\Form\SimplesitemapCustomLinksForm'
      _title: 'Simple XML Sitemap Settings'
   requirements:
-    _permission: 'add custom links'
+    _permission: 'administer sitemap settings'
