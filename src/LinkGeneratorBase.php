@@ -86,11 +86,13 @@ abstract class LinkGeneratorBase extends PluginBase implements LinkGeneratorInte
    * @param array $substitutions (optional)
    *  Substitutions (placeholder => substitution) which will replace placeholders
    *  with strings.
+   * @param string $type (optional)
+   *  Message type (status/warning/error).
    */
-  protected function register_error($message, $substitutions = array()) {
+  protected function register_error($message, $substitutions = array(), $type = 'error') {
     $message = strtr(t($message), $substitutions);
     \Drupal::logger('simplesitemap')->notice($message);
-    drupal_set_message($message, 'error');
+    drupal_set_message($message, $type);
   }
 
   /**
@@ -184,7 +186,7 @@ abstract class LinkGeneratorBase extends PluginBase implements LinkGeneratorInte
   protected function get_multilang_urls_from_user_input($user_input, $options = array()) {
     $user_input = $user_input[0] === '/' ? $user_input : '/' . $user_input;
     if (!\Drupal::service('path.validator')->isValid($user_input)) {
-      $this->register_error(self::PATH_DOES_NOT_EXIST, array('@faulty_path' => $user_input));
+      $this->register_error(self::PATH_DOES_NOT_EXIST, array('@faulty_path' => $user_input), 'warning');
       return FALSE;
     }
 

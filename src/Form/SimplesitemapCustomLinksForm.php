@@ -57,7 +57,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
       '#type' => 'textarea',
       '#title' => t('Relative Drupal paths'),
       '#default_value' => $setting_string,
-      '#description' => t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with a '/' You can optionally add a priority (0.0 - 1.0) by appending it to the path after a space. The home page with the highest priority would be <em>/ 1</em>, the contact page with a medium priority would be <em>/contact 0.5</em>."),
+      '#description' => t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with a '/'. You can optionally add a priority (0.0 - 1.0) by appending it to the path after a space. The home page with the highest priority would be <em>/ 1</em>, the contact page with a medium priority would be <em>/contact 0.5</em>."),
     );
 
     $form['simplesitemap_custom']['simplesitemap_regenerate_now'] = array(

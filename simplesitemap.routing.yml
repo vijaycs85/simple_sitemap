@@ -3,14 +3,14 @@ simplesitemap.sitemap:
  defaults:
    _controller: '\Drupal\simplesitemap\Controller\SimplesitemapController::get_sitemap'
  requirements:
-   _permission: 'access content'
+   _permission: 'TRUE'
 
 simplesitemap.chunk:
  path: '/sitemaps/{sitemap_id}/sitemap.xml'
  defaults:
    _controller: '\Drupal\simplesitemap\Controller\SimplesitemapController::get_sitemap'
  requirements:
-   _permission: 'access content'
+   _permission: 'TRUE'
 
 simplesitemap.settings:
  path: '/admin/config/search/simplesitemap'
