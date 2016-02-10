@@ -24,11 +24,20 @@ function simplesitemap_form_alter(&$form, $form_state, $form_id) {
   // Get current entity type sitemap settings.
   $entity_types = $sitemap->get_config('entity_types');
 
+
+
   $form['simplesitemap'] = array(
+    '#type' => 'details',
     '#group' => 'additional_settings',
     '#title' => t('Simple XML sitemap'),
-    '#type' => 'details'
   );
+
+  // Attach some js magic to forms.
+  // Only attach fieldset summary js to 'additional settings' vertical tabs.
+  $form['simplesitemap']['#attached']['library'][] = 'simplesitemap/form';
+  if (isset($form['additional_settings'])) {
+    $form['simplesitemap']['#attached']['library'][] = 'simplesitemap/fieldsetSummaries';
+  }
 
   $index_content_checked = isset($entity_types[$entity_type_id][$bundle_name]['index']) ? $entity_types[$entity_type_id][$bundle_name]['index'] : FALSE;
   $form['simplesitemap']['simplesitemap_index_content'] = array(
