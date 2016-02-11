@@ -66,8 +66,12 @@ function simplesitemap_form_alter(&$form, $form_state, $form_id) {
   $form['#simplesitemap']['bundle_name'] = $bundle_name;
 
   // Add submission handler.
-  $form['actions']['submit']['#submit'][] = 'simplesitemap_entity_form_submit';
-
+  if (isset($form['actions']['submit']['#submit'])) {
+    $form['actions']['submit']['#submit'][] = 'simplesitemap_entity_form_submit';
+  }
+  else { // Fix for account page which rendered other submit handlers not usable.
+    $form['#submit'][] = 'simplesitemap_entity_form_submit';
+  }
 }
 
 /**

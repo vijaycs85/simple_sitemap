@@ -1,6 +1,8 @@
 /**
  * @file
  * Attaches simplesitemap behaviors to the entity form.
+ *
+ * @todo: Tidy up.
  */
 (function($) {
 
@@ -11,8 +13,6 @@
 
   Drupal.behaviors.simplesitemapForm = {
     attach: function(context) {
-      $(context).find('#edit-simplesitemap').drupalSetSummary(function (context) {
-
         if ($(context).find('#edit-simplesitemap-index-content').is(':checked')) {
           // Show 'Priority' field if 'Index sitemap' is ticked.
           $('.form-item-simplesitemap-priority').show();
@@ -24,13 +24,19 @@
         // Show 'Regenerate sitemap' field if setting has changed.
         $( "#edit-simplesitemap-index-content" ).change(function() {
           $('.form-item-simplesitemap-regenerate-now').show();
+          if ($(context).find('#edit-simplesitemap-index-content').is(':checked')) {
+            // Show 'Priority' field if 'Index sitemap' is ticked.
+            $('.form-item-simplesitemap-priority').show();
+          }
+          else {  // Hide 'Priority' field if 'Index sitemap' is unticked.
+            $('.form-item-simplesitemap-priority').hide();
+          }
         });
 
         // Show 'Regenerate sitemap' field if setting has changed.
         $( "#edit-simplesitemap-priority" ).change(function() {
           $('.form-item-simplesitemap-regenerate-now').show();
         });
-      })
     }
   };
 })(jQuery);
