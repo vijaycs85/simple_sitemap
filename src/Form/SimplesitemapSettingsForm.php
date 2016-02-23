@@ -104,13 +104,13 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
     $max_links = $form_state->getValue('max_links');
     if ($max_links != '') {
       if (!is_numeric($max_links) || $max_links < 1 || $max_links != round($max_links)) {
-        $form_state->setErrorByName('', t("The value of the max links field must be a positive integer greater than 1."));
+        $form_state->setErrorByName('', t("The value of the max links field must be a positive integer greater than 0."));
       }
     }
 
   $batch_process_limit = $form_state->getValue('batch_process_limit');
     if (!is_numeric($batch_process_limit) || $batch_process_limit < 1 || $batch_process_limit != round($batch_process_limit)) {
-      $form_state->setErrorByName('', t("The value of the batch refresh rate field must be a positive integer greater than 1."));
+      $form_state->setErrorByName('', t("The value of the batch refresh rate field must be a positive integer greater than 0."));
     }
   }
 

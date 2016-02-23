@@ -233,9 +233,9 @@ class Simplesitemap {
    *  Formatted timestamp of last sitemap generation, otherwise FALSE.
    */
   public function get_generated_ago() {
-    if (isset($this->sitemap[0]->sitemap_created)) {
+    if (isset($this->sitemap[1]->sitemap_created)) {
       return \Drupal::service('date.formatter')
-        ->formatInterval(REQUEST_TIME - $this->sitemap[0]->sitemap_created);
+        ->formatInterval(REQUEST_TIME - $this->sitemap[1]->sitemap_created);
     }
     return FALSE;
   }
