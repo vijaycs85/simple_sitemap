@@ -129,6 +129,6 @@ function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
     $sitemap->save_config('entity_types', $entity_types);
     drupal_set_message(t("You may want to <a href='@url'>regenerate</a> your XML sitemap now.
     Otherwise it will be rebuilt on the next cron run.",
-      array('@url' => $GLOBALS['base_url'] . '/admin/config/search/simple_sitemap')));
+      array('@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap')));
   }
 }
