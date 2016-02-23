@@ -1,17 +1,17 @@
 <?php
 /**
  * @file
- * Contains \Drupal\simplesitemap\LinkGenerators\CustomLinkGenerator.
+ * Contains \Drupal\simple_sitemap\LinkGenerators\CustomLinkGenerator.
  *
  * Generates custom sitemap paths provided by the user.
  */
 
-namespace Drupal\simplesitemap;
+namespace Drupal\simple_sitemap;
 
 /**
  * CustomLinkGenerator class.
  */
-class CustomLinkGenerator extends LinkGeneratorBase {
+class CustomLinkGenerator {
 
   /**
    * Returns an array of all urls of the custom paths.
@@ -21,14 +21,12 @@ class CustomLinkGenerator extends LinkGeneratorBase {
    * @return array $urls
    *
    */
-  public function get_paths($custom_paths) {
+  public function get_custom_paths($custom_paths) {
     $paths = array();
     foreach($custom_paths as $i => $custom_path) {
-      if (FALSE !== $path_data = $this->get_multilang_urls_from_user_input($custom_path['path'])) {
-        $paths[$i]['path_data'] = $path_data;
-        $paths[$i]['priority'] = isset($custom_path['priority']) ? $custom_path['priority'] : NULL;
-        $paths[$i]['lastmod'] = NULL; //todo: implement lastmod
-      }
+      $paths[$i]['path'] = $custom_path['path'];
+      $paths[$i]['priority'] = isset($custom_path['priority']) ? $custom_path['priority'] : NULL;
+      $paths[$i]['lastmod'] = NULL; //todo: implement lastmod
     }
     return $paths;
   }

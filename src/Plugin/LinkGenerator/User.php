@@ -1,15 +1,15 @@
 <?php
 /**
  * @file
- * Contains \Drupal\simplesitemap\Plugin\LinkGenerator\User.
+ * Contains \Drupal\simple_sitemap\Plugin\LinkGenerator\User.
  *
  * Plugin for user link generation.
  */
 
-namespace Drupal\simplesitemap\Plugin\LinkGenerator;
+namespace Drupal\simple_sitemap\Plugin\LinkGenerator;
 
-use Drupal\simplesitemap\Annotation\LinkGenerator;
-use Drupal\simplesitemap\LinkGeneratorBase;
+use Drupal\simple_sitemap\Annotation\LinkGenerator;
+use Drupal\simple_sitemap\LinkGeneratorBase;
 
 /**
  * User class.
@@ -24,15 +24,21 @@ class User extends LinkGeneratorBase {
   /**
    * {@inheritdoc}
    */
-  function get_paths($bundle) {
-    $results = db_query("SELECT uid, changed FROM {users_field_data} WHERE status = 1")
-      ->fetchAllAssoc('uid');
+  function get_entities_of_bundle($bundle) {
 
-    $paths = array();
-    foreach ($results as $id => $data) {
-      $paths[$id]['path_data'] = $this->get_multilang_urls_from_route("entity.user.canonical", array('user' => $id));
-      $paths[$id]['lastmod'] = $data->changed;
-    }
-    return $paths;
+    $query = \Drupal::database()->select('users_field_data', 'u')
+      ->fields('u', array('uid', 'changed'))
+      ->condition('status', 1);
+
+    $info = array(
+      'field_info' => array(
+        'entity_id' => 'uid',
+        'lastmod' => 'changed',
+      ),
+      'path_info' => array(
+        'route_name' => 'entity.user.canonical',
+        'entity_type' => 'user',
+      ));
+    return array('query' => $query, 'info' => $info);
   }
 }

@@ -1,10 +1,10 @@
 <?php
 /**
  * @file
- * Contains \Drupal\simplesitemap\Simplesitemap.
+ * Contains \Drupal\simple_sitemap\Simplesitemap.
  */
 
-namespace Drupal\simplesitemap;
+namespace Drupal\simple_sitemap;
 
 /**
  * Simplesitemap class.
@@ -37,11 +37,11 @@ class Simplesitemap {
    */
   public static function get_sitemap_form_entity_data($form_state, $form_id) {
 
-    // Get all simplesitemap plugins.
-    $manager = \Drupal::service('plugin.manager.simplesitemap');
+    // Get all simple_sitemap plugins.
+    $manager = \Drupal::service('plugin.manager.simple_sitemap');
     $plugins = $manager->getDefinitions();
 
-    // Go through simplesitemap plugins and check if one of them declares usage
+    // Go through simple_sitemap plugins and check if one of them declares usage
     // of this particular form. If that's the case, get entity type id of the
     // plugin definition and assume the bundle to be of the same name as the
     // entity type id.
@@ -55,7 +55,7 @@ class Simplesitemap {
     }
 
     // Else get entity type id and bundle name from the form if available and only
-    // if a simplesitemap plugin of the same entity type exists.
+    // if a simple_sitemap plugin of the same entity type exists.
     $form_entity = self::get_form_entity($form_state);
     if ($form_entity !== FALSE) {
       $form_entity_type_id = $form_entity->getEntityTypeId();
@@ -70,7 +70,7 @@ class Simplesitemap {
       }
     }
 
-    // If both methods of getting simplesitemap entity data for this form
+    // If both methods of getting simple_sitemap entity data for this form
     // failed, return FALSE.
     return FALSE;
   }
@@ -98,14 +98,14 @@ class Simplesitemap {
    * Gets sitemap from db.
    */
   private function get_sitemap_from_db() {
-    $this->sitemap = db_query("SELECT * FROM {simplesitemap}")->fetchAllAssoc('id');
+    $this->sitemap = db_query("SELECT * FROM {simple_sitemap}")->fetchAllAssoc('id');
   }
 
   /**
    * Gets sitemap settings from the configuration storage.
    */
   private function get_config_from_db() {
-    $this->config = \Drupal::config('simplesitemap.settings');
+    $this->config = \Drupal::config('simple_sitemap.settings');
   }
 
   /**
@@ -127,7 +127,7 @@ class Simplesitemap {
    *  The configuration to be saved.
    */
   public function save_config($key, $value) {
-    \Drupal::service('config.factory')->getEditable('simplesitemap.settings')
+    \Drupal::service('config.factory')->getEditable('simple_sitemap.settings')
       ->set($key, $value)->save();
     $this->initialize();
   }
@@ -144,10 +144,6 @@ class Simplesitemap {
    *  If a sitemap id is provided, a sitemap chunk is returned.
    */
   public function get_sitemap($sitemap_id = NULL) {
-    if (empty($this->sitemap)) {
-      $this->generate_sitemap();
-    }
-
     if (is_null($sitemap_id) || !isset($this->sitemap[$sitemap_id])) {
 
       // Return sitemap index, if there are multiple sitemap chunks.
@@ -157,7 +153,7 @@ class Simplesitemap {
 
       // Return sitemap if there is only one chunk.
       else {
-        return $this->sitemap[0]->sitemap_string;
+        return $this->sitemap[1]->sitemap_string;
       }
     }
 
@@ -170,36 +166,25 @@ class Simplesitemap {
   /**
    * Generates the sitemap for all languages and saves it to the db.
    */
-  public function generate_sitemap() {
-    $generator = new SitemapGenerator();
+  public function generate_sitemap($from = 'form') {
+    db_truncate('simple_sitemap')->execute();
+    $generator = new SitemapGenerator($from);
     $generator->set_custom_links($this->get_config('custom'));
     $generator->set_entity_types($this->get_config('entity_types'));
-    $this->sitemap = $generator->generate_sitemap($this->get_setting('max_links'));
-    $this->save_sitemap();
-    drupal_set_message(t("The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.",
-      array('@url' => $GLOBALS['base_url'] . '/sitemap.xml')));
+    $generator->start_batch();
   }
 
   /**
    * Saves the sitemap to the db.
    */
-  private function save_sitemap() {
-    db_truncate('simplesitemap')->execute();
-    $values = array();
-    foreach($this->sitemap as $chunk_id => $chunk_data) {
-      $values[] = array(
-        'id' => $chunk_id,
-        'sitemap_string' => $chunk_data->sitemap_string,
-        'sitemap_created' =>  $chunk_data->sitemap_created,
-      );
-    }
-
-    $query = db_insert('simplesitemap')
-      ->fields(array('id', 'sitemap_string', 'sitemap_created'));
-    foreach ($values as $record) {
-      $query->values($record);
-    }
-    $query->execute();
+//  private function save_sitemap() {
+  public static function save_sitemap($values) {
+    db_insert('simple_sitemap')
+    ->fields(array(
+      'id' => $values['id'],
+      'sitemap_string' => $values['sitemap_string'],
+      'sitemap_created' => $values['sitemap_created'],
+    ))->execute();
   }
 
   /**
@@ -253,5 +238,9 @@ class Simplesitemap {
         ->formatInterval(REQUEST_TIME - $this->sitemap[0]->sitemap_created);
     }
     return FALSE;
+  }
+
+  public static function get_default_lang_id() {
+    return \Drupal::languageManager()->getDefaultLanguage()->getId();
   }
 }

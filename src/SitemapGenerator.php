@@ -1,12 +1,12 @@
 <?php
 /**
  * @file
- * Contains \Drupal\simplesitemap\SitemapGenerator.
+ * Contains \Drupal\simple_sitemap\SitemapGenerator.
  *
  * Generates a sitemap for entities and custom links.
  */
 
-namespace Drupal\simplesitemap;
+namespace Drupal\simple_sitemap;
 
 use \XMLWriter;
 
@@ -26,11 +26,11 @@ class SitemapGenerator {
   private $entity_types;
   private $custom;
   private $links;
-  private $default_language_id;
+  private $generating_from;
 
-  function __construct() {
-    $this->default_language_id = \Drupal::languageManager()->getDefaultLanguage()->getId();
+  function __construct($from = 'form') {
     $this->links = array();
+    $this->generating_from = $from;
   }
 
   /**
@@ -63,30 +63,60 @@ class SitemapGenerator {
    *
    * @return array $sitemaps.
    */
-  public function generate_sitemap($max_links = NULL) {
+  public function start_batch() {
+    $batch = new Batch($this->generating_from);
+    $batch->add_operations('custom_paths', $this->batch_add_custom_paths());
+    $batch->add_operations('entity_types', $this->batch_add_entity_type_paths());
+    $batch->start();
+  }
 
-    $this->generate_custom_paths();
-    $this->generate_entity_paths();
+  /**
+   * Generates custom internal paths.
+   */
+  private function batch_add_custom_paths() {
+    $link_generator = new CustomLinkGenerator();
+    return $link_generator->get_custom_paths($this->custom);
+  }
 
-    $sitemaps = array();
+  /**
+   * Lets all simple sitemap plugins add their paths to the sitemap.
+   */
+  private function batch_add_entity_type_paths() {
 
-    // Create sitemap chunks according to the max_links setting.
-    if (!empty($max_links) && count($this->links) > 0) {
-      foreach(array_chunk($this->links, $max_links) as $sitemap_id => $sitemap_links) {
-        $sitemaps[] = (object)[
-          'sitemap_string' => $this->generate_sitemap_chunk($sitemap_links),
-          'sitemap_created' => REQUEST_TIME,
-        ];
+    $manager = \Drupal::service('plugin.manager.simple_sitemap');
+    $plugins = $manager->getDefinitions();
+    $operations = array();
+
+    // Let all simple_sitemap plugins add their links to the sitemap.
+    foreach ($plugins as $link_generator_plugin) {
+      if (isset($this->entity_types[$link_generator_plugin['id']])) {
+        $instance = $manager->createInstance($link_generator_plugin['id']);
+        foreach($this->entity_types[$link_generator_plugin['id']] as $bundle => $bundle_settings) {
+          if ($bundle_settings['index']) {
+            $operation = $instance->get_entities_of_bundle($bundle);
+            $operation['info']['bundle_settings'] = $bundle_settings;
+            $operations[] = $operation;
+          }
+        }
       }
     }
-    // If max_link setting is not set, create just one sitemap.
-    else {
-      $sitemaps[] = (object)[
-        'sitemap_string' => $this->generate_sitemap_chunk($this->links),
-        'sitemap_created' => REQUEST_TIME,
-      ];
-    }
-    return $sitemaps;
+    return $operations;
+  }
+
+  /**
+   * Generates and returns the sitemap.
+   *
+   * @param int $max_links
+   *  This number dictates how many sitemap chunks are to be created.
+   *
+   * @return array $sitemaps.
+   */
+  public static function generate_sitemap($links) {
+    Simplesitemap::save_sitemap(array(
+        'id' => db_query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField() + 1,
+        'sitemap_string' => self::generate_sitemap_chunk($links),
+        'sitemap_created' => REQUEST_TIME)
+    );
   }
 
   /**
@@ -125,7 +155,8 @@ class SitemapGenerator {
    *
    * @return string sitemap chunk
    */
-  private function generate_sitemap_chunk($sitemap_links) {
+  private static function generate_sitemap_chunk($sitemap_links) {
+    $default_language_id = Simplesitemap::get_default_lang_id();
 
     $writer = new XMLWriter();
     $writer->openMemory();
@@ -139,11 +170,11 @@ class SitemapGenerator {
       $writer->startElement('url');
 
       // Adding url to standard language.
-      $writer->writeElement('loc', $link['path_data']['urls'][$this->default_language_id]);
+      $writer->writeElement('loc', $link['urls'][$default_language_id]);
 
       // Adding alternate urls (other languages) if any.
-      if (count($link['path_data']['urls']) > 1) {
-        foreach($link['path_data']['urls'] as $language_id => $localised_url) {
+      if (count($link['urls']) > 1) {
+        foreach($link['urls'] as $language_id => $localised_url) {
           $writer->startElement('xhtml:link');
           $writer->writeAttribute('rel', 'alternate');
           $writer->writeAttribute('hreflang', $language_id);
@@ -153,12 +184,12 @@ class SitemapGenerator {
       }
 
       // Add priority if any.
-      if (!is_null($link['priority'])) {
+      if (isset($link['priority'])) {
         $writer->writeElement('priority', $link['priority']);
       }
 
       // Add lastmod if any.
-      if (!is_null($link['lastmod'])) {
+      if (isset($link['lastmod'])) {
         $writer->writeElement('lastmod', $link['lastmod']);
       }
       $writer->endElement();
@@ -166,58 +197,5 @@ class SitemapGenerator {
     $writer->endElement();
     $writer->endDocument();
     return $writer->outputMemory();
-  }
-
-  /**
-   * Generates custom internal paths.
-   */
-  private function generate_custom_paths() {
-    $link_generator = new CustomLinkGenerator();
-    $links = $link_generator->get_paths($this->custom);
-    $this->add_created_paths($links);
-  }
-
-  /**
-   * Lets all simple sitemap plugins add their paths to the sitemap.
-   */
-  private function generate_entity_paths() {
-
-    $manager = \Drupal::service('plugin.manager.simplesitemap');
-    $plugins = $manager->getDefinitions();
-
-    // Let all simplesitemap plugins generate add their links to the sitemap.
-    foreach ($plugins as $link_generator_plugin) {
-      if (isset($this->entity_types[$link_generator_plugin['id']])) {
-        $instance = $manager->createInstance($link_generator_plugin['id']);
-        $links = $instance->get_entity_paths($link_generator_plugin['id'],
-          $this->entity_types[$link_generator_plugin['id']]);
-        $this->add_created_paths($links);
-      }
-    }
-  }
-
-  /**
-   * Adds Drupal internal paths generated by a plugin while removing duplicates.
-   *
-   * @param array $paths
-   *  Drupal internal paths generated by a plugin.
-   */
-  private function add_created_paths($paths) {
-
-    // Do not include path if anonymous users have no access to it.
-    foreach($paths as $i => $path) {
-      if (!$path['path_data']['access']) {
-        unset($paths[$i]);
-        continue;
-      }
-      // Do not include path if it is a duplicate.
-      foreach($this->links as $existing_path) {
-        if ($path['path_data']['path'] === $existing_path['path_data']['path']) {
-          unset($paths[$i]);
-          break;
-        }
-      }
-    }
-    $this->links = array_merge($this->links, $paths);
   }
 }

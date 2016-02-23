@@ -4,16 +4,16 @@
  * Drush integration.
  */
 
-use Drupal\simplesitemap\Simplesitemap;
+use Drupal\simple_sitemap\Simplesitemap;
 
 /**
  * Implements hook_drush_command().
  */
-function simplesitemap_drush_command() {
-  $items['simplesitemap-generate'] = array(
+function simple_sitemap_drush_command() {
+  $items['simple_sitemap-generate'] = array(
     'description' => 'Regenerate XML sitemaps for all languages according to the module settings.',
-    'callback' => 'drush_simplesitemap_generate',
-    'drupal dependencies' => array('simplesitemap'),
+    'callback' => 'drush_simple_sitemap_generate',
+    'drupal dependencies' => array('simple_sitemap'),
   );
   return $items;
 }
@@ -23,7 +23,7 @@ function simplesitemap_drush_command() {
  *
  * Regenerate sitemap for all languages.
  */
-function drush_simplesitemap_generate() {
+function drush_simple_sitemap_generate() {
   $sitemap = new Simplesitemap;
-  $sitemap->generate_sitemap();
+  $sitemap->generate_sitemap('drush');
 }

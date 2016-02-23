@@ -2,14 +2,14 @@
 
 /**
  * @file
- * Contains \Drupal\simplesitemap\Form\SimplesitemapCustomLinksForm.
+ * Contains \Drupal\simple_sitemap\Form\SimplesitemapCustomLinksForm.
  */
 
-namespace Drupal\simplesitemap\Form;
+namespace Drupal\simple_sitemap\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\simplesitemap\Simplesitemap;
+use Drupal\simple_sitemap\Simplesitemap;
 
 /**
  * SimplesitemapCustomLinksFrom
@@ -20,14 +20,14 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function getFormID() {
-    return 'simplesitemap_custom_links_form';
+    return 'simple_sitemap_custom_links_form';
   }
 
   /**
    * {@inheritdoc}
    */
   protected function getEditableConfigNames() {
-    return ['simplesitemap.settings_custom'];
+    return ['simple_sitemap.settings_custom'];
   }
 
   /**
@@ -47,20 +47,20 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
       $setting_string .= "\r\n";
     }
 
-    $form['simplesitemap_custom'] = array(
+    $form['simple_sitemap_custom'] = array(
       '#title' => t('Custom links'),
       '#type' => 'fieldset',
       '#markup' => '<p>' . t('Add custom internal drupal paths and their priorities to the XML sitemap.') . '</p>',
     );
 
-    $form['simplesitemap_custom']['custom_links'] = array(
+    $form['simple_sitemap_custom']['custom_links'] = array(
       '#type' => 'textarea',
       '#title' => t('Relative Drupal paths'),
       '#default_value' => $setting_string,
       '#description' => t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with a '/'. You can optionally add a priority (0.0 - 1.0) by appending it to the path after a space. The home page with the highest priority would be <em>/ 1</em>, the contact page with a medium priority would be <em>/contact 0.5</em>."),
     );
 
-    $form['simplesitemap_custom']['simplesitemap_regenerate_now'] = array(
+    $form['simple_sitemap_custom']['simple_sitemap_regenerate_now'] = array(
       '#type' => 'checkbox',
       '#title' => t('Regenerate sitemap after hitting Save'),
       '#description' => t('This setting will regenerate the whole sitemap including the above changes.<br/>Otherwise the sitemap will be rebuilt on next cron run.'),
@@ -117,7 +117,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
     parent::submitForm($form, $form_state);
 
     // Regenerate sitemaps according to user setting.
-    if ($form_state->getValue('simplesitemap_regenerate_now')) {
+    if ($form_state->getValue('simple_sitemap_regenerate_now')) {
       $sitemap->generate_sitemap();
     }
   }

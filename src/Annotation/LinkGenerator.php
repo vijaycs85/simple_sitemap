@@ -1,17 +1,17 @@
 <?php
 /**
  * @file
- * Contains \Drupal\simplesitemap\Annotation\LinkGenerator.
+ * Contains \Drupal\simple_sitemap\Annotation\LinkGenerator.
  */
 
-namespace Drupal\simplesitemap\Annotation;
+namespace Drupal\simple_sitemap\Annotation;
 
 use Drupal\Component\Annotation\Plugin;
 
 /**
  * Defines a LinkGenerator item annotation object.
  *
- * @see \Drupal\simplesitemap\Plugin\SimplesitemapManager
+ * @see \Drupal\simple_sitemap\Plugin\SimplesitemapManager
  * @see plugin_api
  *
  * @Annotation

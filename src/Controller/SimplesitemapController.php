@@ -1,14 +1,14 @@
 <?php
 /**
  * @file
- * Contains \Drupal\simplesitemap\Controller\SimplesitemapController.
+ * Contains \Drupal\simple_sitemap\Controller\SimplesitemapController.
  */
 
-namespace Drupal\simplesitemap\Controller;
+namespace Drupal\simple_sitemap\Controller;
 
 use Drupal\Core\Cache\CacheableResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Drupal\simplesitemap\Simplesitemap;
+use Drupal\simple_sitemap\Simplesitemap;
 
 /**
  * SimplesitemapController.

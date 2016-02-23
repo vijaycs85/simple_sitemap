@@ -1,10 +1,10 @@
 <?php
 /**
  * @file
- * Contains \Drupal\simplesitemap\SimplesitemapManager.
+ * Contains \Drupal\simple_sitemap\SimplesitemapManager.
  */
 
-namespace Drupal\simplesitemap;
+namespace Drupal\simple_sitemap;
 
 use Drupal\Core\Plugin\DefaultPluginManager;
 use Drupal\Core\Cache\CacheBackendInterface;
@@ -27,9 +27,9 @@ class SimplesitemapManager extends DefaultPluginManager {
    *   The module handler to invoke the alter hook with.
    */
   public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
-    parent::__construct('Plugin/LinkGenerator', $namespaces, $module_handler, 'Drupal\simplesitemap\LinkGeneratorInterface', 'Drupal\simplesitemap\Annotation\LinkGenerator');
+    parent::__construct('Plugin/LinkGenerator', $namespaces, $module_handler, 'Drupal\simple_sitemap\LinkGeneratorInterface', 'Drupal\simple_sitemap\Annotation\LinkGenerator');
 
-    $this->alterInfo('simplesitemap_link_generators_info');
-    $this->setCacheBackend($cache_backend, 'simplesitemap_link_generators');
+    $this->alterInfo('simple_sitemap_link_generators_info');
+    $this->setCacheBackend($cache_backend, 'simple_sitemap_link_generators');
   }
 }
