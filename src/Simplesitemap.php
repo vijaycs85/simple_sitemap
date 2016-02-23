@@ -42,7 +42,7 @@ class Simplesitemap {
     $plugins = $manager->getDefinitions();
 
     // Go through simple_sitemap plugins and check if one of them declares usage
-    // of this particular form. If that's the case, get entity type id of the
+    // of this particular form. If that's the case, get the entity type id of the
     // plugin definition and assume the bundle to be of the same name as the
     // entity type id.
     foreach($plugins as $plugin) {

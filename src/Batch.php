@@ -20,6 +20,7 @@ class Batch {
   const PATH_DOES_NOT_EXIST_OR_NO_ACCESS = "The path @faulty_path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users.";
   const ANONYMOUS_USER_ID = 0;
 
+
   function __construct($from = 'form') {
     $this->batch = array(
       'title' => t('Generating XML sitemap'),
@@ -35,6 +36,7 @@ class Batch {
       'batch_process_limit' => $config['batch_process_limit'],
       'max_links' => $config['max_links'],
       'remove_duplicates' => $config['remove_duplicates'],
+      'anonymous_user_account' => User::load(self::ANONYMOUS_USER_ID),
     );
   }
 
@@ -44,11 +46,14 @@ class Batch {
       case 'form':
         break;
       case 'drush':
+        $this->batch =& batch_get();
+        $this->batch['progressive'] = FALSE;
+        drush_backend_batch_process();
+        break;
       case 'cron':
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
-        //drush_backend_batch_process(); // Seems to be working, but process does not stop.
-        batch_process(); // Works, but less fancy.
+        batch_process();
         break;
     }
   }
@@ -174,7 +179,7 @@ class Batch {
 
       $url_object = Url::fromRoute($route_name, $route_parameters, $options);
 
-      $access = self::access($url_object, User::load(self::ANONYMOUS_USER_ID));
+      $access = self::access($url_object, $batch_info['anonymous_user_account']);
       if (!$access) {
         continue;
       }
@@ -213,19 +218,19 @@ class Batch {
     if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
       $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
       // Adding processing message after finishing every part of the batch.
-      if (isset($context['results'][key($context['results'])]['path'])) {
+      if (!empty($context['results'][key($context['results'])]['path'])) {
         $last_path = HTML::escape($context['results'][key($context['results'])]['path']);
         $context['message'] = t("Processing path @current out of @max: @path", array(
           '@current' => $context['sandbox']['progress'],
           '@max' => $context['sandbox']['max'],
           '@path' => $last_path,
         ));
-        switch($batch_info['from']) {
-          case 'drush':
-            print $context['message'] . "\r\n";
-            break;
-          default:
-        }
+//        switch($batch_info['from']) { //todo: add shell output
+//          case 'drush':
+//            print $context['message'] . "\r\n";
+//            break;
+//          default:
+//        }
       }
     }
 
@@ -262,13 +267,13 @@ class Batch {
     foreach($custom_paths as $i => $custom_path) {
 
       $user_input = $custom_path['path'][0] === '/' ? $custom_path['path'] : '/' . $custom_path['path'];
-      if (!\Drupal::service('path.validator')->isValid($custom_path['path'])) { //todo: change to different function, as this also checks if current user has access. The user however varies depending if process started from the web interface or via cron/drush.
+      if (!\Drupal::service('path.validator')->isValid($custom_path['path'])) { //todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush.
         self::register_error(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, array('@faulty_path' => $custom_path['path']), 'warning');
         continue;
       }
       $url_object = Url::fromUserInput($user_input, $options);
 
-      $access = self::access($url_object, User::load(self::ANONYMOUS_USER_ID));
+      $access = self::access($url_object, $batch_info['anonymous_user_account']);
       if (!$access) {
         continue;
       }

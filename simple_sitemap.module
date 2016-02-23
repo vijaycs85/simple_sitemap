@@ -67,7 +67,7 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
   if (isset($form['actions']['submit']['#submit'])) {
     $form['actions']['submit']['#submit'][] = 'simple_sitemap_entity_form_submit';
   }
-  else { // Fix for account page which rendered other submit handlers not usable.
+  else { // Fix for account page rendering other submit handlers not usable.
     $form['#submit'][] = 'simple_sitemap_entity_form_submit';
   }
 }
@@ -128,7 +128,7 @@ function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
     unset($entity_types[$bundle_entity_type_id][$bundle]);
     $sitemap->save_config('entity_types', $entity_types);
     drupal_set_message(t("You may want to <a href='@url'>regenerate</a> your XML sitemap now.
-    Otherwise it will be rebuilt on the next cron run.",
+    Otherwise it will be rebuilt on the next cron run.", //todo: First check if cron generation is enabled.
       array('@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap')));
   }
 }
