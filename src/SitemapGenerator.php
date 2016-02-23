@@ -163,6 +163,7 @@ class SitemapGenerator {
       }
       $writer->endElement();
     }
+    $writer->endElement();
     $writer->endDocument();
     return $writer->outputMemory();
   }
