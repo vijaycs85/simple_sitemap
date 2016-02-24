@@ -46,9 +46,13 @@ class Batch {
       case 'form':
         break;
       case 'drush':
+        print $this->batch['init_message'] . "\r\n";
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
-        drush_backend_batch_process();
+        if (function_exists('drush_backend_batch_process'))
+          drush_backend_batch_process();
+        else
+          batch_process();
         break;
       case 'cron':
         $this->batch =& batch_get();
@@ -218,19 +222,13 @@ class Batch {
     if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
       $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
       // Adding processing message after finishing every part of the batch.
-      if (!empty($context['results'][key($context['results'])]['path'])) {
-        $last_path = HTML::escape($context['results'][key($context['results'])]['path']);
+      if (!empty($context['results'][$context['sandbox']['progress']]['path'])) {
+        $last_path = HTML::escape($context['results'][$context['sandbox']['progress']]['path']);
         $context['message'] = t("Processing path @current out of @max: @path", array(
           '@current' => $context['sandbox']['progress'],
           '@max' => $context['sandbox']['max'],
           '@path' => $last_path,
         ));
-//        switch($batch_info['from']) { //todo: add shell output
-//          case 'drush':
-//            print $context['message'] . "\r\n";
-//            break;
-//          default:
-//        }
       }
     }
 
