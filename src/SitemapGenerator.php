@@ -56,12 +56,7 @@ class SitemapGenerator {
   }
 
   /**
-   * Generates and returns the sitemap.
-   *
-   * @param int $max_links
-   *  This number dictates how many sitemap chunks are to be created.
-   *
-   * @return array $sitemaps.
+   * Adds all operations to the batch and starts it.
    */
   public function start_batch() {
     $batch = new Batch($this->generating_from);
@@ -71,7 +66,9 @@ class SitemapGenerator {
   }
 
   /**
-   * Generates custom internal paths.
+   * Returns the custom path generating operation.
+   *
+   * @return array $operation.
    */
   private function batch_add_custom_paths() {
     $link_generator = new CustomLinkGenerator();
@@ -79,7 +76,10 @@ class SitemapGenerator {
   }
 
   /**
-   * Lets all simple sitemap plugins add their paths to the sitemap.
+   * Collects the entity path generating information from all simeple_sitemap
+   * plugins to be added to the batch.
+   *
+   * @return array $operations.
    */
   private function batch_add_entity_type_paths() {
 
@@ -104,12 +104,11 @@ class SitemapGenerator {
   }
 
   /**
-   * Generates and returns the sitemap.
+   * Wrapper method which takes links along with their options and then
+   * generates and saves the sitemap.
    *
-   * @param int $max_links
-   *  This number dictates how many sitemap chunks are to be created.
-   *
-   * @return array $sitemaps.
+   * @param array $links
+   *  All links with their multilingual versions and settings.
    */
   public static function generate_sitemap($links) {
     Simplesitemap::save_sitemap(array(
@@ -120,7 +119,7 @@ class SitemapGenerator {
   }
 
   /**
-   * Generates and returns the sitemap index.
+   * Generates and returns the sitemap index for all sitemap chunks.
    *
    * @param array $sitemap
    *  All sitemap chunks keyed by the chunk ID.
@@ -151,7 +150,7 @@ class SitemapGenerator {
    * Generates and returns a sitemap chunk.
    *
    * @param array $sitemap_links
-   *  All links with their translation and settings.
+   *  All links with their multilingual versions and settings.
    *
    * @return string sitemap chunk
    */

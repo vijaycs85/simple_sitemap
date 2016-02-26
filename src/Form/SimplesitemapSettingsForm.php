@@ -72,7 +72,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
     $form['simple_sitemap_settings']['advanced']['remove_duplicates'] = array(
       '#type' => 'checkbox',
       '#title' => t('Remove duplicate links'),
-      '#description' => t('Uncheck this to significantly speed up the sitemap generation process on a huge site (>10 000 entities).'),
+      '#description' => t('Uncheck this to significantly speed up the sitemap generation process on a huge site (>20 000 entities).'),
       '#default_value' => $sitemap->get_setting('remove_duplicates'),
     );
 

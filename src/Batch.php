@@ -2,6 +2,9 @@
 /**
  * @file
  * Contains \Drupal\simple_sitemap\Batch.
+ *
+ * Helper functions for the Drupal batch API.
+ * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
  */
 
 namespace Drupal\simple_sitemap;
@@ -40,6 +43,9 @@ class Batch {
     );
   }
 
+  /**
+   * Starts the batch process depending on where it was requested from.
+   */
   public function start() {
     batch_set($this->batch);
     switch ($this->batch_info['from']) {
@@ -62,6 +68,12 @@ class Batch {
     }
   }
 
+  /**
+   * Adds operations to the batch of type 'entity_types' or 'custom_paths'.
+   *
+   * @param string $type
+   * @param array $operations
+   */
   public function add_operations($type, $operations) {
     switch ($type) {
       case 'entity_types':
@@ -81,10 +93,15 @@ class Batch {
     }
   }
 
+  /**
+   * Callback function called by the batch API when all operations are finished.
+   *
+   * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
+   */
   public static function finish_batch($success, $results, $operations) {
     if ($success) {
       if (!empty($results) || is_null(db_query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField())) {
-        SitemapGenerator::generate_sitemap($results);
+        SitemapGenerator::generate_sitemap($results['generate']);
       }
       drupal_set_message(t("The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.",
         array('@url' => $GLOBALS['base_url'] . '/sitemap.xml')));
@@ -94,21 +111,23 @@ class Batch {
   }
 
   /**
-   * Wrapper function for Drupal\Core\Url::fromRoute.
-   * Returns url data for every language.
+   * Batch callback function which generates urls to entity paths.
    *
-   * @param $route_name
-   * @param $route_parameters
-   * @param $options
-   * @see https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Url.php/function/Url%3A%3AfromRoute/8
+   * @param object $query
+   * @param array $info
+   * @param array $batch_info
+   * @param array &$context
    *
-   * @return array
-   *  Returns an array containing the internal path, url objects for every language,
-   *  url options and access information.
+   * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
-  public static function generate_bundle_urls($query, $info, $batch_info, &$context) {
+  static function generate_bundle_urls($query, $info, $batch_info, &$context) {
     $languages = \Drupal::languageManager()->getLanguages();
     $default_language_id = Simplesitemap::get_default_lang_id();
+
+    // Initializing batch.
+    if (empty($context['sandbox'])) {
+      self::initialize_batch($query->countQuery()->execute()->fetchField(), $context);
+    }
 
     // Getting id field name from plugin info, if not defined assuming the name of the first field in the query to be the entity id field name.
     $fields = $query->getFields();
@@ -116,8 +135,7 @@ class Batch {
       $id_field = $info['field_info']['entity_id'];
     }
     else {
-      reset($fields);
-      $id_field = key($fields);
+      //todo: register error
     }
 
     // Getting the name of the route name field if any.
@@ -125,31 +143,22 @@ class Batch {
       $route_name_field = $info['field_info']['route_name'];
     }
 
-    // Initializing batch.
-    if (empty($context['sandbox'])) {
-      $context['sandbox']['progress'] = 0;
-      $context['sandbox']['current_id'] = 0;
-      $context['sandbox']['max'] = $query->countQuery()
-        ->execute()
-        ->fetchField();
+    // Getting the name of the route parameter field if any.
+    if (!empty($info['field_info']['route_parameters'])) {
+      $route_params_field = $info['field_info']['route_parameters'];
     }
 
     // Creating a query limited to n=batch_process_limit entries.
-    $result = $query->condition($id_field, $context['sandbox']['current_id'], '>')
-      ->orderBy($id_field)
-      ->range(0, $batch_info['batch_process_limit'])
-      ->execute()
-      ->fetchAll();
+    $query
+      ->condition($id_field, $context['sandbox']['current_id'], '>')
+      ->orderBy($id_field);
+    if (!empty($batch_info['batch_process_limit']))
+      $query->range(0, $batch_info['batch_process_limit']);
+    $result = $query->execute()->fetchAll();
 
     foreach ($result as $row) {
+      self::set_current_id($row->$id_field, $context);
 
-      $context['sandbox']['current_id'] = $row->$id_field;
-      $context['sandbox']['progress']++;
-
-      // Getting the name of the route parameter field if any.
-      if (!empty($info['field_info']['route_parameters'])) {
-        $route_params_field = $info['field_info']['route_parameters'];
-      }
       // Setting route parameters if they exist in the database (menu links).
       if (isset($route_params_field) && !empty($route_parameters = unserialize($row->$route_params_field))) {
         $route_parameters = array(key($route_parameters) => $route_parameters[key($route_parameters)]);
@@ -183,20 +192,13 @@ class Batch {
 
       $url_object = Url::fromRoute($route_name, $route_parameters, $options);
 
-      $access = self::access($url_object, $batch_info['anonymous_user_account']);
-      if (!$access) {
+      if (!$url_object->access($batch_info['anonymous_user_account']))
         continue;
-      }
 
       // Do not include path if it already exists.
       $path = $url_object->getInternalPath();
-      if ($batch_info['remove_duplicates']) {
-        foreach ($context['results'] as $result) {
-          if ($result['path'] == $path) {
-            continue 2;
-          }
-        }
-      }
+      if ($batch_info['remove_duplicates'] && self::path_processed($path, $context['results']['processed_paths']))
+        continue;
 
       $urls = array();
       foreach ($languages as $language) {
@@ -209,80 +211,54 @@ class Batch {
             ->toString();
         }
       }
-      $context['results'][] = array(
+      $context['results']['generate'][] = array(
         'path' => $path,
         'urls' => $urls,
         'options' => $url_object->getOptions(),
-        'lastmod' => !empty($info['field_info']['lastmod']) ? $row->{$info['field_info']['lastmod']} : NULL,
+        'lastmod' => !empty($info['field_info']['lastmod']) ? date_iso8601($row->{$info['field_info']['lastmod']}) : NULL,
         'priority' => !empty($info['bundle_settings']['priority']) ? $info['bundle_settings']['priority'] : NULL,
       );
     }
-
-    // Providing progress info.
-    if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
-      $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
-      // Adding processing message after finishing every part of the batch.
-      if (!empty($context['results'][$context['sandbox']['progress']]['path'])) {
-        $last_path = HTML::escape($context['results'][$context['sandbox']['progress']]['path']);
-        $context['message'] = t("Processing path @current out of @max: @path", array(
-          '@current' => $context['sandbox']['progress'],
-          '@max' => $context['sandbox']['max'],
-          '@path' => $last_path,
-        ));
-      }
-    }
-
-    if (!empty($batch_info['max_links']) && count($context['results']) >= $batch_info['max_links']) {
-      $chunks = array_chunk($context['results'], $batch_info['max_links']);
-      foreach($chunks as $i => $chunk_links) {
-        if (count($chunk_links) == $batch_info['max_links']) {
-          SitemapGenerator::generate_sitemap($chunk_links);
-          $context['results'] = array_slice($context['results'], count($chunk_links));
-        }
-      }
-    }
+    self::set_progress_info($context, $batch_info);
+    self::process_segment($context, $batch_info);
   }
 
-  /**
-   * Wrapper function for Drupal\Core\Url::fromUserInput.
-   * Returns url data for every language.
+ /**
+   * Batch function which generates urls to custom paths.
    *
-   * @param $user_input
-   * @param $options
-   * @see https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Url.php/function/Url%3A%3AfromUserInput/8
+   * @param array $custom_paths
+   * @param array $batch_info
+   * @param array &$context
    *
-   * @return array or FALSE
-   *  Returns an array containing the internal path, url objects for every language,
-   *  url options and access information. Returns FALSE if path does not exist.
+   * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
   public static function generate_custom_urls($custom_paths, $batch_info, &$context) {
 
     $languages = \Drupal::languageManager()->getLanguages();
     $default_language_id = Simplesitemap::get_default_lang_id();
 
-    $options['absolute'] = TRUE;
+    // Initializing batch.
+    if (empty($context['sandbox'])) {
+      self::initialize_batch(count($custom_paths), $context);
+    }
 
     foreach($custom_paths as $i => $custom_path) {
+      self::set_current_id($i, $context);
 
       $user_input = $custom_path['path'][0] === '/' ? $custom_path['path'] : '/' . $custom_path['path'];
       if (!\Drupal::service('path.validator')->isValid($custom_path['path'])) { //todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush.
         self::register_error(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, array('@faulty_path' => $custom_path['path']), 'warning');
         continue;
       }
+      $options = array('absolute' => TRUE, 'language' => $languages[$default_language_id]);
       $url_object = Url::fromUserInput($user_input, $options);
 
-      $access = self::access($url_object, $batch_info['anonymous_user_account']);
-      if (!$access) {
+      if (!$url_object->access($batch_info['anonymous_user_account']))
         continue;
-      }
 
-      //  Do not include path if it already exists. //todo: test
       $path = $url_object->getInternalPath();
-      foreach ($context['results'] as $result) {
-        if ($result['path'] == $path) {
-          continue 2;
-        }
-      }
+      if ($batch_info['remove_duplicates'] && self::path_processed($path, $context['results']['processed_paths']))
+        continue;
 
       $urls = array();
       foreach($languages as $language) {
@@ -294,12 +270,66 @@ class Batch {
           $urls[$language->getId()] = Url::fromUserInput($user_input, $options)->toString();
         }
       }
-      $context['results'][] = array(
+
+      $context['results']['generate'][] = array(
         'path' => $path,
         'urls' => $urls,
         'options' => $url_object->getOptions(),
         'priority' => !empty($custom_path['priority']) ? $custom_path['priority'] : NULL,
       );
+    }
+    self::set_progress_info($context, $batch_info);
+    self::process_segment($context, $batch_info);
+  }
+
+  private static function path_processed($needle, &$path_pool) {
+    if (in_array($needle, $path_pool)) {
+      return TRUE;
+    }
+    $path_pool[] = $needle;
+    return FALSE;
+  }
+
+  private static function initialize_batch($max, &$context) {
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['current_id'] = 0;
+    $context['sandbox']['max'] = $max;
+    $context['results']['generate'] = !empty($context['results']['generate']) ? $context['results']['generate'] : array();
+    $context['results']['processed_paths'] = !empty($context['results']['processed_paths']) ? $context['results']['processed_paths'] : array();
+  }
+
+  private static function set_current_id($id, &$context) {
+    $context['sandbox']['progress']++;
+    $context['sandbox']['current_id'] = $id;
+  }
+
+
+  private static function set_progress_info(&$context, $batch_info) {
+    if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
+      // Providing progress info to the batch API.
+      $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+      // Adding processing message after finishing every batch segment.
+      end($context['results']['generate']);
+      $last_key = key($context['results']['generate']);
+      if (!empty($context['results']['generate'][$last_key]['path'])) {
+        $context['message'] = t("Processing path @current out of @max: @path", array(
+          '@current' => $context['sandbox']['progress'],
+          '@max' => $context['sandbox']['max'],
+          '@path' => HTML::escape($context['results']['generate'][$last_key]['path']),
+        ));
+      }
+    }
+  }
+
+  private static function process_segment(&$context, $batch_info) {
+    if (!empty($batch_info['max_links']) && count($context['results']['generate']) >= $batch_info['max_links']) {
+      $chunks = array_chunk($context['results']['generate'], $batch_info['max_links']);
+      foreach ($chunks as $i => $chunk_links) {
+        if (count($chunk_links) == $batch_info['max_links']) {
+          SitemapGenerator::generate_sitemap($chunk_links);
+          $context['results']['generate'] = array_slice($context['results']['generate'], count($chunk_links));
+        }
+      }
     }
   }
 
@@ -318,17 +348,5 @@ class Batch {
     $message = strtr(t($message), $substitutions);
     \Drupal::logger('simple_sitemap')->notice($message);
     drupal_set_message($message, $type);
-  }
-
-  /**
-   * Checks if anonymous users have access to a given path.
-   *
-   * @param \Drupal\Core\Url object
-   *
-   * @return bool
-   *  TRUE if anonymous users have access to path, FALSE if they do not.
-   */
-  protected static function access($url_object, $account) {
-    return $url_object->access($account); //todo: Add error checking.
   }
 }
