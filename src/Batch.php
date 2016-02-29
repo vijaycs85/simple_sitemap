@@ -52,18 +52,15 @@ class Batch {
       case 'form':
         break;
       case 'drush':
+      case 'cron':
         print $this->batch['init_message'] . "\r\n";
+//        drush_log($this->batch['init_message']);
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
         if (function_exists('drush_backend_batch_process'))
           drush_backend_batch_process();
         else
           batch_process();
-        break;
-      case 'cron':
-        $this->batch =& batch_get();
-        $this->batch['progressive'] = FALSE;
-        batch_process();
         break;
     }
   }
@@ -120,7 +117,7 @@ class Batch {
    *
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
-  static function generate_bundle_urls($query, $info, $batch_info, &$context) {
+  public static function generate_bundle_urls($query, $info, $batch_info, &$context) {
     $languages = \Drupal::languageManager()->getLanguages();
     $default_language_id = Simplesitemap::get_default_lang_id();
 
