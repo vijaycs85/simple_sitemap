@@ -63,9 +63,12 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
     $form['simple_sitemap_custom']['simple_sitemap_regenerate_now'] = array(
       '#type' => 'checkbox',
       '#title' => t('Regenerate sitemap after hitting Save'),
-      '#description' => t('This setting will regenerate the whole sitemap including the above changes.<br/>Otherwise the sitemap will be rebuilt on next cron run.'),
+      '#description' => t('This setting will regenerate the whole sitemap including the above changes.'),
       '#default_value' => FALSE,
     );
+    if ($sitemap->get_setting('cron_generate')) {
+      $form['simple_sitemap_custom']['simple_sitemap_regenerate_now']['#description'] .= '</br>' . t('Otherwise the sitemap will be rebuilt on next cron run.');
+    }
 
     return parent::buildForm($form, $form_state);
   }

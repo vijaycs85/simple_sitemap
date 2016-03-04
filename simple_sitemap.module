@@ -52,13 +52,17 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
     '#options' => SitemapGenerator::get_priority_select_values(),
     '#default_value' => $priority,
   );
+  $cron_generate = $sitemap->get_setting('cron_generate');
 
   $form['simple_sitemap']['simple_sitemap_regenerate_now'] = array(
     '#type' => 'checkbox',
     '#title' => t('Regenerate sitemap after hitting Save'),
-    '#description' => t('This setting will regenerate the whole sitemap including the above changes.<br/>Otherwise the sitemap will be rebuilt on next cron run.'),
+    '#description' => t('This setting will regenerate the whole sitemap including the above changes.'),
     '#default_value' => FALSE,
   );
+  if ($sitemap->get_setting('cron_generate')) {
+    $form['simple_sitemap']['simple_sitemap_regenerate_now']['#description'] .= '</br>' . t('Otherwise the sitemap will be rebuilt on next cron run.');
+  }
 
   $form['#simple_sitemap']['entity_type_id'] = $entity_type_id;
   $form['#simple_sitemap']['bundle_name'] = $bundle_name;
@@ -127,8 +131,10 @@ function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
   if (isset($entity_types[$bundle_entity_type_id][$bundle])) {
     unset($entity_types[$bundle_entity_type_id][$bundle]);
     $sitemap->save_config('entity_types', $entity_types);
-    drupal_set_message(t("You may want to <a href='@url'>regenerate</a> your XML sitemap now.
-    Otherwise it will be rebuilt on the next cron run.", //todo: First check if cron generation is enabled.
-      array('@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap')));
+    $message = t("You may want to <a href='@url'>regenerate</a> your XML sitemap now.", array('@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'));
+    if ($sitemap->get_setting('cron_generate')) {
+      $message .= '</br>' . t('Otherwise the sitemap will be rebuilt on next cron run.');
+    }
+    drupal_set_message($message);
   }
 }
