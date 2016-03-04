@@ -19,7 +19,8 @@ class SimplesitemapController {
    * Returns the whole sitemap, a requested sitemap chunk, or the sitemap index file.
    *
    * @param int $sitemap_id
-   *  Id of the sitemap chunk.
+   *  Optional ID of the sitemap chunk. If none provided, the first chunk or
+   *  the sitemap index is fetched.
    *
    * @return object Response
    *  Returns an XML response.
@@ -27,6 +28,7 @@ class SimplesitemapController {
   public function get_sitemap($sitemap_id = NULL) {
     $sitemap = new Simplesitemap;
     $output = $sitemap->get_sitemap($sitemap_id);
+    $output = !$output ? '' : $output;
 
     // Display sitemap with correct xml header.
 //    return new CacheableResponse($output, Response::HTTP_OK, array('content-type' => 'application/xml'));

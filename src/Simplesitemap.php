@@ -153,10 +153,12 @@ class Simplesitemap {
 
       // Return sitemap if there is only one chunk.
       else {
-        return $this->sitemap[1]->sitemap_string;
+        if (isset($this->sitemap[1])) {
+          return $this->sitemap[1]->sitemap_string;
+        }
+        return FALSE;
       }
     }
-
     // Return specific sitemap chunk.
     else {
       return $this->sitemap[$sitemap_id]->sitemap_string;
@@ -177,7 +179,6 @@ class Simplesitemap {
   /**
    * Saves the sitemap to the db.
    */
-//  private function save_sitemap() {
   public static function save_sitemap($values) {
     db_insert('simple_sitemap')
     ->fields(array(
