@@ -77,21 +77,20 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    $custom_links_string = str_replace("\r\n", "\n", $form_state->getValue('custom_links'));
-    $custom_links = array_filter(explode("\n", $custom_links_string), 'trim');
 
-    foreach($custom_links as $link_setting) {
-      $settings = explode(' ', $link_setting, 2);
+    $custom_link_config = $this->get_custom_links($form_state->getValue('custom_links'));
 
-      if (!\Drupal::service('path.validator')->isValid($settings[0])) {
-        $form_state->setErrorByName('', t("The path <em>$settings[0]</em> does not exist."));
+    foreach($custom_link_config as $link_config) {
+
+      if (!\Drupal::service('path.validator')->isValid($link_config['path'])) {
+        $form_state->setErrorByName('', t("The path <em>@path</em> does not exist.", array('@path' => $link_config['path'])));
       }
-      if ($settings[0][0] != '/') {
-        $form_state->setErrorByName('', t("The path <em>$settings[0]</em> needs to start with an '/'."));
+      if ($link_config['path'][0] != '/') {
+        $form_state->setErrorByName('', t("The path <em>@path</em> needs to start with an '/'.", array('@path' => $link_config['path'])));
       }
-      if (isset($settings[1])) {
-        if (!is_numeric($settings[1]) || $settings[1] < 0 || $settings[1] > 1) {
-          $form_state->setErrorByName('', t("Priority setting on line <em>$link_setting</em> is incorrect. Set priority from 0.0 to 1.0."));
+      if (isset($link_config['priority'])) {
+        if (!is_numeric($link_config['priority']) || $link_config['priority'] < 0 || $link_config['priority'] > 1) {
+          $form_state->setErrorByName('', t("Priority setting on line <em>@priority</em> is incorrect. Set priority from 0.0 to 1.0.", array('@priority' => $link_config['priority'])));
         }
       }
     }
@@ -101,27 +100,32 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-
     $sitemap = new Simplesitemap;
-    $custom_links_string = str_replace("\r\n", "\n", $form_state->getValue('custom_links'));
-    $custom_links_string_lines = array_filter(explode("\n", $custom_links_string), 'trim');
-    $custom_link_config = array();
-    foreach($custom_links_string_lines as $line) {
-      $line_settings = explode(' ', $line, 2);
-      $custom_link_config[]['path'] = $line_settings[0];
-      if (isset($line_settings[1])) {
-        end($custom_link_config);
-        $key = key($custom_link_config);
-        $custom_link_config[$key]['priority'] = number_format((float)$line_settings[1], 1, '.', '');
+    $custom_link_config = $this->get_custom_links($form_state->getValue('custom_links'));
+    foreach($custom_link_config as &$link_config) {
+      if (isset($link_config['priority'])) {
+        $link_config['priority'] = number_format((float)$link_config['priority'], 1, '.', '');
       }
     }
     $sitemap->save_config('custom', $custom_link_config);
-
     parent::submitForm($form, $form_state);
 
     // Regenerate sitemaps according to user setting.
     if ($form_state->getValue('simple_sitemap_regenerate_now')) {
       $sitemap->generate_sitemap();
     }
+  }
+
+  private function get_custom_links($custom_links_string) {
+    $custom_links_string_lines = array_filter(explode("\n", str_replace("\r\n", "\n", $custom_links_string)), 'trim');
+    $custom_link_config = array();
+    foreach($custom_links_string_lines as $i => $line) {
+      $line_settings = explode(' ', $line, 2);
+      $custom_link_config[$i]['path'] = $line_settings[0];
+      if (isset($line_settings[1])) {
+        $custom_link_config[$i]['priority'] = $line_settings[1];
+      }
+    }
+    return $custom_link_config;
   }
 }
