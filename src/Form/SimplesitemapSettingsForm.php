@@ -100,5 +100,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
   public function generate_sitemap(array &$form, FormStateInterface $form_state) {
     $sitemap = new Simplesitemap;
     $sitemap->generate_sitemap();
+    drupal_set_message(t("The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.",
+      array('@url' => $GLOBALS['base_url'] . '/sitemap.xml')));
   }
 }

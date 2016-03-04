@@ -119,6 +119,8 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
     // Regenerate sitemaps according to user setting.
     if ($form_state->getValue('simplesitemap_regenerate_now')) {
       $sitemap->generate_sitemap();
+      drupal_set_message(t("The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.",
+        array('@url' => $GLOBALS['base_url'] . '/sitemap.xml')));
     }
   }
 }

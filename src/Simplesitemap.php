@@ -5,6 +5,7 @@
  */
 
 namespace Drupal\simplesitemap;
+use Drupal\Core\Cache\Cache;
 
 /**
  * Simplesitemap class.
@@ -171,13 +172,12 @@ class Simplesitemap {
    * Generates the sitemap for all languages and saves it to the db.
    */
   public function generate_sitemap() {
+    Cache::invalidateTags(array('simplesitemap'));
     $generator = new SitemapGenerator();
     $generator->set_custom_links($this->get_config('custom'));
     $generator->set_entity_types($this->get_config('entity_types'));
     $this->sitemap = $generator->generate_sitemap($this->get_setting('max_links'));
     $this->save_sitemap();
-    drupal_set_message(t("The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.",
-      array('@url' => $GLOBALS['base_url'] . '/sitemap.xml')));
   }
 
   /**
