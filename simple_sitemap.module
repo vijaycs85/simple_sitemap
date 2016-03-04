@@ -52,7 +52,6 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
     '#options' => SitemapGenerator::get_priority_select_values(),
     '#default_value' => $priority,
   );
-  $cron_generate = $sitemap->get_setting('cron_generate');
 
   $form['simple_sitemap']['simple_sitemap_regenerate_now'] = array(
     '#type' => 'checkbox',
