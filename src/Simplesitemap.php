@@ -6,6 +6,8 @@
 
 namespace Drupal\simple_sitemap;
 
+use Drupal\Core\Cache\Cache;
+
 /**
  * Simplesitemap class.
  *
@@ -169,6 +171,7 @@ class Simplesitemap {
    * Generates the sitemap for all languages and saves it to the db.
    */
   public function generate_sitemap($from = 'form') {
+    Cache::invalidateTags(array('simple_sitemap'));
     db_truncate('simple_sitemap')->execute();
     $generator = new SitemapGenerator($from);
     $generator->set_custom_links($this->get_config('custom'));

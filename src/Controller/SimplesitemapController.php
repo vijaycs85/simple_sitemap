@@ -6,7 +6,7 @@
 
 namespace Drupal\simple_sitemap\Controller;
 
-//use Drupal\Core\Cache\CacheableResponse;
+use Drupal\Core\Cache\CacheableResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Drupal\simple_sitemap\Simplesitemap;
 
@@ -31,7 +31,9 @@ class SimplesitemapController {
     $output = !$output ? '' : $output;
 
     // Display sitemap with correct xml header.
-//    return new CacheableResponse($output, Response::HTTP_OK, array('content-type' => 'application/xml'));
-    return new Response($output, Response::HTTP_OK, array('content-type' => 'application/xml'));
+    $response = new CacheableResponse($output, Response::HTTP_OK, array('content-type' => 'application/xml'));
+    $meta_data = $response->getCacheableMetadata();
+    $meta_data->addCacheTags(['simple_sitemap']);
+    return $response;
   }
 }
