@@ -5,13 +5,13 @@ simple_sitemap.settings:
       type: mapping
       mapping:
         max_links:
-          label: 'Max Links'
+          label: 'Max links'
           type: integer
         cron_generate:
-          label: 'Cron Generate'
+          label: 'Cron generate'
           type: boolean
         remove_duplicates:
-          label: 'Remove Duplicates'
+          label: 'Remove duplicates'
           type: boolean
         batch_process_limit:
           label: 'Batch process limit'
@@ -29,7 +29,7 @@ simple_sitemap.settings:
             label: 'Priority'
             type: float
     entity_types:
-      label: 'Entity Types'
+      label: 'Entity types'
       type: sequence
       sequence:
         type: sequence

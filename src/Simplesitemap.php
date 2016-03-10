@@ -180,18 +180,6 @@ class Simplesitemap {
   }
 
   /**
-   * Saves the sitemap to the db.
-   */
-  public static function save_sitemap($values) {
-    db_insert('simple_sitemap')
-    ->fields(array(
-      'id' => $values['id'],
-      'sitemap_string' => $values['sitemap_string'],
-      'sitemap_created' => $values['sitemap_created'],
-    ))->execute();
-  }
-
-  /**
    * Generates and returns the sitemap index as string.
    *
    * @return string

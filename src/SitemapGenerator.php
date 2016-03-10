@@ -111,11 +111,12 @@ class SitemapGenerator {
    *  All links with their multilingual versions and settings.
    */
   public static function generate_sitemap($links) {
-    Simplesitemap::save_sitemap(array(
-        'id' => db_query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField() + 1,
-        'sitemap_string' => self::generate_sitemap_chunk($links),
-        'sitemap_created' => REQUEST_TIME)
+    $values = array(
+      'id' => db_query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField() + 1,
+      'sitemap_string' => self::generate_sitemap_chunk($links),
+      'sitemap_created' => REQUEST_TIME,
     );
+    db_insert('simple_sitemap')->fields($values)->execute();
   }
 
   /**
