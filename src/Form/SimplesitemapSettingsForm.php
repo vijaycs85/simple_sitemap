@@ -37,6 +37,8 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
 
     $sitemap = new Simplesitemap;
 
+    $form['simple_sitemap_settings']['#prefix'] = "<div class='description'>" .t("If you would like to say thanks and support the development of this module, a <a target='_blank' href='@url'>donation</a> is always appreciated.", array('@url' => 'https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5AFYRSBLGSC3W')) . "</div>";
+
     $form['simple_sitemap_settings']['regenerate'] = array(
       '#title' => t('Regenerate sitemap'),
       '#type' => 'fieldset',

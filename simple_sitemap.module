@@ -8,6 +8,14 @@ use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\simple_sitemap\SitemapGenerator;
 
 /**
+ * Implements hook_help.
+ */
+function simple_sitemap_help($route_name, \Drupal\Core\Routing\RouteMatchInterface $route_match) {
+  return $route_name === 'help.page.simple_sitemap' ?
+    check_markup(file_get_contents(dirname(__FILE__) . "/README.txt")) : NULL;
+}
+
+/**
  * Implements hook_form_alter.
  *
  * Adds sitemap settings to entity types that are supported via plugins.
