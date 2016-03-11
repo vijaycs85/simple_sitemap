@@ -21,7 +21,7 @@ function simple_sitemap_help($route_name, \Drupal\Core\Routing\RouteMatchInterfa
  * Adds sitemap settings to entity types that are supported via plugins.
  */
 function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
-  $sitemap_form_entity_data = Simplesitemap::get_sitemap_form_entity_data($form_state, $form_id);
+  $sitemap_form_entity_data = Simplesitemap::getSitemapFormEntityData($form_state, $form_id);
   if (empty($sitemap_form_entity_data))
     return;
   $entity_type_id = $sitemap_form_entity_data['entity_type_id'];
@@ -30,7 +30,7 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
   $sitemap = \Drupal::service('simple_sitemap.generator');
 
   // Get current entity type sitemap settings.
-  $entity_types = $sitemap->get_config('entity_types');
+  $entity_types = $sitemap->getConfig('entity_types');
 
   $form['simple_sitemap'] = array(
     '#type' => 'details',
@@ -57,7 +57,7 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
     '#type' => 'select',
     '#title' => t('Priority'),
     '#description' => t('The priority entities of this bundle will have in the eyes of search engine bots.'),
-    '#options' => SitemapGenerator::get_priority_select_values(),
+    '#options' => SitemapGenerator::getPrioritySelectValues(),
     '#default_value' => $priority,
   );
 
@@ -67,7 +67,7 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
     '#description' => t('This setting will regenerate the whole sitemap including the above changes.'),
     '#default_value' => FALSE,
   );
-  if ($sitemap->get_setting('cron_generate')) {
+  if ($sitemap->getSetting('cron_generate')) {
     $form['simple_sitemap']['simple_sitemap_regenerate_now']['#description'] .= '</br>' . t('Otherwise the sitemap will be rebuilt on next cron run.');
   }
 
@@ -99,18 +99,18 @@ function simple_sitemap_entity_form_submit($form, &$form_state) {
     $bundle_name = $form['#simple_sitemap']['bundle_name'];
 
     // Get current entity type sitemap settings.
-    $entity_types = $sitemap->get_config('entity_types');
+    $entity_types = $sitemap->getConfig('entity_types');
 
     $entity_types[$entity_type_id][$bundle_name]['index'] = $values['simple_sitemap_index_content'];
     $entity_types[$entity_type_id][$bundle_name]['priority'] = $values['simple_sitemap_priority'];
 
     // Save new entity type settings.
-    $sitemap->save_config('entity_types', $entity_types);
+    $sitemap->saveConfig('entity_types', $entity_types);
   }
 
   // Regenerate sitemaps according to user setting.
   if ($values['simple_sitemap_regenerate_now']) {
-    $sitemap->generate_sitemap();
+    $sitemap->generateSitemap();
   }
 }
 
@@ -119,9 +119,9 @@ function simple_sitemap_entity_form_submit($form, &$form_state) {
  */
 function simple_sitemap_cron() {
   $sitemap = \Drupal::service('simple_sitemap.generator');
-  if ($sitemap->get_setting('cron_generate')) {
+  if ($sitemap->getSetting('cron_generate')) {
     // Regenerate sitemap for all languages.
-    $sitemap->generate_sitemap('backend');
+    $sitemap->generateSitemap('backend');
   }
 }
 
@@ -132,14 +132,14 @@ function simple_sitemap_cron() {
  */
 function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
   $sitemap = \Drupal::service('simple_sitemap.generator');
-  $entity_types = $sitemap->get_config('entity_types');
+  $entity_types = $sitemap->getConfig('entity_types');
   $bundle_entity_type_id = \Drupal::entityManager()->getDefinition($entity_type_id)->getBundleEntityType();
 
   if (isset($entity_types[$bundle_entity_type_id][$bundle])) {
     unset($entity_types[$bundle_entity_type_id][$bundle]);
-    $sitemap->save_config('entity_types', $entity_types);
+    $sitemap->saveConfig('entity_types', $entity_types);
     $message = t("You may want to <a href='@url'>regenerate</a> your XML sitemap now.", array('@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'));
-    if ($sitemap->get_setting('cron_generate')) {
+    if ($sitemap->getSetting('cron_generate')) {
       $message .= '</br>' . t('Otherwise the sitemap will be rebuilt on next cron run.');
     }
     drupal_set_message($message);

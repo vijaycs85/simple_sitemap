@@ -40,7 +40,7 @@ class Simplesitemap {
    * @return array containing the entity_type_id and the bundle_name of the
    *  form object or FALSE if none found or not supported by an existing plugin.
    */
-  public static function get_sitemap_form_entity_data($form_state, $form_id) {
+  public static function getSitemapFormEntityData($form_state, $form_id) {
 
     // Get all simple_sitemap plugins.
     $manager = \Drupal::service('plugin.manager.simple_sitemap');
@@ -61,7 +61,7 @@ class Simplesitemap {
 
     // Else get entity type id and bundle name from the form if available and only
     // if a simple_sitemap plugin of the same entity type exists.
-    $form_entity = self::get_form_entity($form_state);
+    $form_entity = self::getFormEntity($form_state);
     if ($form_entity !== FALSE) {
       $form_entity_type_id = $form_entity->getEntityTypeId();
       if (isset($plugins[$form_entity_type_id])) {
@@ -88,7 +88,7 @@ class Simplesitemap {
    * @return object $entity or FALSE if non-existent or if form operation is
    *  'delete'.
    */
-  private static function get_form_entity($form_state) {
+  private static function getFormEntity($form_state) {
     $form_object = $form_state->getFormObject();
     if (!is_null($form_object)
       && method_exists($form_state->getFormObject(), 'getEntity')
@@ -100,20 +100,6 @@ class Simplesitemap {
   }
 
   /**
-   * Gets sitemap from db.
-   */
-  private function get_sitemap_from_db() {
-    $this->sitemap = db_query("SELECT * FROM {simple_sitemap}")->fetchAllAssoc('id');
-  }
-
-  /**
-   * Gets sitemap settings from the configuration storage.
-   */
-  private function get_config_from_db() {
-    $this->config = \Drupal::config('simple_sitemap.settings');
-  }
-
-  /**
    * Gets a specific sitemap configuration from the configuration storage.
    *
    * @param string $key
@@ -121,7 +107,7 @@ class Simplesitemap {
    * @return mixed
    *  The requested configuration.
    */
-  public function get_config($key) {
+  public function getConfig($key) {
     return $this->config->get($key);
   }
 
@@ -133,7 +119,7 @@ class Simplesitemap {
    * @param mixed $value
    *  The configuration to be saved.
    */
-  public function save_config($key, $value) {
+  public function saveConfig($key, $value) {
     \Drupal::service('config.factory')->getEditable('simple_sitemap.settings')
       ->set($key, $value)->save();
   }
@@ -149,12 +135,12 @@ class Simplesitemap {
    *  whole sitemap, if the amount of links does not exceed the max links setting.
    *  If a sitemap id is provided, a sitemap chunk is returned.
    */
-  public function get_sitemap($sitemap_id = NULL) {
+  public function getSitemap($sitemap_id = NULL) {
     if (is_null($sitemap_id) || !isset($this->sitemap[$sitemap_id])) {
 
       // Return sitemap index, if there are multiple sitemap chunks.
       if (count($this->sitemap) > 1) {
-        return $this->get_sitemap_index();
+        return $this->getSitemapIndex();
       }
 
       // Return sitemap if there is only one chunk.
@@ -174,13 +160,13 @@ class Simplesitemap {
   /**
    * Generates the sitemap for all languages and saves it to the db.
    */
-  public function generate_sitemap($from = 'form') {
+  public function generateSitemap($from = 'form') {
     Cache::invalidateTags(array('simple_sitemap'));
     db_truncate('simple_sitemap')->execute();
     $generator = new SitemapGenerator($from);
-    $generator->set_custom_links($this->get_config('custom'));
-    $generator->set_entity_types($this->get_config('entity_types'));
-    $generator->start_batch();
+    $generator->setCustomLinks($this->getConfig('custom'));
+    $generator->setEntityTypes($this->getConfig('entity_types'));
+    $generator->startBatch();
   }
 
   /**
@@ -189,9 +175,9 @@ class Simplesitemap {
    * @return string
    *  The sitemap index.
    */
-  private function get_sitemap_index() {
+  private function getSitemapIndex() {
     $generator = new SitemapGenerator();
-    return $generator->generate_sitemap_index($this->sitemap);
+    return $generator->generateSitemapIndex($this->sitemap);
   }
 
   /**
@@ -203,8 +189,8 @@ class Simplesitemap {
    * @return mixed
    *  The current setting from db or FALSE if setting does not exist.
    */
-  public function get_setting($name) {
-    $settings = $this->get_config('settings');
+  public function getSetting($name) {
+    $settings = $this->getConfig('settings');
     return isset($settings[$name]) ? $settings[$name] : FALSE;
   }
 
@@ -216,10 +202,10 @@ class Simplesitemap {
    * @param $setting
    *  The setting to be saved.
    */
-  public function save_setting($name, $setting) {
-    $settings = $this->get_config('settings');
+  public function saveSetting($name, $setting) {
+    $settings = $this->getConfig('settings');
     $settings[$name] = $setting;
-    $this->save_config('settings', $settings);
+    $this->saveConfig('settings', $settings);
   }
 
   /**
@@ -228,7 +214,7 @@ class Simplesitemap {
    * @return mixed
    *  Formatted timestamp of last sitemap generation, otherwise FALSE.
    */
-  public function get_generated_ago() {
+  public function getGeneratedAgo() {
     if (isset($this->sitemap[1]->sitemap_created)) {
       return \Drupal::service('date.formatter')
         ->formatInterval(REQUEST_TIME - $this->sitemap[1]->sitemap_created);
@@ -236,7 +222,7 @@ class Simplesitemap {
     return FALSE;
   }
 
-  public static function get_default_lang_id() {
+  public static function getDefaultLangId() {
     return \Drupal::languageManager()->getDefaultLanguage()->getId();
   }
 }

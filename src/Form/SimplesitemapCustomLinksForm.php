@@ -36,7 +36,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
 
     $sitemap = \Drupal::service('simple_sitemap.generator');
     $setting_string = '';
-    foreach ($sitemap->get_config('custom') as $custom_link) {
+    foreach ($sitemap->getConfig('custom') as $custom_link) {
 
       // todo: remove this statement after removing the index key from the configuration.
       if (isset($custom_link['index']) && $custom_link['index'] == 0)
@@ -65,7 +65,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
       '#description' => t('This setting will regenerate the whole sitemap including the above changes.'),
       '#default_value' => FALSE,
     );
-    if ($sitemap->get_setting('cron_generate')) {
+    if ($sitemap->getSetting('cron_generate')) {
       $form['simple_sitemap_custom']['simple_sitemap_regenerate_now']['#description'] .= '</br>' . t('Otherwise the sitemap will be rebuilt on next cron run.');
     }
 
@@ -77,7 +77,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
 
-    $custom_link_config = $this->get_custom_links($form_state->getValue('custom_links'));
+    $custom_link_config = $this->getCustomLinks($form_state->getValue('custom_links'));
 
     foreach($custom_link_config as $link_config) {
 
@@ -100,22 +100,22 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $sitemap = \Drupal::service('simple_sitemap.generator');
-    $custom_link_config = $this->get_custom_links($form_state->getValue('custom_links'));
+    $custom_link_config = $this->getCustomLinks($form_state->getValue('custom_links'));
     foreach($custom_link_config as &$link_config) {
       if (isset($link_config['priority'])) {
         $link_config['priority'] = number_format((float)$link_config['priority'], 1, '.', '');
       }
     }
-    $sitemap->save_config('custom', $custom_link_config);
+    $sitemap->saveConfig('custom', $custom_link_config);
     parent::submitForm($form, $form_state);
 
     // Regenerate sitemaps according to user setting.
     if ($form_state->getValue('simple_sitemap_regenerate_now')) {
-      $sitemap->generate_sitemap();
+      $sitemap->generateSitemap();
     }
   }
 
-  private function get_custom_links($custom_links_string) {
+  private function getCustomLinks($custom_links_string) {
     $custom_links_string_lines = array_filter(explode("\n", str_replace("\r\n", "\n", $custom_links_string)), 'trim');
     $custom_link_config = array();
     foreach($custom_links_string_lines as $i => $line) {

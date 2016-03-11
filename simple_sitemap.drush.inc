@@ -23,5 +23,5 @@ function simple_sitemap_drush_command() {
  */
 function drush_simple_sitemap_generate() {
   $sitemap = \Drupal::service('simple_sitemap.generator');
-  $sitemap->generate_sitemap('drush');
+  $sitemap->generateSitemap('drush');
 }

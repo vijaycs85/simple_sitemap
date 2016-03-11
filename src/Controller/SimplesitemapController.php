@@ -24,9 +24,9 @@ class SimplesitemapController {
    * @return object Response
    *  Returns an XML response.
    */
-  public function get_sitemap($sitemap_id = NULL) {
+  public function getSitemap($sitemap_id = NULL) {
     $sitemap = \Drupal::service('simple_sitemap.generator');
-    $output = $sitemap->get_sitemap($sitemap_id);
+    $output = $sitemap->getSitemap($sitemap_id);
     $output = !$output ? '' : $output;
 
     // Display sitemap with correct xml header.
