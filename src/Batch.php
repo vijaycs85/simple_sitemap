@@ -57,7 +57,7 @@ class Batch {
         drush_log($this->batch['init_message'], 'status');
         drush_backend_batch_process();
         break;
-      case 'cron':
+      case 'backend':
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
         batch_process(); //todo: Does not take advantage of batch API and eventually runs out of memory on very large sites.

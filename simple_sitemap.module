@@ -121,7 +121,7 @@ function simple_sitemap_cron() {
   $sitemap = \Drupal::service('simple_sitemap.generator');
   if ($sitemap->get_setting('cron_generate')) {
     // Regenerate sitemap for all languages.
-    $sitemap->generate_sitemap('cron');
+    $sitemap->generate_sitemap('backend');
   }
 }
 

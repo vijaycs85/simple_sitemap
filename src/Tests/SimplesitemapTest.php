@@ -44,7 +44,7 @@ class SimplesitemapTest extends WebTestBase {
    */
   public function testSimplesitemap() {
     $sitemap = \Drupal::service('simple_sitemap.generator');
-    $sitemap->generate_sitemap();
+    $sitemap->generate_sitemap('backend');
 
     // Verify sitemap.xml can be cached.
     $this->drupalGet('sitemap.xml');
