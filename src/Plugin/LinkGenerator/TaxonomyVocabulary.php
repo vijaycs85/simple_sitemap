@@ -40,7 +40,7 @@ class TaxonomyVocabulary extends LinkGeneratorBase {
    * {@inheritdoc}
    */
   public function getQuery($bundle) {
-    return \Drupal::database()->select('taxonomy_term_field_data', 't')
+    return $this->database->select('taxonomy_term_field_data', 't')
       ->fields('t', array('tid', 'changed'))
       ->condition('vid', $bundle);
   }

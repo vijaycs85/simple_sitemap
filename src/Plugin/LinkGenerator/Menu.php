@@ -39,7 +39,7 @@ class Menu extends LinkGeneratorBase {
    * {@inheritdoc}
    */
   public function getQuery($bundle) {
-    return \Drupal::database()->select('menu_tree', 'm')
+    return $this->database->select('menu_tree', 'm')
       ->fields('m', array('mlid', 'route_name', 'route_parameters', 'options'))
       ->condition('menu_name', $bundle)
       ->condition('enabled', 1)

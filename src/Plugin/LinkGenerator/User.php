@@ -41,7 +41,7 @@ class User extends LinkGeneratorBase {
    * {@inheritdoc}
    */
   public function getQuery($bundle) {
-    return \Drupal::database()->select('users_field_data', 'u')
+    return $this->database->select('users_field_data', 'u')
       ->fields('u', array('uid', 'changed'))
       ->condition('status', 1);
   }

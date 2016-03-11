@@ -40,7 +40,7 @@ class NodeType extends LinkGeneratorBase {
    * {@inheritdoc}
    */
   public function getQuery($bundle) {
-    return \Drupal::database()->select('node_field_data', 'n')
+    return $this->database->select('node_field_data', 'n')
       ->fields('n', array('nid', 'changed'))
       ->condition('type', $bundle)
       ->condition('status', 1);
