@@ -47,20 +47,19 @@ class Batch {
    * Starts the batch process depending on where it was requested from.
    */
   public function start() {
+    batch_set($this->batch);
     switch ($this->batch_info['from']) {
       case 'form':
-        batch_set($this->batch);
         break;
       case 'drush':
+        $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
-        batch_set($this->batch);
         drush_log($this->batch['init_message'], 'status');
         drush_backend_batch_process();
         break;
-      break;
       case 'cron':
+        $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
-        batch_set($this->batch);
         batch_process(); //todo: Does not take advantage of batch API and eventually runs out of memory on very large sites.
         break;
     }

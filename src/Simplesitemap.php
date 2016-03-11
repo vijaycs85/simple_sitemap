@@ -116,6 +116,8 @@ class Simplesitemap {
   /**
    * Gets a specific sitemap configuration from the configuration storage.
    *
+   * @param string $key
+   *  Configuration key, like 'entity_links'.
    * @return mixed
    *  The requested configuration.
    */
@@ -134,7 +136,6 @@ class Simplesitemap {
   public function save_config($key, $value) {
     \Drupal::service('config.factory')->getEditable('simple_sitemap.settings')
       ->set($key, $value)->save();
-    $this->initialize();
   }
 
   /**
