@@ -11,7 +11,6 @@ use Drupal\Component\Plugin\PluginInspectionInterface;
 /**
  * Defines an interface for simple_sitemap plugins.
  */
-
 interface LinkGeneratorInterface extends PluginInspectionInterface {
 
   /**

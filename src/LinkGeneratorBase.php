@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Contains \Drupal\simple_sitemap\LinkGeneratorBase.
@@ -47,5 +46,4 @@ abstract class LinkGeneratorBase extends PluginBase implements LinkGeneratorInte
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static($configuration, $plugin_id, $plugin_definition, $container->get('database'));
   }
-
 }
