@@ -8,7 +8,6 @@ namespace Drupal\simple_sitemap\Controller;
 
 use Drupal\Core\Cache\CacheableResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Drupal\simple_sitemap\Simplesitemap;
 
 /**
  * SimplesitemapController.
@@ -26,7 +25,7 @@ class SimplesitemapController {
    *  Returns an XML response.
    */
   public function get_sitemap($sitemap_id = NULL) {
-    $sitemap = new Simplesitemap;
+    $sitemap = \Drupal::service('simple_sitemap.generator');
     $output = $sitemap->get_sitemap($sitemap_id);
     $output = !$output ? '' : $output;
 

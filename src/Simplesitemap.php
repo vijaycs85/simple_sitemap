@@ -5,6 +5,7 @@
  */
 
 namespace Drupal\simple_sitemap;
+use Drupal\Core\Config\ConfigFactoryInterface;
 
 use Drupal\Core\Cache\Cache;
 
@@ -18,13 +19,15 @@ class Simplesitemap {
   private $config;
   private $sitemap;
 
-  function __construct() {
-    $this->initialize();
-  }
-
-  private function initialize() {
-    $this->get_config_from_db();
-    $this->get_sitemap_from_db();
+  /**
+   * Simplesitemap constructor.
+   *
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   The config factory from the container.
+   */
+  function __construct(ConfigFactoryInterface $config_factory) {
+    $this->config = $config_factory->get('simple_sitemap.settings');
+    $this->sitemap = db_query("SELECT * FROM {simple_sitemap}")->fetchAllAssoc('id');
   }
 
   /**

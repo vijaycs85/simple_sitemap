@@ -9,7 +9,6 @@ namespace Drupal\simple_sitemap\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\simple_sitemap\Simplesitemap;
 
 /**
  * SimplesitemapSettingsFrom
@@ -35,7 +34,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $sitemap = new Simplesitemap;
+    $sitemap = \Drupal::service('simple_sitemap.generator');
 
     $form['simple_sitemap_settings']['#prefix'] = "<div class='description'>" .t("If you would like to say thanks and support the development of this module, a <a target='_blank' href='@url'>donation</a> is always appreciated.", array('@url' => 'https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5AFYRSBLGSC3W')) . "</div>";
 
@@ -120,7 +119,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $sitemap = new Simplesitemap;
+    $sitemap = \Drupal::service('simple_sitemap.generator');
     $sitemap->save_setting('max_links', $form_state->getValue('max_links'));
     $sitemap->save_setting('cron_generate', $form_state->getValue('cron_generate'));
     $sitemap->save_setting('remove_duplicates', $form_state->getValue('remove_duplicates'));
@@ -129,7 +128,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
   }
 
   public function generate_sitemap(array &$form, FormStateInterface $form_state) {
-    $sitemap = new Simplesitemap;
+    $sitemap = \Drupal::service('simple_sitemap.generator');
     $sitemap->generate_sitemap();
   }
 }

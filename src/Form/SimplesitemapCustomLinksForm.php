@@ -9,7 +9,6 @@ namespace Drupal\simple_sitemap\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\simple_sitemap\Simplesitemap;
 
 /**
  * SimplesitemapCustomLinksFrom
@@ -35,7 +34,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $sitemap = new Simplesitemap;
+    $sitemap = \Drupal::service('simple_sitemap.generator');
     $setting_string = '';
     foreach ($sitemap->get_config('custom') as $custom_link) {
 
@@ -100,7 +99,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $sitemap = new Simplesitemap;
+    $sitemap = \Drupal::service('simple_sitemap.generator');
     $custom_link_config = $this->get_custom_links($form_state->getValue('custom_links'));
     foreach($custom_link_config as &$link_config) {
       if (isset($link_config['priority'])) {

@@ -43,7 +43,7 @@ class SimplesitemapTest extends WebTestBase {
    * Test Simple sitemap integration.
    */
   public function testSimplesitemap() {
-    $sitemap = new Simplesitemap;
+    $sitemap = \Drupal::service('simple_sitemap.generator');
     $sitemap->generate_sitemap();
 
     // Verify sitemap.xml can be cached.
