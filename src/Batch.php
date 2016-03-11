@@ -126,7 +126,7 @@ class Batch {
       self::InitializeBatch($query->countQuery()->execute()->fetchField(), $context);
     }
 
-    // Getting id field name from plugin info, if not defined assuming the name of the first field in the query to be the entity id field name.
+    // Getting id field name from plugin info.
     $fields = $query->getFields();
     if (isset($info['field_info']['entity_id']) && isset($fields[$info['field_info']['entity_id']])) {
       $id_field = $info['field_info']['entity_id'];
@@ -194,7 +194,7 @@ class Batch {
 
       // Do not include path if it already exists.
       $path = $url_object->getInternalPath();
-      if ($batch_info['remove_duplicates'] && self::batchProcessed($path, $context['results']['processed_paths']))
+      if ($batch_info['remove_duplicates'] && self::pathProcessed($path, $context['results']['processed_paths']))
         continue;
 
       $urls = array();
@@ -254,7 +254,7 @@ class Batch {
         continue;
 
       $path = $url_object->getInternalPath();
-      if ($batch_info['remove_duplicates'] && self::batchProcessed($path, $context['results']['processed_paths']))
+      if ($batch_info['remove_duplicates'] && self::pathProcessed($path, $context['results']['processed_paths']))
         continue;
 
       $urls = array();
@@ -279,7 +279,7 @@ class Batch {
     self::processSegment($context, $batch_info);
   }
 
-  private static function batchProcessed($needle, &$path_pool) {
+  private static function pathProcessed($needle, &$path_pool) {
     if (in_array($needle, $path_pool)) {
       return TRUE;
     }
