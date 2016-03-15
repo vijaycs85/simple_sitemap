@@ -96,6 +96,8 @@ class SitemapGenerator {
             $operation['info'] = $instance->getInfo();
             $operation['query'] = $instance->getQuery($bundle);
             $operation['info']['bundle_settings'] = $bundle_settings;
+            $operation['info']['bundle_settings']['bundle_name'] = $bundle;
+            $operation['info']['bundle_settings']['bundle_entity_type'] = $link_generator_plugin['id'];
             $operations[] = $operation;
           }
         }

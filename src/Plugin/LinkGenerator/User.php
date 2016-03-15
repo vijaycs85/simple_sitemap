@@ -25,7 +25,7 @@ class User extends LinkGeneratorBase {
    * {@inheritdoc}
    */
   public function getInfo() {
-    array(
+    return array(
       'field_info' => array(
         'entity_id' => 'uid',
         'lastmod' => 'changed',

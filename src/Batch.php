@@ -39,6 +39,7 @@ class Batch {
       'batch_process_limit' => $config['batch_process_limit'],
       'max_links' => $config['max_links'],
       'remove_duplicates' => $config['remove_duplicates'],
+      'entity_types' => \Drupal::config('simple_sitemap.settings')->get('entity_types'),
       'anonymous_user_account' => User::load(self::ANONYMOUS_USER_ID),
     );
   }
@@ -104,6 +105,7 @@ class Batch {
         array('@url' => $GLOBALS['base_url'] . '/sitemap.xml')));
     }
     else {
+      //todo: register error
     }
   }
 
@@ -146,15 +148,26 @@ class Batch {
     }
 
     // Creating a query limited to n=batch_process_limit entries.
-    $query
-      ->condition($id_field, $context['sandbox']['current_id'], '>')
-      ->orderBy($id_field);
+    $query->condition($id_field, $context['sandbox']['current_id'], '>')->orderBy($id_field);
     if (!empty($batch_info['batch_process_limit']))
       $query->range(0, $batch_info['batch_process_limit']);
     $result = $query->execute()->fetchAll();
 
     foreach ($result as $row) {
       self::SetCurrentId($row->$id_field, $context);
+
+      // Overriding entity settings if it has been overridden on entity edit page...
+      $bundle_name = !empty($info['bundle_settings']['bundle_name']) ? $info['bundle_settings']['bundle_name'] : NULL;
+      $bundle_entity_type = !empty($info['bundle_settings']['bundle_entity_type']) ? $info['bundle_settings']['bundle_entity_type'] : NULL;
+      if (!empty($bundle_name) && !empty($bundle_entity_type)
+        && isset($batch_info['entity_types'][$bundle_entity_type][$bundle_name]['entities'][$row->$id_field]['index'])) {
+        // Skipping entity if it has been excluded on entity edit page.
+        if (!$batch_info['entity_types'][$bundle_entity_type][$bundle_name]['entities'][$row->$id_field]['index']) {
+          continue;
+        }
+        // Otherwise overriding priority settings for this entity.
+        $priority = $batch_info['entity_types'][$bundle_entity_type][$bundle_name]['entities'][$row->$id_field]['priority'];
+      }
 
       // Setting route parameters if they exist in the database (menu links).
       if (isset($route_params_field) && !empty($route_parameters = unserialize($row->$route_params_field))) {
@@ -213,8 +226,9 @@ class Batch {
         'urls' => $urls,
         'options' => $url_object->getOptions(),
         'lastmod' => !empty($info['field_info']['lastmod']) ? date_iso8601($row->{$info['field_info']['lastmod']}) : NULL,
-        'priority' => !empty($info['bundle_settings']['priority']) ? $info['bundle_settings']['priority'] : NULL,
+        'priority' => !empty($priority) ? $priority : (!empty($info['bundle_settings']['priority']) ? $info['bundle_settings']['priority'] : NULL),
       );
+      $priority = NULL;
     }
     self::setProgressInfo($context, $batch_info);
     self::processSegment($context, $batch_info);

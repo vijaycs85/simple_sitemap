@@ -45,5 +45,4 @@ class NodeType extends LinkGeneratorBase {
       ->condition('type', $bundle)
       ->condition('status', 1);
   }
-
 }

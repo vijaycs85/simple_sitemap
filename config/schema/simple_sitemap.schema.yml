@@ -42,3 +42,14 @@ simple_sitemap.settings:
             priority:
               label: 'Priority'
               type: float
+            entities:
+              label: 'Entities'
+              type: sequence
+              sequence:
+                type: mapping
+                mapping:
+                  label: 'Index'
+                  type: integer
+                priority:
+                  label: 'Priority'
+                  type: float

@@ -55,27 +55,48 @@ class Simplesitemap {
         return array(
           'entity_type_id' => $plugin['id'],
           'bundle_name' => $plugin['id'],
+          'entity_id' => NULL,
         );
       }
     }
 
-    // Else get entity type id and bundle name from the form if available and only
-    // if a simple_sitemap plugin of the same entity type exists.
     $form_entity = self::getFormEntity($form_state);
     if ($form_entity !== FALSE) {
-      $form_entity_type_id = $form_entity->getEntityTypeId();
-      if (isset($plugins[$form_entity_type_id])) {
-        if (!isset($plugins[$form_entity_type_id]['form_id'])
-          || $plugins[$form_entity_type_id]['form_id'] === $form_id) {
+      $entity_type = $form_entity->getEntityType();
+
+      // If this entity is of a bundle, this will be an entity add/edit page.
+      // If a simple_sitemap plugin of this entity_type exists, return the
+      // entity type ID, the bundle name and ethe entity ID.
+      if (!empty($entity_type->getBundleEntityType())) {
+        $bundle_entity_type = $entity_type->getBundleEntityType();
+        if (isset($plugins[$bundle_entity_type])) {
           return array(
-            'entity_type_id' => $form_entity_type_id,
-            'bundle_name' => $form_entity->Id(),
+            'entity_type_id' => $bundle_entity_type,
+            'bundle_name' => $form_entity->bundle(),
+            'entity_id' => $form_entity->Id(),
           );
+        }
+      }
+
+      // Else if this entity has an entity type ID, it means it is a bundle
+      // configuration form. If a simple_sitemap plugin of this entity_type
+      // exists, return the entity type ID, the bundle name and ethe entity ID.
+      else {
+        $entity_type_id = $form_entity->getEntityTypeId();
+        if (isset($plugins[$entity_type_id])) {
+          if (!isset($plugins[$entity_type_id]['form_id'])
+            || $plugins[$entity_type_id]['form_id'] === $form_id) {
+            return array(
+              'entity_type_id' => $entity_type_id,
+              'bundle_name' => $form_entity->Id(),
+              'entity_id' => NULL,
+            );
+          }
         }
       }
     }
 
-    // If both methods of getting simple_sitemap entity data for this form
+    // If all methods of getting simple_sitemap entity data for this form
     // failed, return FALSE.
     return FALSE;
   }

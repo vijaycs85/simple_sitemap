@@ -26,16 +26,39 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
     return;
   $entity_type_id = $sitemap_form_entity_data['entity_type_id'];
   $bundle_name = $sitemap_form_entity_data['bundle_name'];
+  $entity_id = $sitemap_form_entity_data['entity_id'];
 
   $sitemap = \Drupal::service('simple_sitemap.generator');
 
   // Get current entity type sitemap settings.
   $entity_types = $sitemap->getConfig('entity_types');
 
+  // Do not add sitemap settings to entity form, if sitemap is disabled for
+  // entity type.
+  if (!empty($entity_id) && empty($entity_types[$entity_type_id][$bundle_name]['index']))
+    return;
+
+  // Setting default form values.
+  $index_content_checked = FALSE;
+  $priority = SitemapGenerator::PRIORITY_DEFAULT;
+
+  // Overwriting defaults if settings found for bundle.
+  if (isset($entity_types[$entity_type_id][$bundle_name]['index'])) {
+    $index_content_checked = $entity_types[$entity_type_id][$bundle_name]['index'];
+    $priority = $entity_types[$entity_type_id][$bundle_name]['priority'];
+  }
+
+  // Overwriting defaults if settings found for entity.
+  if (isset($entity_types[$entity_type_id][$bundle_name]['entities'][$entity_id]['index'])) {
+    $index_content_checked = $entity_types[$entity_type_id][$bundle_name]['entities'][$entity_id]['index'];
+    $priority = $entity_types[$entity_type_id][$bundle_name]['entities'][$entity_id]['priority'];
+  }
+
   $form['simple_sitemap'] = array(
     '#type' => 'details',
-    '#group' => 'additional_settings',
+    '#group' => isset($form['additional_settings']) ? 'additional_settings' : 'advanced',
     '#title' => t('Simple XML sitemap'),
+    '#description' => !empty($entity_id) ? t('Settings for this specific entity can be overridden here.') : '',
   );
 
   // Attach some js magic to forms.
@@ -45,18 +68,16 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
     $form['simple_sitemap']['#attached']['library'][] = 'simple_sitemap/fieldsetSummaries';
   }
 
-  $index_content_checked = isset($entity_types[$entity_type_id][$bundle_name]['index']) ? $entity_types[$entity_type_id][$bundle_name]['index'] : FALSE;
   $form['simple_sitemap']['simple_sitemap_index_content'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Index content of this type'),
+    '#title' => !empty($entity_id) ? t('Index this entity') : t('Index content of this type'),
     '#default_value' => $index_content_checked,
   );
 
-  $priority = isset($entity_types[$entity_type_id][$bundle_name]['priority']) ? $entity_types[$entity_type_id][$bundle_name]['priority'] : SitemapGenerator::PRIORITY_DEFAULT;
   $form['simple_sitemap']['simple_sitemap_priority'] = array(
     '#type' => 'select',
     '#title' => t('Priority'),
-    '#description' => t('The priority entities of this bundle will have in the eyes of search engine bots.'),
+    '#description' => !empty($entity_id) ? t('The priority this entity will have in the eyes of search engine bots.') : t('The priority entities of this bundle will have in the eyes of search engine bots.'),
     '#options' => SitemapGenerator::getPrioritySelectValues(),
     '#default_value' => $priority,
   );
@@ -73,10 +94,15 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
 
   $form['#simple_sitemap']['entity_type_id'] = $entity_type_id;
   $form['#simple_sitemap']['bundle_name'] = $bundle_name;
+  $form['#simple_sitemap']['entity_id'] = $entity_id;
 
   // Add submission handler.
   if (isset($form['actions']['submit']['#submit'])) {
-    $form['actions']['submit']['#submit'][] = 'simple_sitemap_entity_form_submit';
+    foreach (array_keys($form['actions']) as $action) {
+      if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+        $form['actions'][$action]['#submit'][] = 'simple_sitemap_entity_form_submit';
+      }
+    }
   }
   else { // Fix for account page rendering other submit handlers not usable.
     $form['#submit'][] = 'simple_sitemap_entity_form_submit';
@@ -87,7 +113,6 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
  * Form submission handler called in hook_form_alter.
  */
 function simple_sitemap_entity_form_submit($form, &$form_state) {
-
   $sitemap = \Drupal::service('simple_sitemap.generator');
   $values = $form_state->getValues();
 
@@ -97,13 +122,28 @@ function simple_sitemap_entity_form_submit($form, &$form_state) {
 
     $entity_type_id = $form['#simple_sitemap']['entity_type_id'];
     $bundle_name = $form['#simple_sitemap']['bundle_name'];
+    $entity_id = $form['#simple_sitemap']['entity_id'];
 
     // Get current entity type sitemap settings.
     $entity_types = $sitemap->getConfig('entity_types');
 
-    $entity_types[$entity_type_id][$bundle_name]['index'] = $values['simple_sitemap_index_content'];
-    $entity_types[$entity_type_id][$bundle_name]['priority'] = $values['simple_sitemap_priority'];
-
+    if (!empty($entity_id)) {
+      // Delete overrides if they are identical to bundle settings.
+      if ($values['simple_sitemap_index_content'] == $entity_types[$entity_type_id][$bundle_name]['index']
+        && $values['simple_sitemap_priority'] == $entity_types[$entity_type_id][$bundle_name]['priority']) {
+        unset($entity_types[$entity_type_id][$bundle_name]['entities'][$entity_id]);
+      }
+      // Else save overrides for this entity.
+      else {
+        $entity_types[$entity_type_id][$bundle_name]['entities'][$entity_id]['index'] = $values['simple_sitemap_index_content'];
+        $entity_types[$entity_type_id][$bundle_name]['entities'][$entity_id]['priority'] = $values['simple_sitemap_priority'];
+      }
+    }
+    // Save bundle settings.
+    else {
+      $entity_types[$entity_type_id][$bundle_name]['index'] = $values['simple_sitemap_index_content'];
+      $entity_types[$entity_type_id][$bundle_name]['priority'] = $values['simple_sitemap_priority'];
+    }
     // Save new entity type settings.
     $sitemap->saveConfig('entity_types', $entity_types);
   }
@@ -134,7 +174,6 @@ function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
   $sitemap = \Drupal::service('simple_sitemap.generator');
   $entity_types = $sitemap->getConfig('entity_types');
   $bundle_entity_type_id = \Drupal::entityManager()->getDefinition($entity_type_id)->getBundleEntityType();
-
   if (isset($entity_types[$bundle_entity_type_id][$bundle])) {
     unset($entity_types[$bundle_entity_type_id][$bundle]);
     $sitemap->saveConfig('entity_types', $entity_types);
@@ -143,5 +182,24 @@ function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
       $message .= '</br>' . t('Otherwise the sitemap will be rebuilt on next cron run.');
     }
     drupal_set_message($message);
+  }
+}
+
+/**
+ * Implements hook_entity_delete().
+ *
+ * Removes settings of the removed entity.
+ */
+function simple_sitemap_entity_delete(Drupal\Core\Entity\EntityInterface $entity) {
+  $sitemap = \Drupal::service('simple_sitemap.generator');
+  $entity_types = $sitemap->getConfig('entity_types');
+  $entity_type = $entity->getEntityType();
+  if (!empty($entity_type->getBundleEntityType())) {
+    $bundle_entity_type = $entity_type->getBundleEntityType();
+    $bundle = $entity->bundle();
+    if (isset($entity_types[$bundle_entity_type][$bundle]['entities'][$entity->id()])) {
+      unset($entity_types[$bundle_entity_type][$bundle]['entities'][$entity->id()]);
+      $sitemap->saveConfig('entity_types', $entity_types);
+    }
   }
 }
