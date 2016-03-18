@@ -13,7 +13,7 @@ use Drupal\simpletest\WebTestBase;
 /**
  * Tests Simple XML sitemap integration.
  *
- * @group Simplesitemap
+ * @group simple_sitemap
  */
 class SimplesitemapTest extends WebTestBase {
 
@@ -43,8 +43,7 @@ class SimplesitemapTest extends WebTestBase {
    * Test Simple sitemap integration.
    */
   public function testSimplesitemap() {
-    $sitemap = \Drupal::service('simple_sitemap.generator');
-    $sitemap->generateSitemap('backend');
+    \Drupal::service('simple_sitemap.generator')->generateSitemap('backend');
 
     // Verify sitemap.xml can be cached.
     $this->drupalGet('sitemap.xml');
@@ -53,10 +52,10 @@ class SimplesitemapTest extends WebTestBase {
     $this->assertEqual($this->drupalGetHeader('X-Drupal-Cache'), 'HIT');
 
     /* @var $node \Drupal\Node\NodeInterface */
-    $node = $this->createNode(['title' => 'A new page']);
+    $node = $this->createNode(['title' => 'A new page', 'type' => 'page']);
 
     // Generate new sitemap.
-    $sitemap->generateSitemap();
+    \Drupal::service('simple_sitemap.generator')->generateSitemap('backend');
 
     // Verify the cache was flushed and node is in the sitemap.
     $this->drupalGet('sitemap.xml');
