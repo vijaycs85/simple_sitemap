@@ -18,7 +18,6 @@ use Drupal\simpletest\WebTestBase;
 class SimplesitemapTest extends WebTestBase {
 
   protected $dumpHeaders = TRUE;
-  protected $strictConfigSchema = FALSE;
 
   /**
    * Modules to enable.
