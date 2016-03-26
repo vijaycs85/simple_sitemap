@@ -5,8 +5,8 @@
  */
 
 namespace Drupal\simple_sitemap;
-use Drupal\Core\Config\ConfigFactoryInterface;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Cache\Cache;
 
 /**
@@ -28,96 +28,6 @@ class Simplesitemap {
   function __construct(ConfigFactoryInterface $config_factory) {
     $this->config = $config_factory->get('simple_sitemap.settings');
     $this->sitemap = db_query("SELECT * FROM {simple_sitemap}")->fetchAllAssoc('id');
-  }
-
-  /**
-   * Gets the entity_type_id and bundle_name of the form object if available and only
-   * if the sitemap supports this entity type through an existing plugin.
-   *
-   * @param object $form_state
-   * @param string $form_id
-   *
-   * @return array containing the entity_type_id and the bundle_name of the
-   *  form object or FALSE if none found or not supported by an existing plugin.
-   */
-  public static function getSitemapFormEntityData($form_state, $form_id) {
-
-    // Get all simple_sitemap plugins.
-    $manager = \Drupal::service('plugin.manager.simple_sitemap');
-    $plugins = $manager->getDefinitions();
-
-    // Go through simple_sitemap plugins and check if one of them declares usage
-    // of this particular form. If that's the case, get the entity type id of the
-    // plugin definition and assume the bundle to be of the same name as the
-    // entity type id.
-    foreach($plugins as $plugin) {
-      if (isset($plugin['form_id']) && $plugin['form_id'] === $form_id) {
-        return array(
-          'entity_type_id' => $plugin['id'],
-          'bundle_name' => $plugin['id'],
-          'entity_id' => NULL,
-        );
-      }
-    }
-
-    $form_entity = self::getFormEntity($form_state);
-    if ($form_entity !== FALSE) {
-      $entity_type = $form_entity->getEntityType();
-
-      // If this entity is of a bundle, this will be an entity add/edit page.
-      // If a simple_sitemap plugin of this entity_type exists, return the
-      // entity type ID, the bundle name and ethe entity ID.
-      if (!empty($entity_type->getBundleEntityType())) {
-        $bundle_entity_type = $entity_type->getBundleEntityType();
-        if (isset($plugins[$bundle_entity_type])) {
-          return array(
-            'entity_type_id' => $bundle_entity_type,
-            'bundle_name' => $form_entity->bundle(),
-            'entity_id' => $form_entity->Id(),
-          );
-        }
-      }
-
-      // Else if this entity has an entity type ID, it means it is a bundle
-      // configuration form. If a simple_sitemap plugin of this entity_type
-      // exists, return the entity type ID, the bundle name and ethe entity ID.
-      else {
-        $entity_type_id = $form_entity->getEntityTypeId();
-        if (isset($plugins[$entity_type_id])) {
-          if (!isset($plugins[$entity_type_id]['form_id'])
-            || $plugins[$entity_type_id]['form_id'] === $form_id) {
-            return array(
-              'entity_type_id' => $entity_type_id,
-              'bundle_name' => $form_entity->Id(),
-              'entity_id' => NULL,
-            );
-          }
-        }
-      }
-    }
-
-    // If all methods of getting simple_sitemap entity data for this form
-    // failed, return FALSE.
-    return FALSE;
-  }
-
-  /**
-   * Gets the object entity of the form if available.
-   *
-   * @param object $form_state
-   *
-   * @return object $entity or FALSE if non-existent or if form operation is
-   *  'delete'.
-   */
-  private static function getFormEntity($form_state) {
-    $form_object = $form_state->getFormObject();
-    if (!is_null($form_object)
-      && method_exists($form_state->getFormObject(), 'getEntity')
-      && $form_object->getOperation() !== 'delete') {
-      $entity = $form_state->getFormObject()->getEntity();
-      return $entity;
-    }
-    return FALSE;
   }
 
   /**
@@ -180,6 +90,10 @@ class Simplesitemap {
 
   /**
    * Generates the sitemap for all languages and saves it to the db.
+   *
+   * @param string $from
+   *  Can be 'form', 'cron', or 'drush'. This decides how to the batch process
+   *  is to be run.
    */
   public function generateSitemap($from = 'form') {
     Cache::invalidateTags(array('simple_sitemap'));

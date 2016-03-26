@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Contains \Drupal\simple_sitemap\Tests\SimplesitemapTest
@@ -7,7 +6,6 @@
 
 namespace Drupal\simple_sitemap\Tests;
 
-use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\simpletest\WebTestBase;
 
 /**
