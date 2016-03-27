@@ -7,7 +7,6 @@
 namespace Drupal\simple_sitemap;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Cache\Cache;
 
 /**
  * Simplesitemap class.
@@ -96,7 +95,6 @@ class Simplesitemap {
    *  is to be run.
    */
   public function generateSitemap($from = 'form') {
-    Cache::invalidateTags(array('simple_sitemap'));
     db_truncate('simple_sitemap')->execute();
     $generator = new SitemapGenerator($from);
     $generator->setCustomLinks($this->getConfig('custom'));
