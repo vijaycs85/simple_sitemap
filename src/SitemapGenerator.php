@@ -107,13 +107,16 @@ class SitemapGenerator {
   }
 
   /**
-   * Wrapper method which takes links along with their options and then
-   * generates and saves the sitemap.
+   * Wrapper method which takes links along with their options, lets other
+   * modules alter the links and then generates and saves the sitemap.
    *
    * @param array $links
    *  All links with their multilingual versions and settings.
    */
   public static function generateSitemap($links) {
+    // Invoke alter hook.
+    \Drupal::moduleHandler()->alter('simple_sitemap_links', $links);
+
     $values = array(
       'id' => db_query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField() + 1,
       'sitemap_string' => self::generateSitemapChunk($links),
