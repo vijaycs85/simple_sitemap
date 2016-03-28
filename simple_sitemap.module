@@ -21,6 +21,10 @@ function simple_sitemap_help($route_name, \Drupal\Core\Routing\RouteMatchInterfa
  */
 function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
 
+  // Do not alter the form if user lacks certain permissions.
+  if (!\Drupal::currentUser()->hasPermission('administer sitemap settings'))
+    return;
+
   $f = new Form($form, $form_state, $form_id);
 
   // Do not alter the form if it is irrelevant to sitemap generation.
