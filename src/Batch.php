@@ -228,7 +228,7 @@ class Batch {
         'urls' => $urls,
         'options' => $url_object->getOptions(),
         'lastmod' => !empty($info['field_info']['lastmod']) ? date_iso8601($row->{$info['field_info']['lastmod']}) : NULL,
-        'priority' => !empty($priority) ? $priority : (!empty($info['bundle_settings']['priority']) ? $info['bundle_settings']['priority'] : NULL),
+        'priority' => isset($priority) ? $priority : (isset($info['bundle_settings']['priority']) ? $info['bundle_settings']['priority'] : NULL),
       );
       $priority = NULL;
     }
@@ -288,7 +288,7 @@ class Batch {
         'path' => $path,
         'urls' => $urls,
         'options' => $url_object->getOptions(),
-        'priority' => !empty($custom_path['priority']) ? $custom_path['priority'] : NULL,
+        'priority' => isset($custom_path['priority']) ? $custom_path['priority'] : NULL,
       );
     }
     self::setProgressInfo($context, $batch_info);

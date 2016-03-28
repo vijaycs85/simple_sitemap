@@ -49,24 +49,24 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
     $form['simple_sitemap_custom'] = array(
       '#title' => t('Custom links'),
       '#type' => 'fieldset',
-      '#markup' => '<p>' . t('Add custom internal drupal paths and their priorities to the XML sitemap.') . '</p>',
+      '#markup' => '<p>' . t('Add custom internal drupal paths to the XML sitemap.') . '</p>',
     );
 
     $form['simple_sitemap_custom']['custom_links'] = array(
       '#type' => 'textarea',
       '#title' => t('Relative Drupal paths'),
       '#default_value' => $setting_string,
-      '#description' => t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with a '/'. You can optionally add a priority (0.0 - 1.0) by appending it to the path after a space. The home page with the highest priority would be <em>/ 1</em>, the contact page with a medium priority would be <em>/contact 0.5</em>."),
+      '#description' => t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with a '/'. You can optionally add a priority (0.0 - 1.0) by appending it to the path after a space. The home page with the highest priority would be <em>/ 1.0</em>, the contact page with the default priority would be <em>/contact 0.5</em>."),
     );
 
     $form['simple_sitemap_custom']['simple_sitemap_regenerate_now'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Regenerate sitemap after hitting Save'),
+      '#title' => t('Regenerate sitemap after hitting <em>Save</em>'),
       '#description' => t('This setting will regenerate the whole sitemap including the above changes.'),
       '#default_value' => FALSE,
     );
     if ($sitemap->getSetting('cron_generate')) {
-      $form['simple_sitemap_custom']['simple_sitemap_regenerate_now']['#description'] .= '</br>' . t('Otherwise the sitemap will be rebuilt on next cron run.');
+      $form['simple_sitemap_custom']['simple_sitemap_regenerate_now']['#description'] .= '</br>' . t('Otherwise the sitemap will be regenerated on the next cron run.');
     }
 
     return parent::buildForm($form, $form_state);
@@ -85,11 +85,11 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
         $form_state->setErrorByName('', t("The path <em>@path</em> does not exist.", array('@path' => $link_config['path'])));
       }
       if ($link_config['path'][0] != '/') {
-        $form_state->setErrorByName('', t("The path <em>@path</em> needs to start with an '/'.", array('@path' => $link_config['path'])));
+        $form_state->setErrorByName('', t("The path <em>@path</em> needs to start with a '/'.", array('@path' => $link_config['path'])));
       }
       if (isset($link_config['priority'])) {
         if (!is_numeric($link_config['priority']) || $link_config['priority'] < 0 || $link_config['priority'] > 1) {
-          $form_state->setErrorByName('', t("Priority setting on line <em>@priority</em> is incorrect. Set priority from 0.0 to 1.0.", array('@priority' => $link_config['priority'])));
+          $form_state->setErrorByName('', t("The priority setting on line <em>@priority</em> is incorrect. Set the priority from 0.0 to 1.0.", array('@priority' => $link_config['priority'])));
         }
       }
     }

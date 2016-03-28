@@ -54,7 +54,6 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
     $form['simple_sitemap_settings']['settings'] = array(
       '#title' => t('Settings'),
       '#type' => 'fieldset',
-//      '#markup' => '<p>' . t('Various sitemap settings.') . '</p>',
     );
 
     $form['simple_sitemap_settings']['settings']['cron_generate'] = array(
@@ -67,13 +66,12 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
     $form['simple_sitemap_settings']['advanced'] = array(
       '#title' => t('Advanced settings'),
       '#type' => 'details',
-//      '#markup' => '<p>' . t('Various performance settings.') . '</p>',
     );
 
     $form['simple_sitemap_settings']['advanced']['remove_duplicates'] = array(
       '#type' => 'checkbox',
       '#title' => t('Remove duplicate links'),
-      '#description' => t('Uncheck this to significantly speed up the sitemap generation process on a huge site (>20 000 entities).'),
+      '#description' => t('Uncheck this to significantly speed up the sitemap generation process on a huge site (more than 20 000 indexed entities).'),
       '#default_value' => $sitemap->getSetting('remove_duplicates'),
     );
 
@@ -88,7 +86,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
 
     $form['simple_sitemap_settings']['advanced']['batch_process_limit'] = array(
       '#title' => t('Refresh batch every n links'),
-      '#description' => t("During sitemap generation, the batch process will issue a page refresh after n links processed to prevent PHP timeout and memory exhaustion. Increasing this number will reduce the number of times Drupal has to bootstrap (thus speeding up the generation process), but will require more memory and less strict PHP timeout settings."),
+      '#description' => t("During sitemap generation, the batch process will issue a page refresh after n links processed to prevent PHP timeouts and memory exhaustion. Increasing this number will reduce the number of times Drupal has to bootstrap (thus speeding up the generation process), but will require more memory and less strict PHP timeout settings."),
       '#type' => 'textfield',
       '#maxlength' => 5,
       '#size' => 5,
@@ -105,13 +103,13 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
     $max_links = $form_state->getValue('max_links');
     if ($max_links != '') {
       if (!is_numeric($max_links) || $max_links < 1 || $max_links != round($max_links)) {
-        $form_state->setErrorByName('', t("The value of the max links field must be a positive integer greater than 0."));
+        $form_state->setErrorByName('', t("The value of the <em>Maximum links in a sitemap</em> field must be empty, or a positive integer greater than 0."));
       }
     }
 
   $batch_process_limit = $form_state->getValue('batch_process_limit');
     if (!is_numeric($batch_process_limit) || $batch_process_limit < 1 || $batch_process_limit != round($batch_process_limit)) {
-      $form_state->setErrorByName('', t("The value of the batch refresh rate field must be a positive integer greater than 0."));
+      $form_state->setErrorByName('', t("The value of the <em>Refresh batch every n links</em> field must be a positive integer greater than 0."));
     }
   }
 

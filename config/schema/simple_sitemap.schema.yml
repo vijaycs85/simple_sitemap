@@ -48,8 +48,9 @@ simple_sitemap.settings:
               sequence:
                 type: mapping
                 mapping:
-                  label: 'Index'
-                  type: integer
-                priority:
-                  label: 'Priority'
-                  type: float
+                  index:
+                    label: 'Index'
+                    type: integer
+                  priority:
+                    label: 'Priority'
+                    type: float
