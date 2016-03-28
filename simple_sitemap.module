@@ -4,7 +4,6 @@
  * Main module file containing hooks.
  */
 
-use Drupal\simple_sitemap\SitemapGenerator;
 use Drupal\simple_sitemap\Form;
 
 /**
@@ -23,23 +22,23 @@ function simple_sitemap_help($route_name, \Drupal\Core\Routing\RouteMatchInterfa
 function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
 
   $f = new Form($form, $form_state, $form_id);
-  if (empty($f->entityType)) {
+
+  // Do not alter the form if it is irrelevant to sitemap generation.
+  if (empty($f->entityType))
     return;
-  }
 
   $sitemap = \Drupal::service('simple_sitemap.generator');
 
   // Get current entity type sitemap settings.
   $entity_types = $sitemap->getConfig('entity_types');
 
-  // Do not add sitemap settings to entity form, if sitemap is disabled for
-  // entity type.
+  // Do not alter the form, if sitemap is disabled for entity type.
   if ($f->entityType == 'bundle_instance' && empty($entity_types[$f->entityTypeId][$f->bundleName]['index']))
     return;
 
   // Setting default form values.
   $index = 0;
-  $priority = SitemapGenerator::PRIORITY_DEFAULT;
+  $priority = Form::PRIORITY_DEFAULT;
 
   // Overwriting defaults if settings found for bundle.
   if (isset($entity_types[$f->entityTypeId][$f->bundleName]['index'])) {
@@ -86,7 +85,7 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
     '#title' => t('Priority'),
     '#description' => $f->entityType == 'bundle_instance' ? t('The priority this entity will have in the eyes of search engine bots.') : t('The priority entities of this bundle will have in the eyes of search engine bots.'),
     '#default_value' => $priority,
-    '#options' => SitemapGenerator::getPrioritySelectValues(),
+    '#options' => Form::getPrioritySelectValues(),
   );
   if ($f->entityType == 'bundle_instance' && isset($bundle_priority)) {
     $form['simple_sitemap']['simple_sitemap_priority']['#options'][(string)$bundle_priority] .= ' (' . t('Default') . ')';

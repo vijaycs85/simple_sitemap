@@ -11,6 +11,10 @@ namespace Drupal\simple_sitemap;
  */
 class Form {
 
+  const PRIORITY_DEFAULT = 0.5;
+  const PRIORITY_HIGHEST = 10;
+  const PRIORITY_DIVIDER = 10;
+
   public $entityType;
   public $entityTypeId;
   public $bundleName;
@@ -134,5 +138,19 @@ class Form {
       }
     }
     return FALSE;
+  }
+
+  /**
+   * Gets the values needed to display the priority dropdown setting.
+   *
+   * @return array $options
+   */
+  public static function getPrioritySelectValues() {
+    $options = array();
+    foreach(range(0, self::PRIORITY_HIGHEST) as $value) {
+      $value = $value / self::PRIORITY_DIVIDER;
+      $options[(string)$value] = (string)$value;
+    }
+    return $options;
   }
 }

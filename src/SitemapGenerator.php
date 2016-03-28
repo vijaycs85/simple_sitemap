@@ -15,9 +15,6 @@ use \XMLWriter;
  */
 class SitemapGenerator {
 
-  const PRIORITY_DEFAULT = 0.5;
-  const PRIORITY_HIGHEST = 10;
-  const PRIORITY_DIVIDER = 10;
   const XML_VERSION = '1.0';
   const ENCODING = 'UTF-8';
   const XMLNS = 'http://www.sitemaps.org/schemas/sitemap/0.9';
@@ -31,20 +28,6 @@ class SitemapGenerator {
   function __construct($from = 'form') {
     $this->links = array();
     $this->generatingFrom = $from;
-  }
-
-  /**
-   * Gets the values needed to display the priority dropdown setting.
-   *
-   * @return array $options
-   */
-  public static function getPrioritySelectValues() {
-    $options = array();
-    foreach(range(0, self::PRIORITY_HIGHEST) as $value) {
-      $value = $value / self::PRIORITY_DIVIDER;
-      $options[(string)$value] = (string)$value;
-    }
-    return $options;
   }
 
   public function setEntityTypes($entityTypes) {
