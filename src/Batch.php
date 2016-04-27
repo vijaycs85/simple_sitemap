@@ -32,7 +32,7 @@ class Batch {
       'error_message' => t('An error occurred'),
       'progress_message' => t('Processing @current out of @total link types.'),
       'operations' => array(),
-      'finished' => __CLASS__ . '::finishBatch',
+      'finished' => [__CLASS__ , 'finishBatch'], // __CLASS__ . '::finishBatch' not working possibly due to a drush error.
     );
     $config = \Drupal::config('simple_sitemap.settings')->get('settings');
     $this->batchInfo = array(
