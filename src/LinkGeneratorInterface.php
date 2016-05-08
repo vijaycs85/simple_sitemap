@@ -17,9 +17,9 @@ interface LinkGeneratorInterface extends PluginInspectionInterface {
    * Get metadata about the entities that the link generator is providing.
    *
    * @return array
-   *   An array of information about the link generator.
+   *   An array of information about fields provided by the query.
    */
-  public function getInfo();
+  public function getQueryInfo();
 
   /**
    * Get a non-executed query for entities of a specific bundle type.
@@ -31,5 +31,4 @@ interface LinkGeneratorInterface extends PluginInspectionInterface {
    *   A query ready for execution.
    */
   public function getQuery($bundle);
-
 }

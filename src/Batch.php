@@ -79,7 +79,7 @@ class Batch {
         foreach ($operations as $operation) {
           $this->batch['operations'][] = array(
             __CLASS__ . '::generateBundleUrls',
-            array($operation['query'], $operation['info'], $this->batchInfo)
+            array($operation['query'], $operation['entity_info'], $this->batchInfo)
           );
         };
         break;
@@ -115,52 +115,52 @@ class Batch {
    * Batch callback function which generates urls to entity paths.
    *
    * @param object $query
-   * @param array $info
+   * @param array $entity_info
    * @param array $batch_info
    * @param array &$context
    *
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
-  public static function generateBundleUrls($query, $info, $batch_info, &$context) {
+  public static function generateBundleUrls($query, $entity_info, $batch_info, &$context) {
     $languages = \Drupal::languageManager()->getLanguages();
     $default_language_id = Simplesitemap::getDefaultLangId();
 
     // Initializing batch.
     if (empty($context['sandbox'])) {
-      self::InitializeBatch($query->countQuery()->execute()->fetchField(), $context);
+      self::InitializeBatch($query['query']->countQuery()->execute()->fetchField(), $context);
     }
 
     // Getting id field name from plugin info.
-    $fields = $query->getFields();
-    if (isset($info['field_info']['entity_id']) && isset($fields[$info['field_info']['entity_id']])) {
-      $id_field = $info['field_info']['entity_id'];
+    $fields = $query['query']->getFields();
+    if (isset($query['field_info']['entity_id']) && isset($fields[$query['field_info']['entity_id']])) {
+      $id_field = $query['field_info']['entity_id'];
     }
     else {
       //todo: register error
     }
 
     // Getting the name of the route name field if any.
-    if (!empty($info['field_info']['route_name'])) {
-      $route_name_field = $info['field_info']['route_name'];
+    if (!empty($query['field_info']['route_name'])) {
+      $route_name_field = $query['field_info']['route_name'];
     }
 
     // Getting the name of the route parameter field if any.
-    if (!empty($info['field_info']['route_parameters'])) {
-      $route_params_field = $info['field_info']['route_parameters'];
+    if (!empty($query['field_info']['route_parameters'])) {
+      $route_params_field = $query['field_info']['route_parameters'];
     }
 
     // Creating a query limited to n=batch_process_limit entries.
-    $query->condition($id_field, $context['sandbox']['current_id'], '>')->orderBy($id_field);
+    $query['query']->condition($id_field, $context['sandbox']['current_id'], '>')->orderBy($id_field);
     if (!empty($batch_info['batch_process_limit']))
-      $query->range(0, $batch_info['batch_process_limit']);
-    $result = $query->execute()->fetchAll();
+      $query['query']->range(0, $batch_info['batch_process_limit']);
+    $result = $query['query']->execute()->fetchAll();
 
     foreach ($result as $row) {
       self::SetCurrentId($row->$id_field, $context);
 
       // Overriding entity settings if it has been overridden on entity edit page...
-      $bundle_name = !empty($info['bundle_settings']['bundle_name']) ? $info['bundle_settings']['bundle_name'] : NULL;
-      $bundle_entity_type = !empty($info['bundle_settings']['bundle_entity_type']) ? $info['bundle_settings']['bundle_entity_type'] : NULL;
+      $bundle_name = !empty($entity_info['bundle_name']) ? $entity_info['bundle_name'] : NULL;
+      $bundle_entity_type = !empty($entity_info['bundle_entity_type']) ? $entity_info['bundle_entity_type'] : NULL;
       if (!empty($bundle_name) && !empty($bundle_entity_type)
         && isset($batch_info['entity_types'][$bundle_entity_type][$bundle_name]['entities'][$row->$id_field]['index'])) {
         // Skipping entity if it has been excluded on entity edit page.
@@ -175,16 +175,16 @@ class Batch {
       if (isset($route_params_field) && !empty($route_parameters = unserialize($row->$route_params_field))) {
         $route_parameters = array(key($route_parameters) => $route_parameters[key($route_parameters)]);
       }
-      elseif (!empty($info['path_info']['entity_type'])) {
-        $route_parameters = array($info['path_info']['entity_type'] => $row->$id_field);
+      elseif (!empty($entity_info['entity_type_name'])) {
+        $route_parameters = array($entity_info['entity_type_name'] => $row->$id_field);
       }
       else {
         $route_parameters = array();
       }
 
       // Getting the name of the options field if any.
-      if (!empty($info['field_info']['options'])) {
-        $options_field = $info['field_info']['options'];
+      if (!empty($query['field_info']['options'])) {
+        $options_field = $query['field_info']['options'];
       }
 
       // Setting options if they exist in the database (menu links)
@@ -195,15 +195,16 @@ class Batch {
       if (isset($route_name_field)) {
         $route_name = $row->$route_name_field;
       }
-      elseif (isset($info['path_info']['route_name'])) {
-        $route_name = $info['path_info']['route_name'];
+      elseif (!empty($entity_info['entity_type_name'])) {
+        $route_name = 'entity.' . $entity_info['entity_type_name'] . '.canonical';
       }
       else {
         continue;
+        //todo: register error
       }
-
       $url_object = Url::fromRoute($route_name, $route_parameters, $options);
 
+      // Do not include path if anonymous users do not have access to it.
       if (!$url_object->access($batch_info['anonymous_user_account']))
         continue;
 
@@ -227,8 +228,8 @@ class Batch {
         'path' => $path,
         'urls' => $urls,
         'options' => $url_object->getOptions(),
-        'lastmod' => !empty($info['field_info']['lastmod']) ? date_iso8601($row->{$info['field_info']['lastmod']}) : NULL,
-        'priority' => isset($priority) ? $priority : (isset($info['bundle_settings']['priority']) ? $info['bundle_settings']['priority'] : NULL),
+        'lastmod' => !empty($query['field_info']['lastmod']) ? date_iso8601($row->{$query['field_info']['lastmod']}) : NULL,
+        'priority' => isset($priority) ? $priority : (isset($entity_info['bundle_settings']['priority']) ? $entity_info['bundle_settings']['priority'] : NULL),
       );
       $priority = NULL;
     }

@@ -8,14 +8,14 @@
 
 namespace Drupal\simple_sitemap\Plugin\LinkGenerator;
 
-use Drupal\simple_sitemap\Annotation\LinkGenerator;
 use Drupal\simple_sitemap\LinkGeneratorBase;
 
 /**
  * TaxonomyVocabulary class.
  *
  * @LinkGenerator(
- *   id = "taxonomy_vocabulary"
+ *   id = "taxonomy_vocabulary",
+ *   entity_type_name = "taxonomy_term"
  * )
  */
 class TaxonomyVocabulary extends LinkGeneratorBase {
@@ -23,16 +23,12 @@ class TaxonomyVocabulary extends LinkGeneratorBase {
   /**
    * {@inheritdoc}
    */
-  public function getInfo() {
+  public function getQueryInfo() {
     return array(
       'field_info' => array(
         'entity_id' => 'tid',
         'lastmod' => 'changed',
       ),
-      'path_info' => array(
-        'route_name' => 'entity.taxonomy_term.canonical',
-        'entity_type' => 'taxonomy_term',
-      )
     );
   }
 

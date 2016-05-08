@@ -8,7 +8,6 @@
 
 namespace Drupal\simple_sitemap\Plugin\LinkGenerator;
 
-use Drupal\simple_sitemap\Annotation\LinkGenerator;
 use Drupal\simple_sitemap\LinkGeneratorBase;
 
 /**
@@ -16,6 +15,7 @@ use Drupal\simple_sitemap\LinkGeneratorBase;
  *
  * @LinkGenerator(
  *   id = "user",
+ *   entity_type_name = "user",
  *   form_id = "user_admin_settings"
  * )
  */
@@ -24,16 +24,12 @@ class User extends LinkGeneratorBase {
   /**
    * {@inheritdoc}
    */
-  public function getInfo() {
+  public function getQueryInfo() {
     return array(
       'field_info' => array(
         'entity_id' => 'uid',
         'lastmod' => 'changed',
       ),
-      'path_info' => array(
-        'route_name' => 'entity.user.canonical',
-        'entity_type' => 'user',
-      )
     );
   }
 

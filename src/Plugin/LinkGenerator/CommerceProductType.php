@@ -8,14 +8,14 @@
 
 namespace Drupal\simple_sitemap\Plugin\LinkGenerator;
 
-use Drupal\simple_sitemap\Annotation\LinkGenerator;
 use Drupal\simple_sitemap\LinkGeneratorBase;
 
 /**
  * CommerceProductType class.
  *
  * @LinkGenerator(
- *   id = "commerce_product_type"
+ *   id = "commerce_product_type",
+ *   entity_type_name = "commerce_product"
  * )
  */
 class CommerceProductType extends LinkGeneratorBase {
@@ -23,16 +23,12 @@ class CommerceProductType extends LinkGeneratorBase {
   /**
    * {@inheritdoc}
    */
-  public function getInfo() {
+  public function getQueryInfo() {
     return array(
       'field_info' => array(
         'entity_id' => 'product_id',
         'lastmod' => 'changed',
       ),
-      'path_info' => array(
-        'route_name' => 'entity.commerce_product.canonical',
-        'entity_type' => 'commerce_product',
-      )
     );
   }
 

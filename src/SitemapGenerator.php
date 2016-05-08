@@ -76,11 +76,12 @@ class SitemapGenerator {
         $instance = $manager->createInstance($link_generator_plugin['id']);
         foreach($this->entityTypes[$link_generator_plugin['id']] as $bundle => $bundle_settings) {
           if ($bundle_settings['index']) {
-            $operation['info'] = $instance->getInfo();
-            $operation['query'] = $instance->getQuery($bundle);
-            $operation['info']['bundle_settings'] = $bundle_settings;
-            $operation['info']['bundle_settings']['bundle_name'] = $bundle;
-            $operation['info']['bundle_settings']['bundle_entity_type'] = $link_generator_plugin['id'];
+            $operation['query']['query'] = $instance->getQuery($bundle);
+            $operation['query']['field_info'] = $instance->getQueryInfo()['field_info'];
+            $operation['entity_info']['bundle_settings'] = $bundle_settings;
+            $operation['entity_info']['bundle_name'] = $bundle;
+            $operation['entity_info']['bundle_entity_type'] = $link_generator_plugin['id'];
+            $operation['entity_info']['entity_type_name'] = !empty($link_generator_plugin['entity_type_name']) ? $link_generator_plugin['entity_type_name'] : '';
             $operations[] = $operation;
           }
         }
