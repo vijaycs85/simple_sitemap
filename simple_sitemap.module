@@ -131,6 +131,10 @@ function simple_sitemap_entity_form_submit($form, &$form_state) {
     $sitemap = \Drupal::service('simple_sitemap.generator');
     $f = $form['#simple_sitemap'];
     $values = $form_state->getValues();
+    // Fix for values appearing in a sub array on a commerce product entity.
+    if (isset($values['simple_sitemap'])) {
+      $values = $values['simple_sitemap'];
+    }
 
     // Get current entity type sitemap settings.
     $entity_types = $sitemap->getConfig('entity_types');
