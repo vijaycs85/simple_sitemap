@@ -133,7 +133,8 @@ class Form {
   public static function valuesChanged($form, $form_state) {
     $values = $form_state->getValues();
     foreach (array('simple_sitemap_index_content', 'simple_sitemap_priority', 'simple_sitemap_regenerate_now') as $field_name) {
-      if ($values[$field_name] != $form['simple_sitemap'][$field_name]['#default_value']) {
+      if (isset($values['simple_sitemap'][$field_name]) && $values['simple_sitemap'][$field_name] != $form['simple_sitemap'][$field_name]['#default_value']
+        || isset($values[$field_name]) && $values[$field_name] != $form['simple_sitemap'][$field_name]['#default_value']) { // Fix for values appearing in a sub array on a commerce product entity.
         return TRUE;
       }
     }
