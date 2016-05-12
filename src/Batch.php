@@ -19,11 +19,9 @@ class Batch {
   private $batch;
   private $batchInfo;
 
-  const PLUGIN_ERROR_MESSAGE = "The simple_sitemap @plugin plugin has been omitted, as it does not return the required numeric array of path data sets. Each data sets must contain the required path element (relative path string or Drupal\\Core\\Url object) and optionally other elements, like lastmod.";
   const PATH_DOES_NOT_EXIST = "The path @faulty_path has been omitted from the XML sitemap, as it does not exist.";
   const PATH_DOES_NOT_EXIST_OR_NO_ACCESS = "The path @faulty_path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users.";
   const ANONYMOUS_USER_ID = 0;
-
 
   function __construct($from = 'form') {
     $this->batch = array(

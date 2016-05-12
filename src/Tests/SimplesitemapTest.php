@@ -40,7 +40,7 @@ class SimplesitemapTest extends WebTestBase {
    * Test Simple sitemap integration.
    */
   public function testSimplesitemap() {
-    \Drupal::service('simple_sitemap.generator')->generateSitemap('backend');
+    \Drupal::service('simple_sitemap.generator')->generateSitemap('nobatch');
 
     // Verify sitemap.xml can be cached.
     $this->drupalGet('sitemap.xml');
@@ -52,7 +52,7 @@ class SimplesitemapTest extends WebTestBase {
     $node = $this->createNode(['title' => 'A new page', 'type' => 'page']);
 
     // Generate new sitemap.
-    \Drupal::service('simple_sitemap.generator')->generateSitemap('backend');
+    \Drupal::service('simple_sitemap.generator')->generateSitemap('nobatch');
 
     // Verify the cache was flushed and node is in the sitemap.
     $this->drupalGet('sitemap.xml');
