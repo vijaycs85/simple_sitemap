@@ -189,3 +189,4 @@ class SitemapGenerator {
     return $writer->outputMemory();
   }
 }
+

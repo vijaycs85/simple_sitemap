@@ -128,5 +128,6 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
   public function generateSitemap(array &$form, FormStateInterface $form_state) {
     $sitemap = \Drupal::service('simple_sitemap.generator');
     $sitemap->generateSitemap();
+//    $sitemap->generateSitemap('nobatch');
   }
 }

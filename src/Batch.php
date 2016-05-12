@@ -49,20 +49,44 @@ class Batch {
    * Starts the batch process depending on where it was requested from.
    */
   public function start() {
-    batch_set($this->batch);
     switch ($this->batchInfo['from']) {
+
       case 'form':
+        batch_set($this->batch);
         break;
+
       case 'drush':
+        batch_set($this->batch);
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
         drush_log($this->batch['init_message'], 'status');
         drush_backend_batch_process();
         break;
+
       case 'backend':
+        batch_set($this->batch);
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
         batch_process(); //todo: Does not take advantage of batch API and eventually runs out of memory on very large sites.
+        break;
+
+      case 'nobatch':
+        $context = array();
+        foreach($this->batch['operations'] as $i => $operation) {
+          $operation[1][] = &$context;
+          call_user_func_array($operation[0], $operation[1]);
+        }
+        $links = !empty($context['results']['generate']) ? $context['results']['generate'] : array();
+        if (!empty($links)) {
+          $chunks = array_chunk($links, $this->batchInfo['max_links']);
+          foreach ($chunks as $i => $chunk_links) {
+            SitemapGenerator::generateSitemap($chunk_links);
+          }
+        }
+        else {
+          SitemapGenerator::generateSitemap($links);
+        }
+        self::finishGeneration();
         break;
     }
   }
@@ -102,13 +126,26 @@ class Batch {
       if (!empty($results) || is_null(db_query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField())) {
         SitemapGenerator::generateSitemap($results['generate']);
       }
-      Cache::invalidateTags(array('simple_sitemap'));
-      drupal_set_message(t("The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.",
-        array('@url' => $GLOBALS['base_url'] . '/sitemap.xml')));
+      self::finishGeneration();
     }
     else {
       //todo: register error
     }
+  }
+
+
+  private static function finishGeneration() {
+    Cache::invalidateTags(array('simple_sitemap'));
+    drupal_set_message(t("The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.",
+      array('@url' => $GLOBALS['base_url'] . '/sitemap.xml')));
+  }
+
+  private static function isBatch($batch_info) {
+    return $batch_info['from'] != 'nobatch';
+  }
+
+  private static function needsInitialization($batch_info, $context) {
+    return self::isBatch($batch_info) && empty($context['sandbox']);
   }
 
   /**
@@ -125,38 +162,25 @@ class Batch {
     $languages = \Drupal::languageManager()->getLanguages();
     $default_language_id = Simplesitemap::getDefaultLangId();
 
-    // Initializing batch.
-    if (empty($context['sandbox'])) {
+    // Initialize batch if not done yet.
+    if (self::needsInitialization($batch_info, $context)) {
       self::InitializeBatch($query['query']->countQuery()->execute()->fetchField(), $context);
     }
 
-    // Getting id field name from plugin info.
-    $fields = $query['query']->getFields();
-    if (isset($query['field_info']['entity_id']) && isset($fields[$query['field_info']['entity_id']])) {
-      $id_field = $query['field_info']['entity_id'];
-    }
-    else {
-      //todo: register error
-    }
-
-    // Getting the name of the route name field if any.
-    if (!empty($query['field_info']['route_name'])) {
-      $route_name_field = $query['field_info']['route_name'];
-    }
-
-    // Getting the name of the route parameter field if any.
-    if (!empty($query['field_info']['route_parameters'])) {
-      $route_params_field = $query['field_info']['route_parameters'];
-    }
+    $id_field = self::getIdField($query);
 
     // Creating a query limited to n=batch_process_limit entries.
-    $query['query']->condition($id_field, $context['sandbox']['current_id'], '>')->orderBy($id_field);
-    if (!empty($batch_info['batch_process_limit']))
-      $query['query']->range(0, $batch_info['batch_process_limit']);
+    if (self::isBatch($batch_info)) {
+      $query['query']->condition($id_field, $context['sandbox']['current_id'], '>')->orderBy($id_field);
+      if (!empty($batch_info['batch_process_limit']))
+        $query['query']->range(0, $batch_info['batch_process_limit']);
+    }
     $result = $query['query']->execute()->fetchAll();
 
     foreach ($result as $row) {
-      self::SetCurrentId($row->$id_field, $context);
+      if (self::isBatch($batch_info)) {
+        self::SetCurrentId($row->$id_field, $context);
+      }
 
       // Overriding entity settings if it has been overridden on entity edit page...
       $bundle_name = !empty($entity_info['bundle_name']) ? $entity_info['bundle_name'] : NULL;
@@ -171,36 +195,12 @@ class Batch {
         $priority = $batch_info['entity_types'][$bundle_entity_type][$bundle_name]['entities'][$row->$id_field]['priority'];
       }
 
-      // Setting route parameters if they exist in the database (menu links).
-      if (isset($route_params_field) && !empty($route_parameters = unserialize($row->$route_params_field))) {
-        $route_parameters = array(key($route_parameters) => $route_parameters[key($route_parameters)]);
-      }
-      elseif (!empty($entity_info['entity_type_name'])) {
-        $route_parameters = array($entity_info['entity_type_name'] => $row->$id_field);
-      }
-      else {
-        $route_parameters = array();
-      }
-
-      // Getting the name of the options field if any.
-      if (!empty($query['field_info']['options'])) {
-        $options_field = $query['field_info']['options'];
-      }
-
-      // Setting options if they exist in the database (menu links)
-      $options = isset($options_field) && !empty($options = unserialize($row->$options_field)) ? $options : array();
-      $options['absolute'] = TRUE;
-
-      // Setting route name if it exists in the database (menu links)
-      if (isset($route_name_field)) {
-        $route_name = $row->$route_name_field;
-      }
-      elseif (!empty($entity_info['entity_type_name'])) {
-        $route_name = 'entity.' . $entity_info['entity_type_name'] . '.canonical';
-      }
-      else {
-        continue;
+      $route_parameters = self::getRouteParameters($query, $row, $entity_info, $id_field);
+      $options = self::getOptions($query, $row);
+      $route_name = self::getRouteName($query, $row, $entity_info);
+      if (!$route_name) {
         //todo: register error
+        continue;
       }
       $url_object = Url::fromRoute($route_name, $route_parameters, $options);
 
@@ -210,7 +210,7 @@ class Batch {
 
       // Do not include path if it already exists.
       $path = $url_object->getInternalPath();
-      if ($batch_info['remove_duplicates'] && self::pathProcessed($path, $context['results']['processed_paths']))
+      if ($batch_info['remove_duplicates'] && self::pathProcessed($path, $context))
         continue;
 
       $urls = array();
@@ -224,6 +224,7 @@ class Batch {
             ->toString();
         }
       }
+
       $context['results']['generate'][] = array(
         'path' => $path,
         'urls' => $urls,
@@ -233,8 +234,10 @@ class Batch {
       );
       $priority = NULL;
     }
-    self::setProgressInfo($context, $batch_info);
-    self::processSegment($context, $batch_info);
+    if (self::isBatch($batch_info)) {
+      self::setProgressInfo($context, $batch_info);
+      self::processSegment($context, $batch_info);
+    }
   }
 
  /**
@@ -251,13 +254,15 @@ class Batch {
     $languages = \Drupal::languageManager()->getLanguages();
     $default_language_id = Simplesitemap::getDefaultLangId();
 
-    // Initializing batch.
-    if (empty($context['sandbox'])) {
+    // Initialize batch if not done yet.
+    if (self::needsInitialization($batch_info, $context)) {
       self::InitializeBatch(count($custom_paths), $context);
     }
 
     foreach($custom_paths as $i => $custom_path) {
-      self::SetCurrentId($i, $context);
+      if (self::isBatch($batch_info)) {
+        self::SetCurrentId($i, $context);
+      }
 
       $user_input = $custom_path['path'][0] === '/' ? $custom_path['path'] : '/' . $custom_path['path'];
       if (!\Drupal::service('path.validator')->isValid($custom_path['path'])) { //todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush.
@@ -271,7 +276,7 @@ class Batch {
         continue;
 
       $path = $url_object->getInternalPath();
-      if ($batch_info['remove_duplicates'] && self::pathProcessed($path, $context['results']['processed_paths']))
+      if ($batch_info['remove_duplicates'] && self::pathProcessed($path, $context))
         continue;
 
       $urls = array();
@@ -292,15 +297,18 @@ class Batch {
         'priority' => isset($custom_path['priority']) ? $custom_path['priority'] : NULL,
       );
     }
-    self::setProgressInfo($context, $batch_info);
-    self::processSegment($context, $batch_info);
+    if (self::isBatch($batch_info)) {
+      self::setProgressInfo($context, $batch_info);
+      self::processSegment($context, $batch_info);
+    }
   }
 
-  private static function pathProcessed($needle, &$path_pool) {
-    if (in_array($needle, $path_pool)) {
+  private static function pathProcessed($path, &$context) { //todo: test functionality
+    $path_pool = isset($context['results']['processed_paths']) ? $context['results']['processed_paths'] : array();
+    if (in_array($path, $path_pool)) {
       return TRUE;
     }
-    $path_pool[] = $needle;
+    $context['results']['processed_paths'][] = $path;
     return FALSE;
   }
 
@@ -310,6 +318,55 @@ class Batch {
     $context['sandbox']['max'] = $max;
     $context['results']['generate'] = !empty($context['results']['generate']) ? $context['results']['generate'] : array();
     $context['results']['processed_paths'] = !empty($context['results']['processed_paths']) ? $context['results']['processed_paths'] : array();
+  }
+
+  private static function getIdField($query) {
+    // Getting id field name from plugin info.
+    $fields = $query['query']->getFields();
+    if (isset($query['field_info']['entity_id']) && isset($fields[$query['field_info']['entity_id']])) {
+      return $query['field_info']['entity_id'];
+    }
+    return FALSE;
+  }
+
+  private static function getRouteParameters($query, $row, $entity_info, $id_field) {
+    // Setting route parameters if they exist in the database (menu links).
+    if (!empty($query['field_info']['route_parameters'])) {
+      $route_params_field = $query['field_info']['route_parameters'];
+    }
+    if (isset($route_params_field) && !empty($route_parameters = unserialize($row->$route_params_field))) {
+      return array(key($route_parameters) => $route_parameters[key($route_parameters)]);
+    }
+    elseif (!empty($entity_info['entity_type_name'])) {
+      return array($entity_info['entity_type_name'] => $row->$id_field);
+    }
+    else {
+      return array();
+    }
+  }
+
+  private static function getOptions($query, $row) {
+    // Setting options if they exist in the database (menu links)
+    if (!empty($query['field_info']['options'])) {
+      $options_field = $query['field_info']['options'];
+    }
+    $options = isset($options_field) && !empty($options = unserialize($row->$options_field)) ? $options : array();
+    $options['absolute'] = TRUE;
+    return $options;
+  }
+
+  private static function getRouteName($query, $row, $entity_info) {
+    // Setting route name if it exists in the database (menu links)
+    if (!empty($query['field_info']['route_name'])) {
+      $route_name_field = $query['field_info']['route_name'];
+      return $row->$route_name_field;
+    }
+    elseif (!empty($entity_info['entity_type_name'])) {
+      return 'entity.' . $entity_info['entity_type_name'] . '.canonical';
+    }
+    else {
+      return FALSE;
+    }
   }
 
   private static function SetCurrentId($id, &$context) {
