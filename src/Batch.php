@@ -333,9 +333,7 @@ class Batch {
     // Setting route parameters if they exist in the database (menu links).
     if (!empty($query['field_info']['route_parameters'])) {
       $route_params_field = $query['field_info']['route_parameters'];
-    }
-    if (isset($route_params_field) && !empty($route_parameters = unserialize($row->$route_params_field))) {
-      return array(key($route_parameters) => $route_parameters[key($route_parameters)]);
+      return unserialize($row->$route_params_field);
     }
     elseif (!empty($entity_info['entity_type_name'])) {
       return array($entity_info['entity_type_name'] => $row->$id_field);
