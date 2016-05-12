@@ -235,12 +235,12 @@ class Batch {
       $priority = NULL;
     }
     if (self::isBatch($batch_info)) {
-      self::setProgressInfo($context, $batch_info);
+      self::setProgressInfo($context);
       self::processSegment($context, $batch_info);
     }
   }
 
- /**
+  /**
    * Batch function which generates urls to custom paths.
    *
    * @param array $custom_paths
@@ -298,7 +298,7 @@ class Batch {
       );
     }
     if (self::isBatch($batch_info)) {
-      self::setProgressInfo($context, $batch_info);
+      self::setProgressInfo($context);
       self::processSegment($context, $batch_info);
     }
   }
@@ -374,8 +374,7 @@ class Batch {
     $context['sandbox']['current_id'] = $id;
   }
 
-
-  private static function setProgressInfo(&$context, $batch_info) {
+  private static function setProgressInfo(&$context) {
     if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
       // Providing progress info to the batch API.
       $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
