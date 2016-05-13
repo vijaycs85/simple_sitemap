@@ -1,12 +1,12 @@
 <?php
 /**
  * @file
- * Contains \Drupal\simple_sitemap\Plugin\LinkGenerator\NodeType.
+ * Contains \Drupal\simple_sitemap\Plugin\simple_sitemap\LinkGenerator\NodeType.
  *
  * Plugin for node entity link generation.
  */
 
-namespace Drupal\simple_sitemap\Plugin\LinkGenerator;
+namespace Drupal\simple_sitemap\Plugin\simple_sitemap\LinkGenerator;
 
 use Drupal\simple_sitemap\LinkGeneratorBase;
 

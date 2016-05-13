@@ -1,12 +1,12 @@
 <?php
 /**
  * @file
- * Contains \Drupal\simple_sitemap\Plugin\LinkGenerator\CommerceProductType.
+ * Contains \Drupal\simple_sitemap\Plugin\simple_sitemap\LinkGenerator\CommerceProductType.
  *
  * Plugin for commerce product entity link generation.
  */
 
-namespace Drupal\simple_sitemap\Plugin\LinkGenerator;
+namespace Drupal\simple_sitemap\Plugin\simple_sitemap\LinkGenerator;
 
 use Drupal\simple_sitemap\LinkGeneratorBase;
 
