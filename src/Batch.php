@@ -74,17 +74,6 @@ class Batch {
           $operation[1][] = &$context;
           call_user_func_array($operation[0], $operation[1]);
         }
-        $links = !empty($context['results']['generate']) ? $context['results']['generate'] : array();
-        if (!empty($links)) {
-          $chunks = array_chunk($links, $this->batchInfo['max_links']);
-          foreach ($chunks as $i => $chunk_links) {
-            SitemapGenerator::generateSitemap($chunk_links);
-          }
-        }
-        else {
-          SitemapGenerator::generateSitemap($links);
-        }
-        self::finishGeneration();
         break;
     }
   }
@@ -121,7 +110,7 @@ class Batch {
    */
   public static function finishBatch($success, $results, $operations) {
     if ($success) {
-      if (!empty($results) || is_null(db_query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField())) {
+      if (!empty($results['generate']) || is_null(db_query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField())) {
         SitemapGenerator::generateSitemap($results['generate']);
       }
       self::finishGeneration();
@@ -234,8 +223,8 @@ class Batch {
     }
     if (self::isBatch($batch_info)) {
       self::setProgressInfo($context);
-      self::processSegment($context, $batch_info);
     }
+    self::processSegment($context, $batch_info);
   }
 
   /**
@@ -297,8 +286,8 @@ class Batch {
     }
     if (self::isBatch($batch_info)) {
       self::setProgressInfo($context);
-      self::processSegment($context, $batch_info);
     }
+    self::processSegment($context, $batch_info);
   }
 
   private static function pathProcessed($path, &$context) { //todo: test functionality
@@ -368,6 +357,7 @@ class Batch {
   private static function SetCurrentId($id, &$context) {
     $context['sandbox']['progress']++;
     $context['sandbox']['current_id'] = $id;
+    $context['results']['progress'] = !isset($context['results']['progress']) ? 1 : $context['results']['progress'] + 1;
   }
 
   private static function setProgressInfo(&$context) {
@@ -388,14 +378,28 @@ class Batch {
   }
 
   private static function processSegment(&$context, $batch_info) {
-    if (!empty($batch_info['max_links']) && count($context['results']['generate']) >= $batch_info['max_links']) {
-      $chunks = array_chunk($context['results']['generate'], $batch_info['max_links']);
-      foreach ($chunks as $i => $chunk_links) {
-        if (count($chunk_links) == $batch_info['max_links']) {
-          SitemapGenerator::generateSitemap($chunk_links);
-          $context['results']['generate'] = array_slice($context['results']['generate'], count($chunk_links));
+    if (!self::isBatch($batch_info) || $context['results']['progress'] == 1) {
+      SitemapGenerator::removeSitemap();
+    }
+
+    if (self::isBatch($batch_info)) {
+      if (!empty($batch_info['max_links']) && count($context['results']['generate']) >= $batch_info['max_links']) {
+        $chunks = array_chunk($context['results']['generate'], $batch_info['max_links']);
+        foreach ($chunks as $i => $chunk_links) {
+          if (count($chunk_links) == $batch_info['max_links']) {
+            SitemapGenerator::generateSitemap($chunk_links);
+            $context['results']['generate'] = array_slice($context['results']['generate'], count($chunk_links));
+          }
         }
       }
+    }
+    else {
+      $links = !empty($context['results']['generate']) ? $context['results']['generate'] : array();
+      $chunks = !empty($links) ? array_chunk($links, $batch_info['max_links']) : array($links);
+      foreach ($chunks as $i => $chunk_links) {
+        SitemapGenerator::generateSitemap($chunk_links);
+      }
+      self::finishGeneration();
     }
   }
 

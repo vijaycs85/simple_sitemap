@@ -66,8 +66,8 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
   );
 
   // Attach some js magic to forms.
-  // Only attach fieldset summary js to 'additional settings' vertical tabs.
   $form['simple_sitemap']['#attached']['library'][] = 'simple_sitemap/form';
+  // Only attach fieldset summary js to 'additional settings' vertical tabs.
   if (isset($form['additional_settings'])) {
     $form['simple_sitemap']['#attached']['library'][] = 'simple_sitemap/fieldsetSummaries';
   }

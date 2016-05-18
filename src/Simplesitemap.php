@@ -95,7 +95,6 @@ class Simplesitemap {
    *  is to be run.
    */
   public function generateSitemap($from = 'form') {
-    db_truncate('simple_sitemap')->execute();
     $generator = new SitemapGenerator($from);
     $generator->setCustomLinks($this->getConfig('custom'));
     $generator->setEntityTypes($this->getConfig('entity_types'));

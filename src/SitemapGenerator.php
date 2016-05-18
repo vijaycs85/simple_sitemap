@@ -109,6 +109,10 @@ class SitemapGenerator {
     db_insert('simple_sitemap')->fields($values)->execute();
   }
 
+  public static function removeSitemap() {
+    db_truncate('simple_sitemap')->execute();
+  }
+
   /**
    * Generates and returns the sitemap index for all sitemap chunks.
    *
