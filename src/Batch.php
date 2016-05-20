@@ -22,13 +22,16 @@ class Batch {
   const PATH_DOES_NOT_EXIST = "The path @faulty_path has been omitted from the XML sitemap, as it does not exist.";
   const PATH_DOES_NOT_EXIST_OR_NO_ACCESS = "The path @faulty_path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users.";
   const ANONYMOUS_USER_ID = 0;
+  const BATCH_INIT_MESSAGE = 'Initializing batch...';
+  const BATCH_ERROR_MESSAGE = 'An error has occurred. This may result in an incomplete XML sitemap.';
+  const BATCH_PROGRESS_MESSAGE = 'Processing @current out of @total link types.';
 
   function __construct($from = 'form') {
     $this->batch = array(
       'title' => t('Generating XML sitemap'),
-      'init_message' => t('Initializing batch...'),
-      'error_message' => t('An error occurred'),
-      'progress_message' => t('Processing @current out of @total link types.'),
+      'init_message' => t(self::BATCH_INIT_MESSAGE),
+      'error_message' => t(self::BATCH_ERROR_MESSAGE),
+      'progress_message' => t(self::BATCH_PROGRESS_MESSAGE),
       'operations' => array(),
       'finished' => [__CLASS__ , 'finishGeneration'], // __CLASS__ . '::finishGeneration' not working possibly due to a drush error.
     );
@@ -57,7 +60,7 @@ class Batch {
         batch_set($this->batch);
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
-        drush_log($this->batch['init_message'], 'status');
+        drush_log(t(self::BATCH_INIT_MESSAGE), 'status');
         drush_backend_batch_process();
         break;
 
