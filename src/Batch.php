@@ -30,7 +30,7 @@ class Batch {
       'error_message' => t('An error occurred'),
       'progress_message' => t('Processing @current out of @total link types.'),
       'operations' => array(),
-      'finished' => [__CLASS__ , 'finishBatch'], // __CLASS__ . '::finishBatch' not working possibly due to a drush error.
+      'finished' => [__CLASS__ , 'finishGeneration'], // __CLASS__ . '::finishGeneration' not working possibly due to a drush error.
     );
     $config = \Drupal::config('simple_sitemap.settings')->get('settings');
     $this->batchInfo = array(
@@ -74,6 +74,7 @@ class Batch {
           $operation[1][] = &$context;
           call_user_func_array($operation[0], $operation[1]);
         }
+        self::finishGeneration(TRUE, $context['results'], array());
         break;
     }
   }
@@ -108,24 +109,19 @@ class Batch {
    *
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
-  public static function finishBatch($success, $results, $operations) {
+  public static function finishGeneration($success, $results, $operations) {
     if ($success) {
       if (!empty($results['generate']) || is_null(db_query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField())) {
-        $remove_sitemap = empty($context['results']['chunk_count']);
+        $remove_sitemap = empty($results['chunk_count']);
         SitemapGenerator::generateSitemap($results['generate'], $remove_sitemap);
       }
-      self::finishGeneration();
+      Cache::invalidateTags(array('simple_sitemap'));
+      drupal_set_message(t("The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.",
+        array('@url' => $GLOBALS['base_url'] . '/sitemap.xml')));
     }
     else {
       //todo: register error
     }
-  }
-
-
-  private static function finishGeneration() {
-    Cache::invalidateTags(array('simple_sitemap'));
-    drupal_set_message(t("The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.",
-      array('@url' => $GLOBALS['base_url'] . '/sitemap.xml')));
   }
 
   private static function isBatch($batch_info) {
@@ -379,27 +375,16 @@ class Batch {
   }
 
   private static function processSegment(&$context, $batch_info) {
-    $remove_sitemap = !self::isBatch($batch_info) || empty($context['results']['chunk_count']);
-    if (self::isBatch($batch_info)) {
-      if (!empty($batch_info['max_links']) && count($context['results']['generate']) >= $batch_info['max_links']) {
-        $chunks = array_chunk($context['results']['generate'], $batch_info['max_links']);
-        foreach ($chunks as $i => $chunk_links) {
-          if (count($chunk_links) == $batch_info['max_links']) {
-            SitemapGenerator::generateSitemap($chunk_links, $remove_sitemap);
-            $context['results']['chunk_count'] = !isset($context['results']['chunk_count']) ? 1 : $context['results']['chunk_count'] + 1;
-            $context['results']['generate'] = array_slice($context['results']['generate'], count($chunk_links));
-          }
+    if (!empty($batch_info['max_links']) && count($context['results']['generate']) >= $batch_info['max_links']) {
+      $chunks = array_chunk($context['results']['generate'], $batch_info['max_links']);
+      foreach ($chunks as $i => $chunk_links) {
+        if (count($chunk_links) == $batch_info['max_links']) {
+          $remove_sitemap = empty($context['results']['chunk_count']);
+          SitemapGenerator::generateSitemap($chunk_links, $remove_sitemap);
+          $context['results']['chunk_count'] = !isset($context['results']['chunk_count']) ? 1 : $context['results']['chunk_count'] + 1;
+          $context['results']['generate'] = array_slice($context['results']['generate'], count($chunk_links));
         }
       }
-    }
-    else {
-      $links = !empty($context['results']['generate']) ? $context['results']['generate'] : array();
-      $chunks = !empty($links) ? array_chunk($links, $batch_info['max_links']) : array($links);
-      foreach ($chunks as $i => $chunk_links) {
-        SitemapGenerator::generateSitemap($chunk_links, $remove_sitemap);
-        $context['results']['chunk_count'] = !isset($context['results']['chunk_count']) ? 1 : $context['results']['chunk_count'] + 1;
-      }
-      self::finishGeneration();
     }
   }
 
