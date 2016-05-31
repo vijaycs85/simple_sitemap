@@ -23,9 +23,8 @@ content:
  * menu links
  * users
  * custom links
-
-The above functionalities are implemented as Drupal 8 plugins and it is easy to
-add support to custom entity types through implementing your own plugins.
+ * commerce products
+ * possibly other contributed entities
 
 To learn about XML sitemaps, see https://en.wikipedia.org/wiki/Sitemaps.
 
@@ -57,7 +56,7 @@ https://en.wikipedia.org/wiki/Sitemaps to learn more about this parameter.
 
 Inclusion and priority settings of bundles can be overridden on a per-entity
 basis. Just head over to a bundle instance edit form (node/1/edit) and override
-the bundle settings there. ATM this only works for nodes and taxonomy terms.
+the bundle settings there.
 
 If you wish for the sitemap to reflect the new configuration instantly, check
 'Regenerate sitemap after clicking save'. This setting only appears if a change
@@ -93,18 +92,6 @@ EXTENDING THE MODULE
 It is possible to hook into link generation by implementing
 hook_simple_sitemap_links_alter(&$links){} in a custom module and altering the
 link array.
-
-Need to support a non-core entity type? In case you would like to support an
-entity type provided by a contrib module:
-
- * Create a feature request in simple_sitemap's issue queue and submit a plugin
-   (as patch), or wait until a patch is submitted by the community or a
-   maintainer.
-
- * As soon as a patch is found working, create an issue in the contrib module's
-   queue and submit a slightly altered patch created against that module.
-
- * Link the contrib module's issue on the simple_sitemap issue created earlier.
 
 
 HOW CAN YOU CONTRIBUTE?

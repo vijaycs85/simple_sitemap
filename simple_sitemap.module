@@ -28,7 +28,7 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
   $f = new Form($form, $form_state, $form_id);
 
   // Do not alter the form if it is irrelevant to sitemap generation.
-  if (empty($f->entityType))
+  if (empty($f->entityCategory))
     return;
 
   $sitemap = \Drupal::service('simple_sitemap.generator');
@@ -37,7 +37,7 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
   $entity_types = $sitemap->getConfig('entity_types');
 
   // Do not alter the form, if sitemap is disabled for entity type.
-  if ($f->entityType == 'bundle_instance' && empty($entity_types[$f->entityTypeId][$f->bundleName]['index']))
+  if ($f->entityCategory == 'instance' && empty($entity_types[$f->entityTypeId][$f->bundleName]['index']))
     return;
 
   // Setting default form values.
@@ -51,10 +51,10 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
   }
 
   // Overwriting defaults if settings found for entity.
-  if ($f->entityType == 'bundle_instance') {
-    if (isset($entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->entityId]['index'])) {
-      $index = $entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->entityId]['index'];
-      $priority = $entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->entityId]['priority'];
+  if ($f->entityCategory == 'instance') {
+    if (isset($entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->instanceId]['index'])) {
+      $index = $entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->instanceId]['index'];
+      $priority = $entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->instanceId]['priority'];
     }
   }
 
@@ -62,7 +62,7 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
     '#type' => 'details',
     '#group' => isset($form['additional_settings']) ? 'additional_settings' : 'advanced',
     '#title' => t('Simple XML sitemap'),
-    '#description' => $f->entityType == 'bundle_instance' ? t('Settings for this specific entity can be overridden here.') : '',
+    '#description' => $f->entityCategory == 'instance' ? t('Settings for this specific entity can be overridden here.') : '',
   );
 
   // Attach some js magic to forms.
@@ -76,22 +76,22 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
     '#type' => 'radios',
     '#default_value' => $index,
     '#options' => [
-      0 => $f->entityType == 'bundle_instance' ? t('Do not index this entity') : t('Do not index entities of this type'),
-      1 => $f->entityType == 'bundle_instance' ? t('Index this entity') : t('Index entities of this type'),
+      0 => $f->entityCategory == 'instance' ? t('Do not index this entity') : t('Do not index entities of this type'),
+      1 => $f->entityCategory == 'instance' ? t('Index this entity') : t('Index entities of this type'),
     ]
   );
-  if ($f->entityType == 'bundle_instance' && isset($bundle_index)) {
+  if ($f->entityCategory == 'instance' && isset($bundle_index)) {
     $form['simple_sitemap']['simple_sitemap_index_content']['#options'][$bundle_index] .= ' <em>(' . t('Default') . ')</em>';
   }
   
   $form['simple_sitemap']['simple_sitemap_priority'] = array(
     '#type' => 'select',
     '#title' => t('Priority'),
-    '#description' => $f->entityType == 'bundle_instance' ? t('The priority this entity will have in the eyes of search engine bots.') : t('The priority entities of this bundle will have in the eyes of search engine bots.'),
+    '#description' => $f->entityCategory == 'instance' ? t('The priority this entity will have in the eyes of search engine bots.') : t('The priority entities of this bundle will have in the eyes of search engine bots.'),
     '#default_value' => $priority,
     '#options' => Form::getPrioritySelectValues(),
   );
-  if ($f->entityType == 'bundle_instance' && isset($bundle_priority)) {
+  if ($f->entityCategory == 'instance' && isset($bundle_priority)) {
     $form['simple_sitemap']['simple_sitemap_priority']['#options'][(string)$bundle_priority] .= ' (' . t('Default') . ')';
   }
 
@@ -139,7 +139,7 @@ function simple_sitemap_entity_form_submit($form, &$form_state) {
     // Get current entity type sitemap settings.
     $entity_types = $sitemap->getConfig('entity_types');
 
-    switch ($f->entityType) {
+    switch ($f->entityCategory) {
 
       case 'custom':
       case 'bundle':
@@ -148,18 +148,18 @@ function simple_sitemap_entity_form_submit($form, &$form_state) {
         $entity_types[$f->entityTypeId][$f->bundleName]['priority'] = $values['simple_sitemap_priority'];
         break;
 
-      case 'bundle_instance':
-        $f->entityId = !empty($f->entityId) ? $f->entityId : Form::getNewEntityId($form_state);
+      case 'instance':
+        $f->instanceId = !empty($f->instanceId) ? $f->instanceId : Form::getNewEntityId($form_state);
 
         // Delete overrides if they are identical to bundle settings.
         if ($values['simple_sitemap_index_content'] == $entity_types[$f->entityTypeId][$f->bundleName]['index']
           && $values['simple_sitemap_priority'] == $entity_types[$f->entityTypeId][$f->bundleName]['priority']) {
-          unset($entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->entityId]);
+          unset($entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->instanceId]);
         }
         // Else save overrides for this entity.
         else {
-          $entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->entityId]['index'] = $values['simple_sitemap_index_content'];
-          $entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->entityId]['priority'] = $values['simple_sitemap_priority'];
+          $entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->instanceId]['index'] = $values['simple_sitemap_index_content'];
+          $entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->instanceId]['priority'] = $values['simple_sitemap_priority'];
         }
         break;
     }

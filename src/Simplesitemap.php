@@ -7,6 +7,7 @@
 namespace Drupal\simple_sitemap;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Entity\ContentEntityTypeInterface;
 
 /**
  * Simplesitemap class.
@@ -156,5 +157,23 @@ class Simplesitemap {
 
   public static function getDefaultLangId() {
     return \Drupal::languageManager()->getDefaultLanguage()->getId();
+  }
+
+  /**
+   * Returns objects of entity types that can be indexed by the sitemap.
+   *
+   * @return array
+   *  Objects of entity types that can be indexed by the sitemap.
+   */
+  public static function getSitemapEntityTypes() {
+    $entity_types = \Drupal::entityTypeManager()->getDefinitions();
+
+    foreach ($entity_types as $entity_type_id => $entity_type) {
+      if (!$entity_type instanceof ContentEntityTypeInterface || !method_exists($entity_type, 'getBundleEntityType')) {
+        unset($entity_types[$entity_type_id]);
+        continue;
+      }
+    }
+    return $entity_types;
   }
 }

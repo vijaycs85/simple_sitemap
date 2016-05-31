@@ -15,12 +15,11 @@ class Form {
   const PRIORITY_HIGHEST = 10;
   const PRIORITY_DIVIDER = 10;
 
-  public $entityType;
+  public $entityCategory;
   public $entityTypeId;
   public $bundleName;
-  public $entityId;
+  public $instanceId;
 
-  private $plugins;
   private $formState;
   private $formId;
 
@@ -30,37 +29,33 @@ class Form {
   function __construct(&$form, $form_state, $form_id) {
     $this->formId = $form_id;
     $this->formState = $form_state;
+    $this->entityCategory = NULL;
 
-    // Get all simple_sitemap plugins.
-    $manager = \Drupal::service('plugin.manager.simple_sitemap');
-    $this->plugins = $manager->getDefinitions();
-
-    // First look for a plugin declaring usage of this form, if this fails,
-    // check if this is a bundle, or bundle instance form and gather the form
-    // entity's sitemap settings from the database.
-    if (!$this->getEntityDataFromCustomPlugin()) {
-      $this->getEntityDataFromForm();
+    if (!$this->getEntityDataFromFormId()) {
+      $this->getEntityDataFromFormEntity();
     }
   }
 
-
   /**
-   * Checks if a plugin defines this form to be used for its entity settings and
-   * sets the entity settings and collects those settings.
+   * This is a temporary solution to be able to set sitemap settings
+   * for all 'user' entities on the form 'user_admin_settings', as there is no
+   * general setting page where non-bundle entity types can be set up.
    *
-   * @return bool
-   *  TRUE if there is a plugin declaring usage of this form, FALSE otherwise.
+   * @todo: Remove this and create a general setting page for all entity types.
    */
-  private function getEntityDataFromCustomPlugin() {
-    foreach($this->plugins as $plugin) {
-      if (isset($plugin['form_id']) && $plugin['form_id'] === $this->formId) {
-        $this->entityType = 'custom';
-        $this->entityTypeId = $plugin['id'];
-        $this->bundleName = $plugin['id'];
+  private function getEntityDataFromFormId() {
+    switch ($this->formId) {
+
+      case 'user_admin_settings':
+        $this->entityCategory = 'bundle';
+        $this->entityTypeId = 'user';
+        $this->bundleName = 'user';
+        $this->instanceId = NULL;
         return TRUE;
-      }
+
+      default:
+        return FALSE;
     }
-    return FALSE;
   }
 
   /**
@@ -70,29 +65,51 @@ class Form {
    * @return bool
    *  TRUE if this is a bundle or bundle instance form, FALSE otherwise.
    */
-  private function getEntityDataFromForm() {
+  private function getEntityDataFromFormEntity() {
     $form_entity = $this->getFormEntity();
     if ($form_entity !== FALSE) {
-      $entity_type = $form_entity->getEntityType();
-      if (!empty($entity_type->getBundleEntityType())) {
-        $this->entityType = 'bundle_instance';
-        $this->entityTypeId = $entity_type->getBundleEntityType();
-        $this->bundleName = $form_entity->bundle();
-        $this->entityId = $form_entity->id();
-        return TRUE;
+      $form_entity_type = $form_entity->getEntityType();
+      $entity_type_id = $form_entity->getEntityTypeId(); //todo: Change to $form_entity_type->id()?
+      $sitemap_entity_types = Simplesitemap::getSitemapEntityTypes();
+      $bundle_entity_type = $form_entity_type->getBundleEntityType();
+      $entity_bundle = $form_entity->bundle();
+      if (isset($sitemap_entity_types[$entity_type_id])) {
+        $this->entityCategory = 'instance';
       }
       else {
-        $entity_type_id = $form_entity->getEntityTypeId();
-        if (isset($this->plugins[$entity_type_id])) {
-          if (!isset($this->plugins[$entity_type_id]['form_id'])
-            || $this->plugins[$entity_type_id]['form_id'] === $this->formId) {
-            $this->entityType = 'bundle';
-            $this->entityTypeId = $entity_type_id;
-            $this->bundleName = $form_entity->id();
-            return TRUE;
+        foreach ($sitemap_entity_types as $sitemap_entity) {
+          if ($sitemap_entity->getBundleEntityType() == $entity_type_id) {
+            $this->entityCategory = 'bundle';
+            break;
           }
         }
       }
+
+      // Menu fixes.
+      if (is_null($this->entityCategory) && $entity_type_id == 'menu') {
+        $this->entityCategory = 'bundle';
+      }
+      if ($entity_type_id == 'menu_link_content') {
+        $bundle_entity_type = 'menu';
+      }
+
+      switch ($this->entityCategory) {
+        case 'bundle':
+          $this->entityTypeId = $form_entity->getEntityTypeId();
+          $this->bundleName = $form_entity->id();
+          $this->instanceId = NULL;
+          break;
+
+        case 'instance':
+          $this->entityTypeId = !empty($bundle_entity_type) ? $bundle_entity_type : $entity_bundle;
+          $this->bundleName = $entity_bundle == 'menu_link_content' && method_exists($form_entity, 'getMenuName') ? $form_entity->getMenuName() : $entity_bundle; // menu fix
+          $this->instanceId = $form_entity->id();
+          break;
+
+        default:
+          return FALSE;
+      }
+      return TRUE;
     }
     return FALSE;
   }
