@@ -68,10 +68,8 @@ class Form {
   private function getEntityDataFromFormEntity() {
     $form_entity = $this->getFormEntity();
     if ($form_entity !== FALSE) {
-      $form_entity_type = $form_entity->getEntityType();
-      $entity_type_id = $form_entity->getEntityTypeId(); //todo: Change to $form_entity_type->id()?
+      $entity_type_id = $form_entity->getEntityTypeId();
       $sitemap_entity_types = Simplesitemap::getSitemapEntityTypes();
-      $bundle_entity_type = $form_entity_type->getBundleEntityType();
       $entity_bundle = $form_entity->bundle();
       if (isset($sitemap_entity_types[$entity_type_id])) {
         $this->entityCategory = 'instance';
@@ -85,24 +83,22 @@ class Form {
         }
       }
 
-      // Menu fixes.
+      // Menu fix.
       if (is_null($this->entityCategory) && $entity_type_id == 'menu') {
         $this->entityCategory = 'bundle';
-      }
-      if ($entity_type_id == 'menu_link_content') {
-        $bundle_entity_type = 'menu';
+        $entity_type_id = 'menu_link_content';
       }
 
       switch ($this->entityCategory) {
         case 'bundle':
-          $this->entityTypeId = $form_entity->getEntityTypeId();
+          $this->entityTypeId = $entity_type_id == 'menu_link_content' ? $entity_type_id : $form_entity->getEntityType()->getBundleOf(); // Menu fix.
           $this->bundleName = $form_entity->id();
           $this->instanceId = NULL;
           break;
 
         case 'instance':
-          $this->entityTypeId = !empty($bundle_entity_type) ? $bundle_entity_type : $entity_bundle;
-          $this->bundleName = $entity_bundle == 'menu_link_content' && method_exists($form_entity, 'getMenuName') ? $form_entity->getMenuName() : $entity_bundle; // menu fix
+          $this->entityTypeId = $entity_type_id;
+          $this->bundleName = $entity_bundle == 'menu_link_content' && method_exists($form_entity, 'getMenuName') ? $form_entity->getMenuName() : $entity_bundle; // Menu fix.
           $this->instanceId = $form_entity->id();
           break;
 
@@ -124,7 +120,7 @@ class Form {
     $form_object = $this->formState->getFormObject();
     if (!is_null($form_object)
       && method_exists($form_object, 'getEntity')
-      && $form_object->getOperation() !== 'delete') {
+      && in_array($form_object->getOperation(), ['default', 'edit'])) {
       return $form_object->getEntity();
     }
     return FALSE;

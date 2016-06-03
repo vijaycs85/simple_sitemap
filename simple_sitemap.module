@@ -36,7 +36,11 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
   // Get current entity type sitemap settings.
   $entity_types = $sitemap->getConfig('entity_types');
 
-  // Do not alter the form, if sitemap is disabled for entity type.
+  // Do not alter the form if entity is not enabled in sitemap settings.
+  if (!isset($entity_types[$f->entityTypeId]))
+    return;
+
+  // Do not alter the form, if sitemap is disabled for the entity type of this entity instance.
   if ($f->entityCategory == 'instance' && empty($entity_types[$f->entityTypeId][$f->bundleName]['index']))
     return;
 
@@ -50,7 +54,7 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
     $bundle_priority = $priority = $entity_types[$f->entityTypeId][$f->bundleName]['priority'];
   }
 
-  // Overwriting defaults if settings found for entity.
+  // Overwriting defaults if settings found for this entity instance.
   if ($f->entityCategory == 'instance') {
     if (isset($entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->instanceId]['index'])) {
       $index = $entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->instanceId]['index'];
@@ -189,19 +193,20 @@ function simple_sitemap_cron() {
  * Implements hook_entity_bundle_delete().
  *
  * Removes settings of the removed bundle.
+ *
+ * @todo Not working for menu bundles, as they are technically not bundles.
  */
 function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
   $sitemap = \Drupal::service('simple_sitemap.generator');
   $entity_types = $sitemap->getConfig('entity_types');
-  $bundle_entity_type_id = \Drupal::entityTypeManager()->getDefinition($entity_type_id)->getBundleEntityType();
-  if (isset($entity_types[$bundle_entity_type_id][$bundle])) {
-    unset($entity_types[$bundle_entity_type_id][$bundle]);
+  if (isset($entity_types[$entity_type_id][$bundle])) {
+    unset($entity_types[$entity_type_id][$bundle]);
     $sitemap->saveConfig('entity_types', $entity_types);
     $message = t("You may want to <a href='@url'>regenerate</a> your XML sitemap now.", array('@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'));
     if ($sitemap->getSetting('cron_generate')) {
       $message .= '</br>' . t('Otherwise the sitemap will be regenerated on the next cron run.');
     }
-    drupal_set_message($message);
+//    drupal_set_message($message); // Commented out, as html code is visible.
   }
 }
 
@@ -213,13 +218,11 @@ function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
 function simple_sitemap_entity_delete(Drupal\Core\Entity\EntityInterface $entity) {
   $sitemap = \Drupal::service('simple_sitemap.generator');
   $entity_types = $sitemap->getConfig('entity_types');
-  $entity_type = $entity->getEntityType();
-  if (!empty($entity_type->getBundleEntityType())) {
-    $bundle_entity_type = $entity_type->getBundleEntityType();
-    $bundle = $entity->bundle();
-    if (isset($entity_types[$bundle_entity_type][$bundle]['entities'][$entity->id()])) {
-      unset($entity_types[$bundle_entity_type][$bundle]['entities'][$entity->id()]);
-      $sitemap->saveConfig('entity_types', $entity_types);
-    }
+  $entity_type_id = $entity->getEntityTypeId();
+  $bundle_name = !empty($entity->bundle()) ? $entity->bundle() : $entity_type_id;
+  $bundle_name = $bundle_name == 'menu_link_content'&& method_exists($entity, 'getMenuName') ? $entity->getMenuName() : $bundle_name; // Menu fix.
+  if (isset($entity_types[$entity_type_id][$bundle_name]['entities'][$entity->id()])) {
+    unset($entity_types[$entity_type_id][$bundle_name]['entities'][$entity->id()]);
+    $sitemap->saveConfig('entity_types', $entity_types);
   }
 }

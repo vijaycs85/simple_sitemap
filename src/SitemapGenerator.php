@@ -59,38 +59,27 @@ class SitemapGenerator {
   }
 
   /**
-   * Collects the entity path generating information from all simeple_sitemap
-   * plugins to be added to the batch.
+   * Collects entity metadata for entities that are set to be indexed
+   * and returns a batch-ready operation.
    *
    * @return array $operations.
    */
   private function batchAddEntityTypePaths() {
     $operations = [];
-
-    // Menu fix.
-    if (isset($this->entityTypes['menu'])) {
-      $this->entityTypes['menu_link_content'] = $this->entityTypes['menu'];
-      unset ($this->entityTypes['menu']);
-    }
-
-    $entity_types = Simplesitemap::getSitemapEntityTypes();
-    foreach($entity_types as $entity_type_name => $entity_type) {
-      $bundle_entity_type_name = !empty($entity_type->getBundleEntityType()) ? $entity_type->getBundleEntityType() : $entity_type->id();
-      if (isset($this->entityTypes[$bundle_entity_type_name])) {
-        foreach($this->entityTypes[$bundle_entity_type_name] as $bundle_name => $bundle_settings) {
-          if ($bundle_settings['index']) {
-            $keys = $entity_type->getKeys();
-            if ($entity_type_name == 'menu_link_content') {$keys['bundle'] = 'menu_name';} // Menu fix.
-            $operations[] = [
-              'entity_info' => [
-                'bundle_settings' => $bundle_settings,
-                'bundle_name' => $bundle_name,
-                'bundle_entity_type' => $bundle_entity_type_name,
-                'entity_type_name' => $entity_type_name,
-                'keys' => $keys,
-              ],
-            ];
-          }
+    $sitemap_entity_types = Simplesitemap::getSitemapEntityTypes();
+    foreach($this->entityTypes as $entity_type_name => $bundles) {
+      if (isset($sitemap_entity_types[$entity_type_name])) {
+        $keys = $sitemap_entity_types[$entity_type_name]->getKeys();
+        $keys['bundle'] = $entity_type_name == 'menu_link_content' ? 'menu_name' : $keys['bundle']; // Menu fix.
+        foreach($bundles as $bundle_name => $bundle_settings) {
+          $operations[] = [
+            'entity_info' => [
+              'bundle_settings' => $bundle_settings,
+              'bundle_name' => $bundle_name,
+              'entity_type_name' => $entity_type_name,
+              'keys' => $keys,
+            ],
+          ];
         }
       }
     }

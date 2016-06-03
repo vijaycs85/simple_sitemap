@@ -34,7 +34,7 @@ class Simplesitemap {
    * Gets a specific sitemap configuration from the configuration storage.
    *
    * @param string $key
-   *  Configuration key, like 'entity_links'.
+   *  Configuration key, like 'entity_types'.
    * @return mixed
    *  The requested configuration.
    */
@@ -46,7 +46,7 @@ class Simplesitemap {
    * Saves a specific sitemap configuration to db.
    *
    * @param string $key
-   *  Configuration key, like 'entity_links'.
+   *  Configuration key, like 'entity_types'.
    * @param mixed $value
    *  The configuration to be saved.
    */

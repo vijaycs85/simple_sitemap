@@ -171,7 +171,8 @@ class Batch {
 
     $results = $query->execute();
     if (!empty($results)) {
-      $entities = entity_load_multiple($entity_info['entity_type_name'], $results);
+//      $entities = entity_load_multiple($entity_info['entity_type_name'], $results);
+      $entities = \Drupal::entityTypeManager()->getStorage($entity_info['entity_type_name'])->loadMultiple($results);
 
       foreach ($entities as $entity_id => $entity) {
         if (self::isBatch($batch_info)) {
@@ -179,20 +180,14 @@ class Batch {
         }
 
         // Overriding entity settings if it has been overridden on entity edit page...
-        $bundle_name = !empty($entity_info['bundle_name']) ? $entity_info['bundle_name'] : NULL;
-        $bundle_entity_type = !empty($entity_info['bundle_entity_type']) ? $entity_info['bundle_entity_type'] : NULL;
-
-        $bundle_entity_type = $bundle_entity_type == 'menu_link_content' ? 'menu' : $bundle_entity_type; // Menu fix
-
-        if (!empty($bundle_name) && !empty($bundle_entity_type)
-          && isset($batch_info['entity_types'][$bundle_entity_type][$bundle_name]['entities'][$entity_id]['index'])) {
+        if (isset($batch_info['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['index'])) {
 
           // Skipping entity if it has been excluded on entity edit page.
-          if (!$batch_info['entity_types'][$bundle_entity_type][$bundle_name]['entities'][$entity_id]['index']) {
+          if (!$batch_info['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['index']) {
             continue;
           }
           // Otherwise overriding priority settings for this entity.
-          $priority = $batch_info['entity_types'][$bundle_entity_type][$bundle_name]['entities'][$entity_id]['priority'];
+          $priority = $batch_info['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['priority'];
         }
 
         // Loading url object for menu links.
@@ -225,8 +220,10 @@ class Batch {
             $urls[$default_language_id] = $url_object->toString();
           }
           else {
+//            if ($entity->hasTranslation($language->getId())) {
             $url_object->setOption('language', $language);
             $urls[$language->getId()] = $url_object->toString();
+//            }
           }
         }
 
@@ -310,7 +307,7 @@ class Batch {
     self::processSegment($context, $batch_info);
   }
 
-  private static function pathProcessed($path, &$context) { //todo: test functionality
+  private static function pathProcessed($path, &$context) {
     $path_pool = isset($context['results']['processed_paths']) ? $context['results']['processed_paths'] : array();
     if (in_array($path, $path_pool)) {
       return TRUE;
