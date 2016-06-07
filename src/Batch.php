@@ -115,7 +115,7 @@ class Batch {
   public static function finishGeneration($success, $results, $operations) {
     if ($success) {
       $remove_sitemap = empty($results['chunk_count']);
-      if (!empty($results['generate']) || $remove_sitemap/*is_null(db_query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField())*/) { //todo test
+      if (!empty($results['generate']) || $remove_sitemap) {
         SitemapGenerator::generateSitemap($results['generate'], $remove_sitemap);
       }
       Cache::invalidateTags(array('simple_sitemap'));
@@ -171,7 +171,6 @@ class Batch {
 
     $results = $query->execute();
     if (!empty($results)) {
-//      $entities = entity_load_multiple($entity_info['entity_type_name'], $results);
       $entities = \Drupal::entityTypeManager()->getStorage($entity_info['entity_type_name'])->loadMultiple($results);
 
       foreach ($entities as $entity_id => $entity) {

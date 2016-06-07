@@ -92,18 +92,21 @@ class SitemapGenerator {
    *
    * @param array $links
    *  All links with their multilingual versions and settings.
+   * @param bool $remove_sitemap
+   *  Remove old sitemap from database before inserting the new one.
    */
   public static function generateSitemap($links, $remove_sitemap = FALSE) {
     // Invoke alter hook.
     \Drupal::moduleHandler()->alter('simple_sitemap_links', $links);
     $values = array(
-      'id' => $remove_sitemap ? 1 : db_query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField() + 1,
+      'id' => $remove_sitemap ? 1 : \Drupal::service('database')->query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField() + 1,
       'sitemap_string' => self::generateSitemapChunk($links),
       'sitemap_created' => REQUEST_TIME,
     );
-    if ($remove_sitemap)
-      db_truncate('simple_sitemap')->execute();
-    db_insert('simple_sitemap')->fields($values)->execute();
+    if ($remove_sitemap) {
+      \Drupal::service('database')->truncate('simple_sitemap')->execute();
+    }
+    \Drupal::service('database')->insert('simple_sitemap')->fields($values)->execute();
   }
 
   /**

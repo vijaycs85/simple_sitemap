@@ -6,7 +6,6 @@ custom:
 entity_types:
   node: []
   taxonomy_term: []
-  user: []
   menu_link_content: []
 
 settings:

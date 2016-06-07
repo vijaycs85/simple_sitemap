@@ -15,46 +15,135 @@ class Form {
   const PRIORITY_HIGHEST = 10;
   const PRIORITY_DIVIDER = 10;
 
+  public $alteringForm;
+
   public $entityCategory;
   public $entityTypeId;
   public $bundleName;
   public $instanceId;
-
+  
   private $formState;
-  private $formId;
+  
+  private $sitemap;
 
   /**
    * Form constructor.
    */
-  function __construct(&$form, $form_state, $form_id) {
-    $this->formId = $form_id;
+  function __construct($form_state = NULL) {
     $this->formState = $form_state;
     $this->entityCategory = NULL;
+    $this->alteringForm = TRUE;
+    $this->sitemap = \Drupal::service('simple_sitemap.generator');
 
-    if (!$this->getEntityDataFromFormId()) {
-      $this->getEntityDataFromFormEntity();
+    // Do not alter the form if user lacks certain permissions.
+    if (!\Drupal::currentUser()->hasPermission('administer sitemap settings')) {
+      $this->alteringForm = FALSE;
+      return;
     }
+    $this->getEntityData();
   }
 
-  /**
-   * This is a temporary solution to be able to set sitemap settings
-   * for all 'user' entities on the form 'user_admin_settings', as there is no
-   * general setting page where non-bundle entity types can be set up.
-   *
-   * @todo: Remove this and create a general setting page for all entity types.
-   */
-  private function getEntityDataFromFormId() {
-    switch ($this->formId) {
+  private function getEntityData() {
+    if (!is_null($this->formState))
+      $this->getEntityDataFromFormEntity();
 
-      case 'user_admin_settings':
-        $this->entityCategory = 'bundle';
-        $this->entityTypeId = 'user';
-        $this->bundleName = 'user';
-        $this->instanceId = NULL;
-        return TRUE;
+    $entity_types = $this->sitemap->getConfig('entity_types');
 
-      default:
-        return FALSE;
+    // Do not alter the form if it is irrelevant to sitemap generation.
+    if (empty($this->entityCategory))
+      $this->alteringForm = FALSE;
+
+    // Do not alter the form if entity is not enabled in sitemap settings.
+    elseif (!isset($entity_types[$this->entityTypeId]))
+        $this->alteringForm = FALSE;
+
+    // Do not alter the form, if sitemap is disabled for the entity type of this entity instance.
+    elseif ($this->entityCategory == 'instance' && empty($entity_types[$this->entityTypeId][$this->bundleName]['index']))
+      $this->alteringForm = FALSE;
+  }
+
+  public function setEntityCategory($entity_category) {
+    $this->entityCategory = $entity_category;
+  }
+
+  public function setEntityTypeId($entity_type_id) {
+    $this->entityTypeId = $entity_type_id;
+  }
+
+  public function setBundleName($bundle_name) {
+    $this->bundleName = $bundle_name;
+  }
+
+  public function setInstanceId($instance_id) {
+    $this->instanceId = $instance_id;
+  }
+
+  public function displaySitemapRegenerationSetting(&$form_fragment) {
+    $form_fragment['simple_sitemap_regenerate_now'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Regenerate sitemap after hitting <em>Save</em>'),
+      '#description' => t('This setting will regenerate the whole sitemap including the above changes.'),
+      '#default_value' => FALSE,
+    );
+    if ($this->sitemap->getSetting('cron_generate')) {
+      $form_fragment['simple_sitemap_regenerate_now']['#description'] .= '</br>' . t('Otherwise the sitemap will be regenerated on the next cron run.');
+    }
+  }
+  
+  public function displayEntitySitemapSettings(&$form_fragment, $multiple = FALSE) {
+    $prefix = $multiple ? $this->entityTypeId . '_' : '';
+
+    // Setting default form values.
+    $index = 0;
+    $priority = self::PRIORITY_DEFAULT;
+    $entity_types = $this->sitemap->getConfig('entity_types');
+
+    // Overwriting defaults if settings found for bundle.
+    if (isset($entity_types[$this->entityTypeId][$this->bundleName]['index']))
+      $bundle_index = $index = $entity_types[$this->entityTypeId][$this->bundleName]['index'];
+    if (isset($entity_types[$this->entityTypeId][$this->bundleName]['priority']))
+      $bundle_priority = $priority = $entity_types[$this->entityTypeId][$this->bundleName]['priority'];
+
+    // Overwriting defaults if settings found for this entity instance.
+    if ($this->entityCategory == 'instance') {
+      if (isset($entity_types[$this->entityTypeId][$this->bundleName]['entities'][$this->instanceId]['index']))
+        $index = $entity_types[$this->entityTypeId][$this->bundleName]['entities'][$this->instanceId]['index'];
+      if (isset($entity_types[$this->entityTypeId][$this->bundleName]['entities'][$this->instanceId]['priority']))
+        $priority = $entity_types[$this->entityTypeId][$this->bundleName]['entities'][$this->instanceId]['priority'];
+    }
+
+    if (!$multiple) {
+      $form_fragment[$prefix . 'simple_sitemap_index_content'] = [
+        '#type' => 'radios',
+        '#default_value' => $index,
+        '#options' => [
+          0 => $this->entityCategory == 'instance' ? t('Do not index this entity') : t('Do not index entities of this type'),
+          1 => $this->entityCategory == 'instance' ? t('Index this entity') : t('Index entities of this type'),
+        ]
+      ];
+      if ($this->entityCategory == 'instance' && isset($bundle_index)) {
+        $form_fragment[$prefix . 'simple_sitemap_index_content']['#options'][$bundle_index] .= ' <em>(' . t('Default') . ')</em>';
+      }
+    }
+
+    if ($this->entityCategory == 'instance') {
+      $priority_description = t('The priority this entity will have in the eyes of search engine bots.');
+    }
+    elseif (!$multiple) {
+      $priority_description = t('The priority entities of this bundle will have in the eyes of search engine bots.');
+    }
+    else {
+      $priority_description = t('The priority entities of this type will have in the eyes of search engine bots.');
+    }
+    $form_fragment[$prefix . 'simple_sitemap_priority'] = [
+      '#type' => 'select',
+      '#title' => t('Priority'),
+      '#description' => $priority_description,
+      '#default_value' => $priority,
+      '#options' => self::getPrioritySelectValues(),
+    ];
+    if ($this->entityCategory == 'instance' && isset($bundle_priority)) {
+      $form_fragment[$prefix . 'simple_sitemap_priority']['#options'][(string)$bundle_priority] .= ' (' . t('Default') . ')';
     }
   }
 

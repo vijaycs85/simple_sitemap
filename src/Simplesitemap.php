@@ -27,7 +27,7 @@ class Simplesitemap {
    */
   function __construct(ConfigFactoryInterface $config_factory) {
     $this->config = $config_factory->get('simple_sitemap.settings');
-    $this->sitemap = db_query("SELECT * FROM {simple_sitemap}")->fetchAllAssoc('id');
+    $this->sitemap = \Drupal::service('database')->query("SELECT * FROM {simple_sitemap}")->fetchAllAssoc('id');
   }
 
   /**
@@ -175,5 +175,19 @@ class Simplesitemap {
       }
     }
     return $entity_types;
+  }
+
+  public static function entityTypeIsAtomic($entity_type_id) { //todo: make it work with entity object as well
+    if ($entity_type_id == 'menu_link_content') // Menu fix.
+      return FALSE;
+    $sitemap_entity_types = self::getSitemapEntityTypes();
+    if (isset($sitemap_entity_types[$entity_type_id])) {
+      $entity_type = $sitemap_entity_types[$entity_type_id];
+      if (empty($entity_type->getBundleEntityType())) {
+        return TRUE;
+      }
+      return FALSE;
+    }
+    return FALSE; //todo: throw exception
   }
 }

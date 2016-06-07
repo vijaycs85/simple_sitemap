@@ -6,7 +6,7 @@ simple_sitemap.settings:
 
 simple_sitemap.settings_entities:
   route_name: simple_sitemap.settings_entities
-  title: 'Entities'
+  title: 'Sitemap entities'
   base_route: simple_sitemap.settings
 
 simple_sitemap.settings_custom:
