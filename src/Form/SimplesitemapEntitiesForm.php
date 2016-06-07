@@ -41,19 +41,24 @@ class SimplesitemapEntitiesForm extends ConfigFormBase {
     $form['simple_sitemap_entities']['entities'] = array(
       '#title' => t('Sitemap entities'),
       '#type' => 'fieldset',
-      '#markup' => '<p>' . t("Simple XML sitemap settings will be added only to entity forms of entity types enabled here. For all entity types featuring bundles (e.g. node) inclusion settings have to be set on their bundle pages (e.g. 'page'). Disabling an entity type on this page will irreversibly delete its sitemap settings including per-entity overrides.") . '</p>',
+      '#markup' => '<p>' . t("Simple XML sitemap settings will be added only to entity forms of entity types enabled here. For all entity types featuring bundles (e.g. <em>node</em>) inclusion settings have to be set on their bundle pages (e.g. <em>page</em>). Disabling an entity type on this page will delete its sitemap settings including per-entity overrides.") . '</p>',
     );
 
-    $sitemap_entity_types = Simplesitemap::getSitemapEntityTypes();
+    $entity_type_labels = [];
+    foreach (Simplesitemap::getSitemapEntityTypes() as $entity_type_id => $entity_type) {
+      $entity_type_labels[$entity_type_id] = $entity_type->getLabel() ? : $entity_type_id;
+    }
+    asort($entity_type_labels);
+
     $entity_types = $sitemap->getConfig('entity_types');
     $f = new Form();
 
-    foreach ($sitemap_entity_types as $entity_type_id => $entity_type) {
-      $entity_type_label = $entity_type->getLabel() ? : $entity_type_id;
+    foreach ($entity_type_labels as $entity_type_id => $entity_type_label) {
       $entity_type_enabled = isset($entity_types[$entity_type_id]);
       $form['simple_sitemap_entities']['entities'][$entity_type_id] = [
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => $entity_type_label,
+      '#open' => $entity_type_enabled,
     ];
       $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled'] = [
         '#type' => 'checkbox',
