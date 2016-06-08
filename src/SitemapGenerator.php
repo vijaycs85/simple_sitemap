@@ -72,14 +72,16 @@ class SitemapGenerator {
         $keys = $sitemap_entity_types[$entity_type_name]->getKeys();
         $keys['bundle'] = $entity_type_name == 'menu_link_content' ? 'menu_name' : $keys['bundle']; // Menu fix.
         foreach($bundles as $bundle_name => $bundle_settings) {
-          $operations[] = [
-            'entity_info' => [
-              'bundle_settings' => $bundle_settings,
-              'bundle_name' => $bundle_name,
-              'entity_type_name' => $entity_type_name,
-              'keys' => $keys,
-            ],
-          ];
+          if ($bundle_settings['index']) {
+            $operations[] = [
+              'entity_info' => [
+                'bundle_settings' => $bundle_settings,
+                'bundle_name' => $bundle_name,
+                'entity_type_name' => $entity_type_name,
+                'keys' => $keys,
+              ],
+            ];
+          }
         }
       }
     }
