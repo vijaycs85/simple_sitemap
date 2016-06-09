@@ -232,11 +232,9 @@ class Form {
    * @return bool
    *  TRUE if simple_sitemap form values have been altered by the user.
    */
-  public static function valuesChanged($form, $form_state) {
-    $values = $form_state->getValues();
+  public static function valuesChanged($form, $values) {
     foreach (array('simple_sitemap_index_content', 'simple_sitemap_priority', 'simple_sitemap_regenerate_now') as $field_name) {
-      if (isset($values['simple_sitemap'][$field_name]) && $values['simple_sitemap'][$field_name] != $form['simple_sitemap'][$field_name]['#default_value']
-        || isset($values[$field_name]) && $values[$field_name] != $form['simple_sitemap'][$field_name]['#default_value']) { // Fix for values appearing in a sub array on a commerce product entity.
+      if (isset($values[$field_name]) && $values[$field_name] != $form['simple_sitemap'][$field_name]['#default_value']) {
         return TRUE;
       }
     }
