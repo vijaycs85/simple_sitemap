@@ -72,35 +72,18 @@ function simple_sitemap_entity_form_submit($form, &$form_state) {
     $sitemap = \Drupal::service('simple_sitemap.generator');
     $f = $form['simple_sitemap']['#simple_sitemap'];
 
-    // Get current entity type sitemap settings.
-    $entity_types = $sitemap->getConfig('entity_types');
-
     switch ($f->entityCategory) {
 
-      case 'custom':
       case 'bundle':
         $f->bundleName = !empty($f->bundleName) ? $f->bundleName : Form::getNewEntityId($form_state);
-        $entity_types[$f->entityTypeId][$f->bundleName]['index'] = $values['simple_sitemap_index_content'];
-        $entity_types[$f->entityTypeId][$f->bundleName]['priority'] = $values['simple_sitemap_priority'];
+        $sitemap->setBundleSettings($f->entityTypeId, $f->bundleName, ['index' => $values['simple_sitemap_index_content'], 'priority' => $values['simple_sitemap_priority']]);
         break;
 
       case 'instance':
         $f->instanceId = !empty($f->instanceId) ? $f->instanceId : Form::getNewEntityId($form_state);
-
-        // Delete overrides if they are identical to bundle settings.
-        if ($values['simple_sitemap_index_content'] == $entity_types[$f->entityTypeId][$f->bundleName]['index']
-          && $values['simple_sitemap_priority'] == $entity_types[$f->entityTypeId][$f->bundleName]['priority']) {
-          unset($entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->instanceId]);
-        }
-        else { // Else save overrides for this entity.
-          $entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->instanceId]['index'] = $values['simple_sitemap_index_content'];
-          $entity_types[$f->entityTypeId][$f->bundleName]['entities'][$f->instanceId]['priority'] = $values['simple_sitemap_priority'];
-        }
+        $sitemap->setEntityInstanceSettings($f->entityTypeId, $f->instanceId, ['index' => $values['simple_sitemap_index_content'], 'priority' => $values['simple_sitemap_priority']]);
         break;
     }
-
-    // Save new entity type settings.
-    $sitemap->saveConfig('entity_types', $entity_types);
 
     // Regenerate sitemaps according to user setting.
     if ($values['simple_sitemap_regenerate_now']) {

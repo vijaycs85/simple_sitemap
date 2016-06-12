@@ -8,6 +8,7 @@ namespace Drupal\simple_sitemap;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\ContentEntityTypeInterface;
+use Drupal\simple_sitemap\Form;
 
 /**
  * Simplesitemap class.
@@ -53,6 +54,140 @@ class Simplesitemap {
   public function saveConfig($key, $value) {
     \Drupal::service('config.factory')->getEditable('simple_sitemap.settings')
       ->set($key, $value)->save();
+  }
+
+  /**
+   * Enables sitemap support for an entity type. Enabled entity types show
+   * sitemap settings on their bundles. If an enabled entity type does not
+   * featured bundles (e.g. 'user'), it needs to be set up with
+   * setBundleSettings() as well.
+   *
+   * @param string $entity_type_id
+   *  Entity type id like 'node'.
+   *
+   * @return bool
+   *  TRUE if entity type has been enabled, FALSE if it was not.
+   */
+  public function enableEntityType($entity_type_id) {
+    $entity_types = $this->getConfig('entity_types');
+    if (empty($entity_types[$entity_type_id])) {
+      $entity_types[$entity_type_id] = [];
+      $this->saveConfig('entity_types', $entity_types);
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  /**
+   * Disables sitemap support for an entity type. Disabling support for an
+   * entity type deletes its sitemap settings permanently and removes sitemap
+   * settings from entity forms.
+   *
+   * @param string $entity_type_id
+   *  Entity type id like 'node'.
+   *
+   * @return bool
+   *  TRUE if entity type has been disabled, FALSE if it was not.
+   */
+  public function disableEntityType($entity_type_id) {
+    $entity_types = $this->getConfig('entity_types');
+    if (isset($entity_types[$entity_type_id])) {
+      unset($entity_types[$entity_type_id]);
+      $this->saveConfig('entity_types', $entity_types);
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  /**
+   * Sets sitemap settings for a bundle less entity type (e.g. user) or a bundle
+   * of an entity type (e.g. page).
+   *
+   * @param string $entity_type_id
+   *  Entity type id like 'node' the bundle belongs to.
+   * @param string $bundle_name
+   *  Name of the bundle. NULL if entity type has no bundles.
+   * @param array $settings
+   *  An array of sitemap settings for this bundle/entity type.
+   *  Example: ['index' => TRUE, 'priority' => 0.5]
+   */
+  public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings) {
+    $bundle_name = !empty($bundle_name) ? $bundle_name : $entity_type_id;
+    $entity_types = $this->getConfig('entity_types');
+    foreach($settings as $key => $setting) {
+      $entity_types[$entity_type_id][$bundle_name][$key] = $setting;
+    }
+    $this->saveConfig('entity_types', $entity_types);
+  }
+
+  public static function getEntityInstanceBundleName($entity) {
+    return $entity->getEntityTypeId() == 'menu_link_content'
+      ? $entity->getMenuName() : $entity->bundle(); // Menu fix.
+  }
+
+  public static function getBundleEntityTypeId($entity) {
+    return $entity->getEntityTypeId() == 'menu'
+      ? 'menu_link_content' : $entity->getEntityType()->getBundleOf(); // Menu fix.
+  }
+
+  public function setEntityInstanceSettings($entity_type_id, $id, $settings) {
+    $entity_types = $this->getConfig('entity_types');
+    $entity = \Drupal::entityTypeManager()->getStorage($entity_type_id)->load($id);
+    $bundle_name = self::getEntityInstanceBundleName($entity);
+    if (isset($entity_types[$entity_type_id][$bundle_name])) {
+
+      // Check if overrides are different from bundle setting before saving.
+      $override = FALSE;
+      foreach ($settings as $key => $setting) {
+        if ($setting != $entity_types[$entity_type_id][$bundle_name][$key]) {
+          $override = TRUE;
+          break;
+        }
+      }
+      if ($override) { //Save overrides for this entity if something is different.
+        foreach($settings as $key => $setting) {
+          $entity_types[$entity_type_id][$bundle_name]['entities'][$id][$key] = $setting;
+        }
+      }
+      else { // Else unset override.
+        unset($entity_types[$entity_type_id][$bundle_name]['entities'][$id]);
+      }
+      $this->saveConfig('entity_types', $entity_types);
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  public function getBundleSettings($entity_type_id, $bundle_name) {
+    $entity_types = $this->getConfig('entity_types');
+    if (isset($entity_types[$entity_type_id][$bundle_name])) {
+      $settings = $entity_types[$entity_type_id][$bundle_name];
+      unset($settings['entities']);
+      return $settings;
+    }
+    return FALSE;
+  }
+
+  public function bundleIsIndexed($entity_type_id, $bundle_name) {
+    $settings = $this->getBundleSettings($entity_type_id, $bundle_name);
+    return !empty($settings['index']);
+  }
+
+  public function entityTypeIsEnabled($entity_type_id) {
+    $entity_types = $this->getConfig('entity_types');
+    return isset($entity_types[$entity_type_id]);
+  }
+
+  public function getEntityInstanceSettings($entity_type_id, $id) {
+    $entity_types = $this->getConfig('entity_types');
+    $entity = \Drupal::entityTypeManager()->getStorage($entity_type_id)->load($id);
+    $bundle_name = self::getEntityInstanceBundleName($entity);
+    if (isset($entity_types[$entity_type_id][$bundle_name]['entities'][$id])) {
+      return $entity_types[$entity_type_id][$bundle_name]['entities'][$id];
+    }
+    else {
+      return $this->getBundleSettings($entity_type_id, $bundle_name);
+    }
   }
 
   /**
@@ -177,7 +312,7 @@ class Simplesitemap {
     return $entity_types;
   }
 
-  public static function entityTypeIsAtomic($entity_type_id) { //todo: make it work with entity object as well
+  public static function entityTypeIsAtomic($entity_type_id) {
     if ($entity_type_id == 'menu_link_content') // Menu fix.
       return FALSE;
     $sitemap_entity_types = self::getSitemapEntityTypes();
