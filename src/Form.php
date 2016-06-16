@@ -235,9 +235,17 @@ class Form {
   public static function getPrioritySelectValues() {
     $options = array();
     foreach(range(0, self::PRIORITY_HIGHEST) as $value) {
-      $value = $value / self::PRIORITY_DIVIDER;
-      $options[(string)$value] = (string)$value;
+      $value = self::formatPriority($value / self::PRIORITY_DIVIDER);
+      $options[$value] = $value;
     }
     return $options;
+  }
+
+  public static function formatPriority($priority) {
+    return number_format((float)$priority, 1, '.', '');
+  }
+
+  public static function isValidPriority($priority) {
+    return !is_numeric($priority) || $priority < 0 || $priority > 1 ? FALSE : TRUE;
   }
 }

@@ -38,7 +38,9 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
     $sitemap = \Drupal::service('simple_sitemap.generator');
     $setting_string = '';
     foreach ($sitemap->getConfig('custom') as $custom_link) {
-      $setting_string .= isset($custom_link['priority']) ? $custom_link['path'] . ' ' . $custom_link['priority'] : $custom_link['path'];
+      $setting_string .= isset($custom_link['priority'])
+        ? $custom_link['path'] . ' ' . Form::formatPriority($custom_link['priority'])
+        : $custom_link['path'];
       $setting_string .= "\r\n";
     }
 
@@ -66,7 +68,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
 
-    $custom_link_config = $this->getCustomLinks($form_state->getValue('custom_links'));
+    $custom_link_config = $this->getCustomLinkConfig($form_state->getValue('custom_links'));
 
     foreach($custom_link_config as $link_config) {
 
@@ -77,8 +79,8 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
         $form_state->setErrorByName('', t("The path <em>@path</em> needs to start with a '/'.", array('@path' => $link_config['path'])));
       }
       if (isset($link_config['priority'])) {
-        if (!is_numeric($link_config['priority']) || $link_config['priority'] < 0 || $link_config['priority'] > 1) {
-          $form_state->setErrorByName('', t("The priority setting on line <em>@priority</em> is incorrect. Set the priority from 0.0 to 1.0.", array('@priority' => $link_config['priority'])));
+        if (!Form::isValidPriority($link_config['priority'])) {
+          $form_state->setErrorByName('', t("The priority setting <em>@priority</em> for path <em>@path</em> is incorrect. Set the priority from 0.0 to 1.0.", array('@priority' => $link_config['priority'], '@path' => $link_config['path'])));
         }
       }
     }
@@ -89,13 +91,11 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $sitemap = \Drupal::service('simple_sitemap.generator');
-    $custom_link_config = $this->getCustomLinks($form_state->getValue('custom_links'));
-    foreach($custom_link_config as &$link_config) {
-      if (isset($link_config['priority'])) {
-        $link_config['priority'] = number_format((float)$link_config['priority'], 1, '.', '');
-      }
+    $custom_link_config = $this->getCustomLinkConfig($form_state->getValue('custom_links'));
+    $sitemap->removeCustomLinks();
+    foreach ($custom_link_config as $link_config) {
+      $sitemap->addCustomLink($link_config['path'], $link_config);
     }
-    $sitemap->saveConfig('custom', $custom_link_config);
     parent::submitForm($form, $form_state);
 
     // Regenerate sitemaps according to user setting.
@@ -104,14 +104,17 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
     }
   }
 
-  private function getCustomLinks($custom_links_string) {
-    $custom_links_string_lines = array_filter(explode("\n", str_replace("\r\n", "\n", $custom_links_string)), 'trim');
+  private function getCustomLinkConfig($custom_links_string) {
+    // Unify newline characters and explode into array.
+    $custom_links_string_lines = explode("\n", str_replace("\r\n", "\n", $custom_links_string));
+    // Remove whitespace from array values.
+    $custom_links_string_lines = array_filter(array_map('trim', $custom_links_string_lines));
     $custom_link_config = array();
-    foreach($custom_links_string_lines as $i => $line) {
-      $line_settings = explode(' ', $line, 2);
-      $custom_link_config[$i]['path'] = $line_settings[0];
-      if (isset($line_settings[1])) {
-        $custom_link_config[$i]['priority'] = $line_settings[1];
+    foreach($custom_links_string_lines as $i => &$line) {
+      $link_settings = explode(' ', $line, 2);
+      $custom_link_config[$i]['path'] = $link_settings[0];
+      if (isset($link_settings[1]) && $link_settings[1] != '') {
+        $custom_link_config[$i]['priority'] = $link_settings[1];
       }
     }
     return $custom_link_config;
