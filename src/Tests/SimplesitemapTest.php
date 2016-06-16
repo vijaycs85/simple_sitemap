@@ -44,7 +44,8 @@ class SimplesitemapTest extends WebTestBase {
     $this->assertRaw('http');
 
     /* @var $node \Drupal\Node\NodeInterface */
-    $node = $this->createNode(['title' => 'A new page', 'type' => 'page']);
+    $this->createNode(['title' => 'Node 1', 'type' => 'page']);
+    $node = $this->createNode(['title' => 'Node 2', 'type' => 'page']);
 
     // Set up the module.
     $sitemap = \Drupal::service('simple_sitemap.generator');
@@ -60,15 +61,35 @@ class SimplesitemapTest extends WebTestBase {
     $this->assertText('node/' . $node->id());
 
     // Test overriding of bundle entities.
-    $sitemap->setEntityInstanceSettings('node', $node->id(), ['index' => 1, 'priority' => '0.6']);
+    $sitemap->setEntityInstanceSettings('node', $node->id(), ['index' => 1, 'priority' => '0.1']);
     $sitemap->generateSitemap('nobatch');
     $this->drupalGet('sitemap.xml');
-    $this->assertText('0.6');
+    $this->assertText('0.1');
+
+    // Test sitemap index.
+    $sitemap->saveSetting('max_links', 1);
+    $sitemap->generateSitemap('nobatch');
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('sitemaps/2/sitemap.xml');
+
+    $sitemap->saveSetting('max_links', 2000);
 
     // Test disabling sitemap support for an entity type.
-//    $sitemap->disableEntityType('node');
-//    $sitemap->generateSitemap('nobatch');
-//    $this->drupalGet('sitemap.xml');
-//    $this->assertNoText('node/');
+    $sitemap->disableEntityType('node');
+    $sitemap->generateSitemap('nobatch');
+    $this->drupalGet('sitemap.xml');
+    $this->assertNoText('node/');
+
+    // Test adding a custom link to the sitemap.
+    $sitemap->addCustomLink('/node/' . $node->id(), ['priority' => '0.2']);
+    $sitemap->generateSitemap('nobatch');
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('0.2');
+
+    // Test removing custom links from the sitemap.
+    $sitemap->removeCustomLink('/node/' . $node->id());
+    $sitemap->generateSitemap('nobatch');
+    $this->drupalGet('sitemap.xml');
+    $this->assertNoText('0.2');
   }
 }
