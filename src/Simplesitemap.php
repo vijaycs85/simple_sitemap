@@ -27,8 +27,8 @@ class Simplesitemap {
    *   The config factory from the container.
    */
   function __construct(ConfigFactoryInterface $config_factory) {
-    $this->config = $config_factory->get('simple_sitemap.settings');
-    $this->sitemap = \Drupal::service('database')->query("SELECT * FROM {simple_sitemap}")->fetchAllAssoc('id');
+    $this->config_factory = $config_factory;
+    $this->config = $this->config_factory->get('simple_sitemap.settings');
   }
 
   /**
@@ -43,6 +43,12 @@ class Simplesitemap {
     return $this->config->get($key);
   }
 
+  private function fetchSitemap() {
+    return \Drupal::service('database')
+      ->query("SELECT * FROM {simple_sitemap}")
+      ->fetchAllAssoc('id');
+  }
+
   /**
    * Saves a specific sitemap configuration to db.
    *
@@ -52,8 +58,10 @@ class Simplesitemap {
    *  The configuration to be saved.
    */
   public function saveConfig($key, $value) {
-    \Drupal::service('config.factory')->getEditable('simple_sitemap.settings')
+    $this->config_factory->getEditable('simple_sitemap.settings')
       ->set($key, $value)->save();
+    // Refresh config object after making changes.
+    $this->config = $this->config_factory->get('simple_sitemap.settings');
   }
 
   /**
@@ -202,24 +210,23 @@ class Simplesitemap {
    *  If a sitemap id is provided, a sitemap chunk is returned.
    */
   public function getSitemap($sitemap_id = NULL) {
-    if (is_null($sitemap_id) || !isset($this->sitemap[$sitemap_id])) {
+    $sitemap = $this->fetchSitemap();
+    if (is_null($sitemap_id) || !isset($sitemap[$sitemap_id])) {
 
       // Return sitemap index, if there are multiple sitemap chunks.
-      if (count($this->sitemap) > 1) {
-        return $this->getSitemapIndex();
+      if (count($sitemap) > 1) {
+        return $this->getSitemapIndex($sitemap);
       }
 
-      // Return sitemap if there is only one chunk.
-      else {
-        if (isset($this->sitemap[1])) {
-          return $this->sitemap[1]->sitemap_string;
+      else { // Return sitemap if there is only one chunk.
+        if (isset($sitemap[1])) {
+          return $sitemap[1]->sitemap_string;
         }
         return FALSE;
       }
     }
-    // Return specific sitemap chunk.
-    else {
-      return $this->sitemap[$sitemap_id]->sitemap_string;
+    else { // Return specific sitemap chunk.
+      return $sitemap[$sitemap_id]->sitemap_string;
     }
   }
 
@@ -240,12 +247,15 @@ class Simplesitemap {
   /**
    * Generates and returns the sitemap index as string.
    *
+   * @param array $sitemap
+   *  Sitemap chunks which to generate the index from.
+   *
    * @return string
    *  The sitemap index.
    */
-  private function getSitemapIndex() {
+  private function getSitemapIndex($sitemap) {
     $generator = new SitemapGenerator();
-    return $generator->generateSitemapIndex($this->sitemap);
+    return $generator->generateSitemapIndex($sitemap);
   }
 
   /**
@@ -283,9 +293,10 @@ class Simplesitemap {
    *  Formatted timestamp of last sitemap generation, otherwise FALSE.
    */
   public function getGeneratedAgo() {
-    if (isset($this->sitemap[1]->sitemap_created)) {
+    $sitemap = $this->fetchSitemap();
+    if (isset($sitemap[1]->sitemap_created)) {
       return \Drupal::service('date.formatter')
-        ->formatInterval(REQUEST_TIME - $this->sitemap[1]->sitemap_created);
+        ->formatInterval(REQUEST_TIME - $sitemap[1]->sitemap_created);
     }
     return FALSE;
   }

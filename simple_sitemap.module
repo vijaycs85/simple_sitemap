@@ -139,3 +139,4 @@ function simple_sitemap_entity_delete(Drupal\Core\Entity\EntityInterface $entity
     $sitemap->saveConfig('entity_types', $entity_types);
   }
 }
+
