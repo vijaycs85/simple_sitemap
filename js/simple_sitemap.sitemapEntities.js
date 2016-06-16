@@ -11,7 +11,7 @@
       var allEntities = settings.simple_sitemap.all_entities;
       var atomicEntities = settings.simple_sitemap.atomic_entities;
       var initiallyChecked = [];
-      var removingSettingsWarning = Drupal.t("<strong>Warning:</strong> This entity type's sitemap settings including per-entity overrides will be deleted after hitting <em>Save</em>");
+      var removingSettingsWarning = Drupal.t("<strong>Warning:</strong> This entity type's sitemap settings including per-entity overrides will be deleted after hitting <em>Save</em>.");
 
       // On load.
       // Hide the 'Regenerate sitemap' field to only display it if settings have changed.
