@@ -17,8 +17,11 @@ use Drupal\simple_sitemap\Form;
  */
 class Simplesitemap {
 
+  private $config_factory;
   private $config;
-  private $sitemap;
+  private static $allowed_link_settings = [
+    'entity' => ['index', 'priority'],
+    'custom' => ['priority']];
 
   /**
    * Simplesitemap constructor.
@@ -122,9 +125,7 @@ class Simplesitemap {
   public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings) {
     $bundle_name = !empty($bundle_name) ? $bundle_name : $entity_type_id;
     $entity_types = $this->getConfig('entity_types');
-    foreach($settings as $key => $setting) {
-      $entity_types[$entity_type_id][$bundle_name][$key] = $setting;
-    }
+    $this->addLinkSettings('entity', $settings, $entity_types[$entity_type_id][$bundle_name]);
     $this->saveConfig('entity_types', $entity_types);
   }
 
@@ -153,9 +154,7 @@ class Simplesitemap {
         }
       }
       if ($override) { //Save overrides for this entity if something is different.
-        foreach($settings as $key => $setting) {
-          $entity_types[$entity_type_id][$bundle_name]['entities'][$id][$key] = $setting;
-        }
+        $this->addLinkSettings('entity', $settings, $entity_types[$entity_type_id][$bundle_name]['entities'][$id]);
       }
       else { // Else unset override.
         unset($entity_types[$entity_type_id][$bundle_name]['entities'][$id]);
@@ -198,6 +197,70 @@ class Simplesitemap {
     }
   }
 
+  public function addCustomLink($path, $settings) {
+    if (!\Drupal::service('path.validator')->isValid($path))
+      return FALSE; // todo: log error
+    if ($path[0] != '/')
+      return FALSE; // todo: log error
+    $custom_links = $this->getConfig('custom');
+    foreach($custom_links as $key => $link) {
+      if ($link['path'] == $path) {
+        $link_key = $key;
+        break;
+      }
+    }
+    $link_key = isset($link_key) ? $link_key : count($custom_links);
+    $custom_links[$link_key]['path'] = $path;
+    $this->addLinkSettings('entity', $settings, $custom_links[$link_key]);
+    $this->saveConfig('custom', $custom_links);
+    return TRUE;
+  }
+
+  public function getCustomLink($path) {
+    $custom_links = $this->getConfig('custom');
+    foreach($custom_links as $key => $link) {
+      if ($link['path'] == $path) {
+        return $custom_links[$key];
+      }
+    }
+    return FALSE;
+  }
+
+  public function removeCustomLink($path) {
+    $custom_links = $this->getConfig('custom');
+    foreach($custom_links as $key => $link) {
+      if ($link['path'] == $path) {
+        unset($custom_links[$key]);
+        $custom_links = array_values($custom_links);
+        $this->saveConfig('custom', $custom_links);
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  public function removeCustomLinks() {
+    $this->saveConfig('custom', []);
+  }
+
+  private function addLinkSettings($type, $settings, &$target) {
+    foreach($settings as $setting_key => $setting) {
+      if (in_array($setting_key, self::$allowed_link_settings[$type])) {
+        switch($setting_key) {
+          case 'priority':
+            if (!Form::isValidPriority($setting)) {
+              // todo: register error
+              continue;
+            }
+            break;
+          //todo: add index check
+        }
+        $target[$setting_key] = $setting;
+      }
+
+    }
+  }
+
   /**
    * Returns the whole sitemap, a requested sitemap chunk,
    * or the sitemap index file.
@@ -234,8 +297,8 @@ class Simplesitemap {
    * Generates the sitemap for all languages and saves it to the db.
    *
    * @param string $from
-   *  Can be 'form', 'cron', or 'drush'. This decides how to the batch process
-   *  is to be run.
+   *  Can be 'form', 'cron', 'drush' or 'nobatch'.
+   *  This decides how the batch process is to be run.
    */
   public function generateSitemap($from = 'form') {
     $generator = new SitemapGenerator($from);
