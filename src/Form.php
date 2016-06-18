@@ -16,15 +16,15 @@ class Form {
   const PRIORITY_DIVIDER = 10;
 
   public $alteringForm;
-
   public $entityCategory;
   public $entityTypeId;
   public $bundleName;
   public $instanceId;
   
   private $formState;
-  
   private $sitemap;
+
+  private static $allowed_operations = ['default', 'edit', 'add'];
 
   /**
    * Form constructor.
@@ -93,8 +93,8 @@ class Form {
     $prefix = $multiple ? $this->entityTypeId . '_' : '';
 
     if ($this->entityCategory == 'instance') {
-      $settings = $this->sitemap->getEntityInstanceSettings($this->entityTypeId, $this->instanceId);
       $bundle_settings = $this->sitemap->getBundleSettings($this->entityTypeId, $this->bundleName);
+      $settings = !is_null($this->instanceId) ? $this->sitemap->getEntityInstanceSettings($this->entityTypeId, $this->instanceId) : $bundle_settings;
     }
     else {
       $settings = $this->sitemap->getBundleSettings($this->entityTypeId, $this->bundleName);
@@ -174,7 +174,7 @@ class Form {
         case 'instance':
           $this->entityTypeId = $entity_type_id;
           $this->bundleName = Simplesitemap::getEntityInstanceBundleName($form_entity);
-          $this->instanceId = $form_entity->id();
+          $this->instanceId = !empty($form_entity->id()) ? $form_entity->id() : NULL; // New menu link's id is '' instead of NULL, hence checking for empty.
           break;
 
         default:
@@ -195,7 +195,7 @@ class Form {
     $form_object = $this->formState->getFormObject();
     if (!is_null($form_object)
       && method_exists($form_object, 'getEntity')
-      && in_array($form_object->getOperation(), ['default', 'edit'])) {
+      && in_array($form_object->getOperation(), self::$allowed_operations)) {
       return $form_object->getEntity();
     }
     return FALSE;
