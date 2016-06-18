@@ -301,10 +301,9 @@ class Simplesitemap {
    *  This decides how the batch process is to be run.
    */
   public function generateSitemap($from = 'form') {
-    $generator = new SitemapGenerator($from);
-    $generator->setCustomLinks($this->getConfig('custom'));
-    $generator->setEntityTypes($this->getConfig('entity_types'));
-    $generator->startBatch();
+    $generator = new SitemapGenerator($this);
+    $generator->setGenerateFrom($from);
+    $generator->startGeneration();
   }
 
   /**
@@ -317,7 +316,7 @@ class Simplesitemap {
    *  The sitemap index.
    */
   private function getSitemapIndex($sitemap) {
-    $generator = new SitemapGenerator();
+    $generator = new SitemapGenerator($this);
     return $generator->generateSitemapIndex($sitemap);
   }
 

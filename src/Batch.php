@@ -14,19 +14,18 @@ use Drupal\Core\Url;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Cache\Cache;
 
-
 class Batch {
   private $batch;
   private $batchInfo;
 
   const PATH_DOES_NOT_EXIST = "The path @faulty_path has been omitted from the XML sitemap, as it does not exist.";
   const PATH_DOES_NOT_EXIST_OR_NO_ACCESS = "The path @faulty_path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users.";
-  const ANONYMOUS_USER_ID = 0;
   const BATCH_INIT_MESSAGE = 'Initializing batch...';
   const BATCH_ERROR_MESSAGE = 'An error has occurred. This may result in an incomplete XML sitemap.';
   const BATCH_PROGRESS_MESSAGE = 'Processing @current out of @total link types.';
+  const ANONYMOUS_USER_ID = 0;
 
-  function __construct($from = 'form') {
+  function __construct() {
     $this->batch = array(
       'title' => t('Generating XML sitemap'),
       'init_message' => t(self::BATCH_INIT_MESSAGE),
@@ -35,15 +34,11 @@ class Batch {
       'operations' => array(),
       'finished' => [__CLASS__ , 'finishGeneration'], // __CLASS__ . '::finishGeneration' not working possibly due to a drush error.
     );
-    $config = \Drupal::config('simple_sitemap.settings')->get('settings');
-    $this->batchInfo = array(
-      'from' => $from,
-      'batch_process_limit' => !empty($config['batch_process_limit']) ? $config['batch_process_limit'] : NULL,
-      'max_links' => $config['max_links'],
-      'remove_duplicates' => $config['remove_duplicates'],
-      'entity_types' => \Drupal::config('simple_sitemap.settings')->get('entity_types'),
-      'anonymous_user_account' => User::load(self::ANONYMOUS_USER_ID),
-    );
+  }
+
+  public function setBatchInfo($batch_info) {
+    $this->batchInfo = $batch_info;
+    $this->batchInfo['anonymous_user_account'] = User::load(self::ANONYMOUS_USER_ID);
   }
 
   /**

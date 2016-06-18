@@ -20,29 +20,32 @@ class SitemapGenerator {
   const XMLNS = 'http://www.sitemaps.org/schemas/sitemap/0.9';
   const XMLNS_XHTML = 'http://www.w3.org/1999/xhtml';
 
-  private $entityTypes;
-  private $custom;
+  private $sitemap;
   private $links;
   private $generatingFrom;
 
-  function __construct($from = 'form') {
+  function __construct($sitemap) {
+    $this->sitemap = $sitemap;
     $this->links = array();
+  }
+
+  public function setGenerateFrom($from = 'form') {
     $this->generatingFrom = $from;
-  }
-
-  public function setEntityTypes($entityTypes) {
-    $this->entityTypes = is_array($entityTypes) ? $entityTypes : array();
-  }
-
-  public function setCustomLinks($custom) {
-    $this->custom = is_array($custom) ? $custom : array();
   }
 
   /**
    * Adds all operations to the batch and starts it.
    */
-  public function startBatch() {
-    $batch = new Batch($this->generatingFrom);
+  public function startGeneration() {
+    $batch = new Batch();
+    $batch->setBatchInfo([
+      'from' => $this->generatingFrom,
+      'batch_process_limit' => !empty($this->sitemap->getSetting('batch_process_limit'))
+        ? $this->sitemap->getSetting('batch_process_limit') : NULL,
+      'max_links' => $this->sitemap->getSetting('max_links'),
+      'remove_duplicates' => $this->sitemap->getSetting('remove_duplicates'),
+      'entity_types' => $this->sitemap->getConfig('entity_types'),
+    ]);
     $batch->addOperations('custom_paths', $this->batchAddCustomPaths());
     $batch->addOperations('entity_types', $this->batchAddEntityTypePaths());
     $batch->start();
@@ -55,7 +58,7 @@ class SitemapGenerator {
    */
   private function batchAddCustomPaths() {
     $link_generator = new CustomLinkGenerator();
-    return $link_generator->getCustomPaths($this->custom);
+    return $link_generator->getCustomPaths($this->sitemap->getConfig('custom'));
   }
 
   /**
@@ -67,7 +70,8 @@ class SitemapGenerator {
   private function batchAddEntityTypePaths() {
     $operations = [];
     $sitemap_entity_types = Simplesitemap::getSitemapEntityTypes();
-    foreach($this->entityTypes as $entity_type_name => $bundles) {
+    $entity_types = $this->sitemap->getConfig('entity_types');
+    foreach($entity_types as $entity_type_name => $bundles) {
       if (isset($sitemap_entity_types[$entity_type_name])) {
         $keys = $sitemap_entity_types[$entity_type_name]->getKeys();
         $keys['bundle'] = $entity_type_name == 'menu_link_content' ? 'menu_name' : $keys['bundle']; // Menu fix.
