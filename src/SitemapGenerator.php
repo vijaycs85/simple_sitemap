@@ -20,12 +20,12 @@ class SitemapGenerator {
   const XMLNS = 'http://www.sitemaps.org/schemas/sitemap/0.9';
   const XMLNS_XHTML = 'http://www.w3.org/1999/xhtml';
 
-  private $sitemap;
+  private $generator;
   private $links;
   private $generateFrom;
 
-  function __construct($sitemap) {
-    $this->sitemap = $sitemap;
+  function __construct($generator) {
+    $this->generator = $generator;
     $this->links = [];
     $this->generateFrom = 'form';
   }
@@ -41,11 +41,11 @@ class SitemapGenerator {
     $batch = new Batch();
     $batch->setBatchInfo([
       'from' => $this->generateFrom,
-      'batch_process_limit' => !empty($this->sitemap->getSetting('batch_process_limit'))
-        ? $this->sitemap->getSetting('batch_process_limit') : NULL,
-      'max_links' => $this->sitemap->getSetting('max_links'),
-      'remove_duplicates' => $this->sitemap->getSetting('remove_duplicates'),
-      'entity_types' => $this->sitemap->getConfig('entity_types'),
+      'batch_process_limit' => !empty($this->generator->getSetting('batch_process_limit'))
+        ? $this->generator->getSetting('batch_process_limit') : NULL,
+      'max_links' => $this->generator->getSetting('max_links'),
+      'remove_duplicates' => $this->generator->getSetting('remove_duplicates'),
+      'entity_types' => $this->generator->getConfig('entity_types'),
     ]);
     $batch->addOperations('custom_paths', $this->batchAddCustomPaths());
     $batch->addOperations('entity_types', $this->batchAddEntityTypePaths());
@@ -59,7 +59,7 @@ class SitemapGenerator {
    */
   private function batchAddCustomPaths() {
     $link_generator = new CustomLinkGenerator();
-    return $link_generator->getCustomPaths($this->sitemap->getConfig('custom'));
+    return $link_generator->getCustomPaths($this->generator->getConfig('custom'));
   }
 
   /**
@@ -71,7 +71,7 @@ class SitemapGenerator {
   private function batchAddEntityTypePaths() {
     $operations = [];
     $sitemap_entity_types = Simplesitemap::getSitemapEntityTypes();
-    $entity_types = $this->sitemap->getConfig('entity_types');
+    $entity_types = $this->generator->getConfig('entity_types');
     foreach($entity_types as $entity_type_name => $bundles) {
       if (isset($sitemap_entity_types[$entity_type_name])) {
         $keys = $sitemap_entity_types[$entity_type_name]->getKeys();
@@ -119,12 +119,12 @@ class SitemapGenerator {
   /**
    * Generates and returns the sitemap index for all sitemap chunks.
    *
-   * @param array $sitemap_chunks
+   * @param array $chunks
    *  All sitemap chunks keyed by the chunk ID.
    *
    * @return string sitemap index
    */
-  public function generateSitemapIndex($sitemap_chunks) {
+  public function generateSitemapIndex($chunks) {
     $writer = new XMLWriter();
     $writer->openMemory();
     $writer->setIndent(TRUE);
@@ -132,7 +132,7 @@ class SitemapGenerator {
     $writer->startElement('sitemapindex');
     $writer->writeAttribute('xmlns', self::XMLNS);
 
-    foreach ($sitemap_chunks as $chunk_id => $chunk_data) {
+    foreach ($chunks as $chunk_id => $chunk_data) {
       $writer->startElement('sitemap');
       $writer->writeElement('loc', $GLOBALS['base_url'] . '/sitemaps/'
         . $chunk_id . '/' . 'sitemap.xml');
@@ -147,12 +147,12 @@ class SitemapGenerator {
   /**
    * Generates and returns a sitemap chunk.
    *
-   * @param array $sitemap_links
+   * @param array $links
    *  All links with their multilingual versions and settings.
    *
    * @return string sitemap chunk
    */
-  private static function generateSitemapChunk($sitemap_links) {
+  private static function generateSitemapChunk($links) {
     $default_language_id = Simplesitemap::getDefaultLangId();
 
     $writer = new XMLWriter();
@@ -163,7 +163,7 @@ class SitemapGenerator {
     $writer->writeAttribute('xmlns', self::XMLNS);
     $writer->writeAttribute('xmlns:xhtml', self::XMLNS_XHTML);
 
-    foreach ($sitemap_links as $link) {
+    foreach ($links as $link) {
       $writer->startElement('url');
 
       // Adding url to standard language.

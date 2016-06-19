@@ -67,25 +67,25 @@ function simple_sitemap_entity_form_submit($form, &$form_state) {
 
   // Only make changes in DB if sitemap settings actually changed.
   if (Form::valuesChanged($form, $values)) {
-    $sitemap = \Drupal::service('simple_sitemap.generator');
+    $generator = \Drupal::service('simple_sitemap.generator');
     $f = new Form($form_state);
 
     switch ($f->entityCategory) {
 
       case 'bundle':
         $f->bundleName = !empty($f->bundleName) ? $f->bundleName : $f->getFormEntityId();
-        $sitemap->setBundleSettings($f->entityTypeId, $f->bundleName, ['index' => $values['simple_sitemap_index_content'], 'priority' => $values['simple_sitemap_priority']]);
+        $generator->setBundleSettings($f->entityTypeId, $f->bundleName, ['index' => $values['simple_sitemap_index_content'], 'priority' => $values['simple_sitemap_priority']]);
         break;
 
       case 'instance':
         $f->instanceId = !empty($f->instanceId) ? $f->instanceId : $f->getFormEntityId();
-        $sitemap->setEntityInstanceSettings($f->entityTypeId, $f->instanceId, ['index' => $values['simple_sitemap_index_content'], 'priority' => $values['simple_sitemap_priority']]);
+        $generator->setEntityInstanceSettings($f->entityTypeId, $f->instanceId, ['index' => $values['simple_sitemap_index_content'], 'priority' => $values['simple_sitemap_priority']]);
         break;
     }
 
     // Regenerate sitemaps according to user setting.
     if ($values['simple_sitemap_regenerate_now']) {
-      $sitemap->generateSitemap();
+      $generator->generateSitemap();
     }
   }
 }
@@ -94,9 +94,9 @@ function simple_sitemap_entity_form_submit($form, &$form_state) {
  * Implements hook_cron.
  */
 function simple_sitemap_cron() {
-  $sitemap = \Drupal::service('simple_sitemap.generator');
-  if ($sitemap->getSetting('cron_generate')) {
-    $sitemap->generateSitemap('backend');
+  $generator = \Drupal::service('simple_sitemap.generator');
+  if ($generator->getSetting('cron_generate')) {
+    $generator->generateSitemap('backend');
   }
 }
 
@@ -108,13 +108,13 @@ function simple_sitemap_cron() {
  * @todo Not working for menu bundles, as they are technically not bundles. Implement hook_menu_delete().
  */
 function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
-  $sitemap = \Drupal::service('simple_sitemap.generator');
-  $entity_types = $sitemap->getConfig('entity_types');
+  $generator = \Drupal::service('simple_sitemap.generator');
+  $entity_types = $generator->getConfig('entity_types');
   if (isset($entity_types[$entity_type_id][$bundle])) {
     unset($entity_types[$entity_type_id][$bundle]);
-    $sitemap->saveConfig('entity_types', $entity_types);
+    $generator->saveConfig('entity_types', $entity_types);
     $message = t("You may want to <a href='@url'>regenerate</a> your XML sitemap now.", ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']);
-    if ($sitemap->getSetting('cron_generate')) {
+    if ($generator->getSetting('cron_generate')) {
       $message .= '</br>' . t('Otherwise the sitemap will be regenerated on the next cron run.');
     }
 //    drupal_set_message($message); // todo: Commented out, as html code is visible.
@@ -127,14 +127,14 @@ function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
  * Removes settings of the removed entity.
  */
 function simple_sitemap_entity_delete(Drupal\Core\Entity\EntityInterface $entity) {
-  $sitemap = \Drupal::service('simple_sitemap.generator');
-  $entity_types = $sitemap->getConfig('entity_types');
+  $generator = \Drupal::service('simple_sitemap.generator');
+  $entity_types = $generator->getConfig('entity_types');
   $entity_type_id = $entity->getEntityTypeId();
   $bundle_name = !empty($entity->bundle()) ? $entity->bundle() : $entity_type_id;
   $bundle_name = $bundle_name == 'menu_link_content'&& method_exists($entity, 'getMenuName') ? $entity->getMenuName() : $bundle_name; // Menu fix.
   if (isset($entity_types[$entity_type_id][$bundle_name]['entities'][$entity->id()])) {
     unset($entity_types[$entity_type_id][$bundle_name]['entities'][$entity->id()]);
-    $sitemap->saveConfig('entity_types', $entity_types);
+    $generator->saveConfig('entity_types', $entity_types);
   }
 }
 

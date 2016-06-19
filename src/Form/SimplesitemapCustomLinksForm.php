@@ -35,9 +35,9 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $sitemap = \Drupal::service('simple_sitemap.generator');
+    $generator = \Drupal::service('simple_sitemap.generator');
     $setting_string = '';
-    foreach ($sitemap->getConfig('custom') as $custom_link) {
+    foreach ($generator->getConfig('custom') as $custom_link) {
       $setting_string .= isset($custom_link['priority'])
         ? $custom_link['path'] . ' ' . Form::formatPriority($custom_link['priority'])
         : $custom_link['path'];
@@ -90,17 +90,17 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $sitemap = \Drupal::service('simple_sitemap.generator');
+    $generator = \Drupal::service('simple_sitemap.generator');
     $custom_link_config = $this->getCustomLinkConfig($form_state->getValue('custom_links'));
-    $sitemap->removeCustomLinks();
+    $generator->removeCustomLinks();
     foreach ($custom_link_config as $link_config) {
-      $sitemap->addCustomLink($link_config['path'], $link_config);
+      $generator->addCustomLink($link_config['path'], $link_config);
     }
     parent::submitForm($form, $form_state);
 
     // Regenerate sitemaps according to user setting.
     if ($form_state->getValue('simple_sitemap_regenerate_now')) {
-      $sitemap->generateSitemap();
+      $generator->generateSitemap();
     }
   }
 

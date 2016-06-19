@@ -22,7 +22,7 @@ class Form {
   public $instanceId;
   
   private $formState;
-  private $sitemap;
+  private $generator;
 
   private static $allowedFormOperations = ['default', 'edit', 'add'];
   private static $valuesToCheck = ['simple_sitemap_index_content', 'simple_sitemap_priority', 'simple_sitemap_regenerate_now'];
@@ -40,7 +40,7 @@ class Form {
     $this->formState = $form_state;
     $this->entityCategory = NULL;
     $this->alteringForm = TRUE;
-    $this->sitemap = \Drupal::service('simple_sitemap.generator');
+    $this->generator = \Drupal::service('simple_sitemap.generator');
 
     $this->getEntityData();
   }
@@ -54,12 +54,12 @@ class Form {
       $this->alteringForm = FALSE;
 
     // Do not alter the form if entity is not enabled in sitemap settings.
-    elseif (!$this->sitemap->entityTypeIsEnabled($this->entityTypeId))
+    elseif (!$this->generator->entityTypeIsEnabled($this->entityTypeId))
       $this->alteringForm = FALSE;
 
     // Do not alter the form, if sitemap is disabled for the entity type of this entity instance.
     elseif ($this->entityCategory == 'instance'
-      && !$this->sitemap->bundleIsIndexed($this->entityTypeId, $this->bundleName))
+      && !$this->generator->bundleIsIndexed($this->entityTypeId, $this->bundleName))
       $this->alteringForm = FALSE;
   }
 
@@ -86,7 +86,7 @@ class Form {
       '#description' => t('This setting will regenerate the whole sitemap including the above changes.'),
       '#default_value' => FALSE,
     ];
-    if ($this->sitemap->getSetting('cron_generate')) {
+    if ($this->generator->getSetting('cron_generate')) {
       $form_fragment['simple_sitemap_regenerate_now']['#description'] .= '</br>' . t('Otherwise the sitemap will be regenerated on the next cron run.');
     }
   }
@@ -95,11 +95,11 @@ class Form {
     $prefix = $multiple ? $this->entityTypeId . '_' : '';
 
     if ($this->entityCategory == 'instance') {
-      $bundle_settings = $this->sitemap->getBundleSettings($this->entityTypeId, $this->bundleName);
-      $settings = !is_null($this->instanceId) ? $this->sitemap->getEntityInstanceSettings($this->entityTypeId, $this->instanceId) : $bundle_settings;
+      $bundle_settings = $this->generator->getBundleSettings($this->entityTypeId, $this->bundleName);
+      $settings = !is_null($this->instanceId) ? $this->generator->getEntityInstanceSettings($this->entityTypeId, $this->instanceId) : $bundle_settings;
     }
     else {
-      $settings = $this->sitemap->getBundleSettings($this->entityTypeId, $this->bundleName);
+      $settings = $this->generator->getBundleSettings($this->entityTypeId, $this->bundleName);
     }
     $index = isset($settings['index']) ? $settings['index'] : 0;
     $priority = isset($settings['priority']) ? $settings['priority'] : self::PRIORITY_DEFAULT;

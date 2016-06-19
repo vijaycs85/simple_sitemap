@@ -22,6 +22,6 @@ function simple_sitemap_drush_command() {
  * Regenerate sitemap for all languages.
  */
 function drush_simple_sitemap_generate() {
-  $sitemap = \Drupal::service('simple_sitemap.generator');
-  $sitemap->generateSitemap('drush');
+  $generator = \Drupal::service('simple_sitemap.generator');
+  $generator->generateSitemap('drush');
 }

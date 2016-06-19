@@ -21,30 +21,30 @@ class SimplesitemapController extends ControllerBase {
    *
    * @var \Drupal\simple_sitemap\Simplesitemap
    */
-  protected $sitemapGenerator;
+  protected $generator;
 
   /**
    * SimplesitemapController constructor.
    *
-   * @param \Drupal\simple_sitemap\Simplesitemap $sitemap_generator
+   * @param \Drupal\simple_sitemap\Simplesitemap $generator
    *   The sitemap generator.
    */
-  public function __construct($sitemap_generator) {
-    $this->sitemapGenerator = $sitemap_generator;
+  public function __construct($generator) {
+    $this->generator = $generator;
   }
 
   /**
    * Returns the whole sitemap, a requested sitemap chunk, or the sitemap index file.
    *
-   * @param int $sitemap_id
+   * @param int $chunk_id
    *  Optional ID of the sitemap chunk. If none provided, the first chunk or
    *  the sitemap index is fetched.
    *
    * @return object Response
    *  Returns an XML response.
    */
-  public function getSitemap($sitemap_id = NULL) {
-    $output = $this->sitemapGenerator->getSitemap($sitemap_id);
+  public function getSitemap($chunk_id = NULL) {
+    $output = $this->generator->getSitemap($chunk_id);
     $output = !$output ? '' : $output;
 
     // Display sitemap with correct xml header.
@@ -60,5 +60,4 @@ class SimplesitemapController extends ControllerBase {
   public static function create(ContainerInterface $container) {
     return new static($container->get('simple_sitemap.generator'));
   }
-
 }

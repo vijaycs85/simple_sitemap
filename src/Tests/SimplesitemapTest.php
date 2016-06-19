@@ -48,11 +48,11 @@ class SimplesitemapTest extends WebTestBase {
     $node = $this->createNode(['title' => 'Node 2', 'type' => 'page']);
 
     // Set up the module.
-    $sitemap = \Drupal::service('simple_sitemap.generator');
-    $sitemap->setBundleSettings('node', 'page', ['index' => 1, 'priority' => '0.5']);
+    $generator = \Drupal::service('simple_sitemap.generator');
+    $generator->setBundleSettings('node', 'page', ['index' => 1, 'priority' => '0.5']);
 
     // Verify the cache was flushed and node is in the sitemap.
-    $sitemap->generateSitemap('nobatch');
+    $generator->generateSitemap('nobatch');
     $this->drupalGet('sitemap.xml');
     $this->assertEqual($this->drupalGetHeader('X-Drupal-Cache'), 'MISS');
     $this->assertText('node/' . $node->id());
@@ -61,34 +61,34 @@ class SimplesitemapTest extends WebTestBase {
     $this->assertText('node/' . $node->id());
 
     // Test overriding of bundle entities.
-    $sitemap->setEntityInstanceSettings('node', $node->id(), ['index' => 1, 'priority' => '0.1']);
-    $sitemap->generateSitemap('nobatch');
+    $generator->setEntityInstanceSettings('node', $node->id(), ['index' => 1, 'priority' => '0.1']);
+    $generator->generateSitemap('nobatch');
     $this->drupalGet('sitemap.xml');
     $this->assertText('0.1');
 
     // Test sitemap index.
-    $sitemap->saveSetting('max_links', 1);
-    $sitemap->generateSitemap('nobatch');
+    $generator->saveSetting('max_links', 1);
+    $generator->generateSitemap('nobatch');
     $this->drupalGet('sitemap.xml');
     $this->assertText('sitemaps/2/sitemap.xml');
 
-    $sitemap->saveSetting('max_links', 2000);
+    $generator->saveSetting('max_links', 2000);
 
     // Test disabling sitemap support for an entity type.
-    $sitemap->disableEntityType('node');
-    $sitemap->generateSitemap('nobatch');
+    $generator->disableEntityType('node');
+    $generator->generateSitemap('nobatch');
     $this->drupalGet('sitemap.xml');
     $this->assertNoText('node/');
 
     // Test adding a custom link to the sitemap.
-    $sitemap->addCustomLink('/node/' . $node->id(), ['priority' => '0.2']);
-    $sitemap->generateSitemap('nobatch');
+    $generator->addCustomLink('/node/' . $node->id(), ['priority' => '0.2']);
+    $generator->generateSitemap('nobatch');
     $this->drupalGet('sitemap.xml');
     $this->assertText('0.2');
 
     // Test removing custom links from the sitemap.
-    $sitemap->removeCustomLink('/node/' . $node->id());
-    $sitemap->generateSitemap('nobatch');
+    $generator->removeCustomLink('/node/' . $node->id());
+    $generator->generateSitemap('nobatch');
     $this->drupalGet('sitemap.xml');
     $this->assertNoText('0.2');
   }

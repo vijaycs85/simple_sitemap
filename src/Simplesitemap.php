@@ -308,15 +308,15 @@ class Simplesitemap {
   /**
    * Generates and returns the sitemap index as string.
    *
-   * @param array $sitemap
+   * @param array $chunks
    *  Sitemap chunks which to generate the index from.
    *
    * @return string
    *  The sitemap index.
    */
-  private function getSitemapIndex($sitemap) {
+  private function getSitemapIndex($chunks) {
     $generator = new SitemapGenerator($this);
-    return $generator->generateSitemapIndex($sitemap);
+    return $generator->generateSitemapIndex($chunks);
   }
 
   /**
@@ -354,10 +354,10 @@ class Simplesitemap {
    *  Formatted timestamp of last sitemap generation, otherwise FALSE.
    */
   public function getGeneratedAgo() {
-    $sitemap = $this->fetchSitemap();
-    if (isset($sitemap[1]->sitemap_created)) {
+    $chunks = $this->fetchSitemap();
+    if (isset($chunks[1]->sitemap_created)) {
       return \Drupal::service('date.formatter')
-        ->formatInterval(REQUEST_TIME - $sitemap[1]->sitemap_created);
+        ->formatInterval(REQUEST_TIME - $chunks[1]->sitemap_created);
     }
     return FALSE;
   }

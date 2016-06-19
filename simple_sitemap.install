@@ -21,8 +21,8 @@ function simple_sitemap_requirements($phase) {
 
   switch($phase) {
     case 'runtime':
-      $sitemap = \Drupal::service('simple_sitemap.generator');
-      $generated_ago = $sitemap->getGeneratedAgo();
+      $generator = \Drupal::service('simple_sitemap.generator');
+      $generated_ago = $generator->getGeneratedAgo();
       if (!$generated_ago) {
         $value = t('Not available');
         $description = t("The sitemap has not been generated yet. Run cron, or <a href='@generate'>generate</a> the sitemap manually.", ['@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']);
@@ -79,8 +79,8 @@ function simple_sitemap_schema() {
  * Implements hook_install().
  */
 function simple_sitemap_install() {
-  $sitemap = \Drupal::service('simple_sitemap.generator');
-  $sitemap->generateSitemap('nobatch');
+  $generator = \Drupal::service('simple_sitemap.generator');
+  $generator->generateSitemap('nobatch');
   $base_url = $GLOBALS['base_url'];
   drupal_set_message(t("You can now include content into the <a href='@sitemap_url' target='_blank'>XML sitemap</a> by visiting the corresponding entity type edit pages (e.g. <a href='@content_type_url' target='_blank'>node type edit pages</a>) These settings can then be overridden for single entities.<br/> Support for additional entity types and custom links can be added on <a href='@config_url' target='_blank'>the module's configuration pages</a>.", ['@sitemap_url' => "$base_url/sitemap.xml", '@content_type_url' => "$base_url/admin/structure/types", '@config_url' => "$base_url/admin/config/search/simplesitemap"]));
 }
