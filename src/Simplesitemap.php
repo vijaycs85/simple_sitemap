@@ -46,7 +46,7 @@ class Simplesitemap {
     return $this->config->get($key);
   }
 
-  private function fetchSitemap() {
+  private function fetchSitemapChunks() {
     return \Drupal::service('database')
       ->query("SELECT * FROM {simple_sitemap}")
       ->fetchAllAssoc('id');
@@ -265,31 +265,30 @@ class Simplesitemap {
    * Returns the whole sitemap, a requested sitemap chunk,
    * or the sitemap index file.
    *
-   * @param int $sitemap_id
+   * @param int $chunk_id
    *
    * @return string $sitemap
    *  If no sitemap id provided, either a sitemap index is returned, or the
    *  whole sitemap, if the amount of links does not exceed the max links setting.
    *  If a sitemap id is provided, a sitemap chunk is returned.
    */
-  public function getSitemap($sitemap_id = NULL) {
-    $sitemap = $this->fetchSitemap();
-    if (is_null($sitemap_id) || !isset($sitemap[$sitemap_id])) {
+  public function getSitemap($chunk_id = NULL) {
+    $chunks = $this->fetchSitemapChunks();
+    if (is_null($chunk_id) || !isset($chunks[$chunk_id])) {
 
       // Return sitemap index, if there are multiple sitemap chunks.
-      if (count($sitemap) > 1) {
-        return $this->getSitemapIndex($sitemap);
+      if (count($chunks) > 1) {
+        return $this->getSitemapIndex($chunks);
       }
-
       else { // Return sitemap if there is only one chunk.
-        if (isset($sitemap[1])) {
-          return $sitemap[1]->sitemap_string;
+        if (isset($chunks[1])) {
+          return $chunks[1]->sitemap_string;
         }
         return FALSE;
       }
     }
     else { // Return specific sitemap chunk.
-      return $sitemap[$sitemap_id]->sitemap_string;
+      return $chunks[$chunk_id]->sitemap_string;
     }
   }
 

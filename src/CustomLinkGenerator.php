@@ -22,7 +22,7 @@ class CustomLinkGenerator {
    *
    */
   public function getCustomPaths($custom_paths) {
-    $paths = array();
+    $paths = [];
     foreach($custom_paths as $i => $custom_path) {
       $paths[$i]['path'] = $custom_path['path'];
       $paths[$i]['priority'] = isset($custom_path['priority']) ? $custom_path['priority'] : NULL;

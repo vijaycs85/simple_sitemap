@@ -22,15 +22,16 @@ class SitemapGenerator {
 
   private $sitemap;
   private $links;
-  private $generatingFrom;
+  private $generateFrom;
 
   function __construct($sitemap) {
     $this->sitemap = $sitemap;
-    $this->links = array();
+    $this->links = [];
+    $this->generateFrom = 'form';
   }
 
-  public function setGenerateFrom($from = 'form') {
-    $this->generatingFrom = $from;
+  public function setGenerateFrom($from) {
+    $this->generateFrom = $from;
   }
 
   /**
@@ -39,7 +40,7 @@ class SitemapGenerator {
   public function startGeneration() {
     $batch = new Batch();
     $batch->setBatchInfo([
-      'from' => $this->generatingFrom,
+      'from' => $this->generateFrom,
       'batch_process_limit' => !empty($this->sitemap->getSetting('batch_process_limit'))
         ? $this->sitemap->getSetting('batch_process_limit') : NULL,
       'max_links' => $this->sitemap->getSetting('max_links'),
@@ -104,11 +105,11 @@ class SitemapGenerator {
   public static function generateSitemap($links, $remove_sitemap = FALSE) {
     // Invoke alter hook.
     \Drupal::moduleHandler()->alter('simple_sitemap_links', $links);
-    $values = array(
+    $values = [
       'id' => $remove_sitemap ? 1 : \Drupal::service('database')->query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField() + 1,
       'sitemap_string' => self::generateSitemapChunk($links),
       'sitemap_created' => REQUEST_TIME,
-    );
+    ];
     if ($remove_sitemap) {
       \Drupal::service('database')->truncate('simple_sitemap')->execute();
     }

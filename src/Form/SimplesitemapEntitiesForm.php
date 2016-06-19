@@ -38,11 +38,11 @@ class SimplesitemapEntitiesForm extends ConfigFormBase {
 
     $sitemap = \Drupal::service('simple_sitemap.generator');
 
-    $form['simple_sitemap_entities']['entities'] = array(
+    $form['simple_sitemap_entities']['entities'] = [
       '#title' => t('Sitemap entities'),
       '#type' => 'fieldset',
       '#markup' => '<p>' . t("Simple XML sitemap settings will be added only to entity forms of entity types enabled here. For all entity types featuring bundles (e.g. <em>node</em>) sitemap settings have to be set on their bundle pages (e.g. <em>page</em>).") . '</p>',
-    );
+    ];
 
     $form['#attached']['library'][] = 'simple_sitemap/sitemapEntities';
     $form['#attached']['drupalSettings']['simple_sitemap'] = ['all_entities' => [], 'atomic_entities' => []];
@@ -63,7 +63,7 @@ class SimplesitemapEntitiesForm extends ConfigFormBase {
     ];
       $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled'] = [
         '#type' => 'checkbox',
-        '#title' => t('Enable @entity_type_label <em>(@entity_type_id)</em> support', array('@entity_type_label' => strtolower($entity_type_label), '@entity_type_id' => $entity_type_id)),
+        '#title' => t('Enable @entity_type_label <em>(@entity_type_id)</em> support', ['@entity_type_label' => strtolower($entity_type_label), '@entity_type_id' => $entity_type_id]),
         '#description' => t('Sitemap settings for this entity type can be set on its bundle pages and overridden on its entity pages.'),
         '#default_value' => $sitemap->entityTypeIsEnabled($entity_type_id),
       ];

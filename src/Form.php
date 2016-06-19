@@ -24,22 +24,24 @@ class Form {
   private $formState;
   private $sitemap;
 
-  private static $allowed_operations = ['default', 'edit', 'add'];
+  private static $allowedFormOperations = ['default', 'edit', 'add'];
+  private static $valuesToCheck = ['simple_sitemap_index_content', 'simple_sitemap_priority', 'simple_sitemap_regenerate_now'];
 
   /**
    * Form constructor.
    */
   function __construct($form_state = NULL) {
-    $this->formState = $form_state;
-    $this->entityCategory = NULL;
-    $this->alteringForm = TRUE;
-    $this->sitemap = \Drupal::service('simple_sitemap.generator');
-
     // Do not alter the form if user lacks certain permissions.
     if (!\Drupal::currentUser()->hasPermission('administer sitemap settings')) {
       $this->alteringForm = FALSE;
       return;
     }
+
+    $this->formState = $form_state;
+    $this->entityCategory = NULL;
+    $this->alteringForm = TRUE;
+    $this->sitemap = \Drupal::service('simple_sitemap.generator');
+
     $this->getEntityData();
   }
 
@@ -78,12 +80,12 @@ class Form {
   }
 
   public function displaySitemapRegenerationSetting(&$form_fragment) {
-    $form_fragment['simple_sitemap_regenerate_now'] = array(
+    $form_fragment['simple_sitemap_regenerate_now'] = [
       '#type' => 'checkbox',
       '#title' => t('Regenerate sitemap after hitting <em>Save</em>'),
       '#description' => t('This setting will regenerate the whole sitemap including the above changes.'),
       '#default_value' => FALSE,
-    );
+    ];
     if ($this->sitemap->getSetting('cron_generate')) {
       $form_fragment['simple_sitemap_regenerate_now']['#description'] .= '</br>' . t('Otherwise the sitemap will be regenerated on the next cron run.');
     }
@@ -153,7 +155,7 @@ class Form {
         $this->entityCategory = 'instance';
       }
       else {
-        foreach ($sitemap_entity_types as $sitemap_entity) {
+        foreach($sitemap_entity_types as $sitemap_entity) {
           if ($sitemap_entity->getBundleEntityType() == $entity_type_id) {
             $this->entityCategory = 'bundle';
             break;
@@ -195,7 +197,7 @@ class Form {
     $form_object = $this->formState->getFormObject();
     if (!is_null($form_object)
       && method_exists($form_object, 'getEntity')
-      && in_array($form_object->getOperation(), self::$allowed_operations)) {
+      && in_array($form_object->getOperation(), self::$allowedFormOperations)) {
       return $form_object->getEntity();
     }
     return FALSE;
@@ -207,8 +209,8 @@ class Form {
    *
    * @return int entity ID.
    */
-  public static function getNewEntityId($form_state) {
-    return $form_state->getFormObject()->getEntity()->id();
+  public function getFormEntityId() {
+    return $this->formState->getFormObject()->getEntity()->id();
   }
 
   /**
@@ -219,7 +221,7 @@ class Form {
    *  TRUE if simple_sitemap form values have been altered by the user.
    */
   public static function valuesChanged($form, $values) {
-    foreach (array('simple_sitemap_index_content', 'simple_sitemap_priority', 'simple_sitemap_regenerate_now') as $field_name) {
+    foreach (self::$valuesToCheck as $field_name) {
       if (isset($values[$field_name]) && $values[$field_name] != $form['simple_sitemap'][$field_name]['#default_value']) {
         return TRUE;
       }
@@ -233,7 +235,7 @@ class Form {
    * @return array $options
    */
   public static function getPrioritySelectValues() {
-    $options = array();
+    $options = [];
     foreach(range(0, self::PRIORITY_HIGHEST) as $value) {
       $value = self::formatPriority($value / self::PRIORITY_DIVIDER);
       $options[$value] = $value;

@@ -26,14 +26,14 @@ class Batch {
   const ANONYMOUS_USER_ID = 0;
 
   function __construct() {
-    $this->batch = array(
+    $this->batch = [
       'title' => t('Generating XML sitemap'),
       'init_message' => t(self::BATCH_INIT_MESSAGE),
       'error_message' => t(self::BATCH_ERROR_MESSAGE),
       'progress_message' => t(self::BATCH_PROGRESS_MESSAGE),
-      'operations' => array(),
-      'finished' => [__CLASS__ , 'finishGeneration'], // __CLASS__ . '::finishGeneration' not working possibly due to a drush error.
-    );
+      'operations' => [],
+      'finished' => [__CLASS__, 'finishGeneration'], // __CLASS__ . '::finishGeneration' not working possibly due to a drush error.
+    ];
   }
 
   public function setBatchInfo($batch_info) {
@@ -67,12 +67,12 @@ class Batch {
         break;
 
       case 'nobatch':
-        $context = array();
+        $context = [];
         foreach($this->batch['operations'] as $i => $operation) {
           $operation[1][] = &$context;
           call_user_func_array($operation[0], $operation[1]);
         }
-        self::finishGeneration(TRUE, $context['results'], array());
+        self::finishGeneration(TRUE, $context['results'], []);
         break;
     }
   }
@@ -87,17 +87,17 @@ class Batch {
     switch ($type) {
       case 'entity_types':
         foreach ($operations as $operation) {
-          $this->batch['operations'][] = array(
+          $this->batch['operations'][] = [
             __CLASS__ . '::generateBundleUrls',
-            array($operation['entity_info'], $this->batchInfo)
-          );
+            [$operation['entity_info'], $this->batchInfo]
+          ];
         };
         break;
       case 'custom_paths':
-        $this->batch['operations'][] = array(
+        $this->batch['operations'][] = [
           __CLASS__ . '::generateCustomUrls',
-          array($operations, $this->batchInfo)
-        );
+          [$operations, $this->batchInfo]
+        ];
         break;
     }
   }
@@ -113,9 +113,9 @@ class Batch {
       if (!empty($results['generate']) || $remove_sitemap) {
         SitemapGenerator::generateSitemap($results['generate'], $remove_sitemap);
       }
-      Cache::invalidateTags(array('simple_sitemap'));
+      Cache::invalidateTags(['simple_sitemap']);
       drupal_set_message(t("The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.",
-        array('@url' => $GLOBALS['base_url'] . '/sitemap.xml')));
+        ['@url' => $GLOBALS['base_url'] . '/sitemap.xml']));
     }
     else {
       //todo: register error
@@ -194,7 +194,7 @@ class Batch {
         // Loading url object for other entities.
         else {
           $route_name = 'entity.' . $entity_info['entity_type_name'] . '.canonical';
-          $route_parameters = array($entity_info['entity_type_name'] => $entity_id);
+          $route_parameters = [$entity_info['entity_type_name'] => $entity_id];
           $url_object = Url::fromRoute($route_name, $route_parameters);
         }
         $url_object->setOption('absolute', TRUE);
@@ -208,7 +208,7 @@ class Batch {
         if ($batch_info['remove_duplicates'] && self::pathProcessed($path, $context))
           continue;
 
-        $urls = array();
+        $urls = [];
         foreach ($languages as $language) {
           if ($language->getId() === $default_language_id) {
             $urls[$default_language_id] = $url_object->toString();
@@ -221,13 +221,13 @@ class Batch {
           }
         }
 
-        $context['results']['generate'][] = array(
+        $context['results']['generate'][] = [
           'path' => $path,
           'urls' => $urls,
           'options' => $url_object->getOptions(),
           'lastmod' => method_exists($entity, 'getChangedTime') ? date_iso8601($entity->getChangedTime()) : NULL,
           'priority' => isset($priority) ? $priority : (isset($entity_info['bundle_settings']['priority']) ? $entity_info['bundle_settings']['priority'] : NULL),
-        );
+        ];
         $priority = NULL;
       }
     }
@@ -264,10 +264,10 @@ class Batch {
 
       $user_input = $custom_path['path'][0] === '/' ? $custom_path['path'] : '/' . $custom_path['path'];
       if (!\Drupal::service('path.validator')->isValid($custom_path['path'])) { //todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush.
-        self::registerError(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, array('@faulty_path' => $custom_path['path']), 'warning');
+        self::registerError(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, ['@faulty_path' => $custom_path['path']], 'warning');
         continue;
       }
-      $options = array('absolute' => TRUE, 'language' => $languages[$default_language_id]);
+      $options = ['absolute' => TRUE, 'language' => $languages[$default_language_id]];
       $url_object = Url::fromUserInput($user_input, $options);
 
       if (!$url_object->access($batch_info['anonymous_user_account']))
@@ -277,7 +277,7 @@ class Batch {
       if ($batch_info['remove_duplicates'] && self::pathProcessed($path, $context))
         continue;
 
-      $urls = array();
+      $urls = [];
       foreach($languages as $language) {
         if ($language->getId() === $default_language_id) {
           $urls[$default_language_id] = $url_object->toString();
@@ -288,12 +288,12 @@ class Batch {
         }
       }
 
-      $context['results']['generate'][] = array(
+      $context['results']['generate'][] = [
         'path' => $path,
         'urls' => $urls,
         'options' => $url_object->getOptions(),
         'priority' => isset($custom_path['priority']) ? $custom_path['priority'] : NULL,
-      );
+      ];
     }
     if (self::isBatch($batch_info)) {
       self::setProgressInfo($context);
@@ -302,7 +302,7 @@ class Batch {
   }
 
   private static function pathProcessed($path, &$context) {
-    $path_pool = isset($context['results']['processed_paths']) ? $context['results']['processed_paths'] : array();
+    $path_pool = isset($context['results']['processed_paths']) ? $context['results']['processed_paths'] : [];
     if (in_array($path, $path_pool)) {
       return TRUE;
     }
@@ -311,12 +311,12 @@ class Batch {
   }
 
   private static function InitializeBatch($batch_info, $max, &$context) {
-    $context['results']['generate'] = !empty($context['results']['generate']) ? $context['results']['generate'] : array();
+    $context['results']['generate'] = !empty($context['results']['generate']) ? $context['results']['generate'] : [];
     if (self::isBatch($batch_info)) {
       $context['sandbox']['progress'] = 0;
       $context['sandbox']['current_id'] = 0;
       $context['sandbox']['max'] = $max;
-      $context['results']['processed_paths'] = !empty($context['results']['processed_paths']) ? $context['results']['processed_paths'] : array();
+      $context['results']['processed_paths'] = !empty($context['results']['processed_paths']) ? $context['results']['processed_paths'] : [];
     }
   }
 
@@ -334,11 +334,11 @@ class Batch {
       end($context['results']['generate']);
       $last_key = key($context['results']['generate']);
       if (!empty($context['results']['generate'][$last_key]['path'])) {
-        $context['message'] = t("Processing path @current out of @max: @path", array(
+        $context['message'] = t("Processing path @current out of @max: @path", [
           '@current' => $context['sandbox']['progress'],
           '@max' => $context['sandbox']['max'],
           '@path' => HTML::escape($context['results']['generate'][$last_key]['path']),
-        ));
+        ]);
       }
     }
   }
@@ -368,7 +368,7 @@ class Batch {
    * @param string $type (optional)
    *  Message type (status/warning/error).
    */
-  private static function registerError($message, $substitutions = array(), $type = 'error') {
+  private static function registerError($message, $substitutions = [], $type = 'error') {
     $message = strtr(t($message), $substitutions);
     \Drupal::logger('simple_sitemap')->notice($message);
     drupal_set_message($message, $type);

@@ -73,12 +73,12 @@ function simple_sitemap_entity_form_submit($form, &$form_state) {
     switch ($f->entityCategory) {
 
       case 'bundle':
-        $f->bundleName = !empty($f->bundleName) ? $f->bundleName : Form::getNewEntityId($form_state);
+        $f->bundleName = !empty($f->bundleName) ? $f->bundleName : $f->getFormEntityId();
         $sitemap->setBundleSettings($f->entityTypeId, $f->bundleName, ['index' => $values['simple_sitemap_index_content'], 'priority' => $values['simple_sitemap_priority']]);
         break;
 
       case 'instance':
-        $f->instanceId = !empty($f->instanceId) ? $f->instanceId : Form::getNewEntityId($form_state);
+        $f->instanceId = !empty($f->instanceId) ? $f->instanceId : $f->getFormEntityId();
         $sitemap->setEntityInstanceSettings($f->entityTypeId, $f->instanceId, ['index' => $values['simple_sitemap_index_content'], 'priority' => $values['simple_sitemap_priority']]);
         break;
     }
@@ -113,7 +113,7 @@ function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
   if (isset($entity_types[$entity_type_id][$bundle])) {
     unset($entity_types[$entity_type_id][$bundle]);
     $sitemap->saveConfig('entity_types', $entity_types);
-    $message = t("You may want to <a href='@url'>regenerate</a> your XML sitemap now.", array('@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'));
+    $message = t("You may want to <a href='@url'>regenerate</a> your XML sitemap now.", ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']);
     if ($sitemap->getSetting('cron_generate')) {
       $message .= '</br>' . t('Otherwise the sitemap will be regenerated on the next cron run.');
     }
