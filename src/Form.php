@@ -31,36 +31,16 @@ class Form {
    * Form constructor.
    */
   function __construct($form_state = NULL) {
-    // Do not alter the form if user lacks certain permissions.
-    if (!\Drupal::currentUser()->hasPermission('administer sitemap settings')) {
-      $this->alteringForm = FALSE;
-      return;
-    }
 
     $this->formState = $form_state;
     $this->entityCategory = NULL;
     $this->alteringForm = TRUE;
     $this->generator = \Drupal::service('simple_sitemap.generator');
 
-    $this->getEntityData();
-  }
-
-  private function getEntityData() {
-    if (!is_null($this->formState))
+    if (!is_null($this->formState)) {
       $this->getEntityDataFromFormEntity();
-
-    // Do not alter the form if it is irrelevant to sitemap generation.
-    if (empty($this->entityCategory))
-      $this->alteringForm = FALSE;
-
-    // Do not alter the form if entity is not enabled in sitemap settings.
-    elseif (!$this->generator->entityTypeIsEnabled($this->entityTypeId))
-      $this->alteringForm = FALSE;
-
-    // Do not alter the form, if sitemap is disabled for the entity type of this entity instance.
-    elseif ($this->entityCategory == 'instance'
-      && !$this->generator->bundleIsIndexed($this->entityTypeId, $this->bundleName))
-      $this->alteringForm = FALSE;
+      $this->assertAlteringForm();
+    }
   }
 
   public function setEntityCategory($entity_category) {
@@ -79,7 +59,28 @@ class Form {
     $this->instanceId = $instance_id;
   }
 
-  public function displaySitemapRegenerationSetting(&$form_fragment) {
+  private function assertAlteringForm() {
+
+    // Do not alter the form if user lacks certain permissions.
+    if (!\Drupal::currentUser()->hasPermission('administer sitemap settings'))
+      $this->alteringForm = FALSE;
+
+    // Do not alter the form if it is irrelevant to sitemap generation.
+    elseif (empty($this->entityCategory))
+      $this->alteringForm = FALSE;
+
+    // Do not alter the form if entity is not enabled in sitemap settings.
+    elseif (!$this->generator->entityTypeIsEnabled($this->entityTypeId))
+      $this->alteringForm = FALSE;
+
+    // Do not alter the form, if sitemap is disabled for the entity type of this
+    // entity instance.
+    elseif ($this->entityCategory == 'instance'
+      && !$this->generator->bundleIsIndexed($this->entityTypeId, $this->bundleName))
+      $this->alteringForm = FALSE;
+  }
+
+  public function displayRegenerateNow(&$form_fragment) {
     $form_fragment['simple_sitemap_regenerate_now'] = [
       '#type' => 'checkbox',
       '#title' => t('Regenerate sitemap after hitting <em>Save</em>'),
@@ -91,7 +92,7 @@ class Form {
     }
   }
   
-  public function displayEntitySitemapSettings(&$form_fragment, $multiple = FALSE) {
+  public function displayEntitySettings(&$form_fragment, $multiple = FALSE) {
     $prefix = $multiple ? $this->entityTypeId . '_' : '';
 
     if ($this->entityCategory == 'instance') {

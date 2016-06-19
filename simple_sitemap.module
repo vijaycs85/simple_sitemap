@@ -21,26 +21,24 @@ function simple_sitemap_help($route_name, \Drupal\Core\Routing\RouteMatchInterfa
  */
 function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
   $f = new Form($form_state);
-  if ($f->alteringForm) {
-    $form['simple_sitemap'] = [
-      '#type' => 'details',
-      '#group' => isset($form['additional_settings']) ? 'additional_settings' : 'advanced',
-      '#title' => t('Simple XML sitemap'),
-      '#description' => $f->entityCategory == 'instance' ? t('Settings for this specific entity can be overridden here.') : '',
-    ];
-    // Attach some js magic to forms.
-    if ($f->entityTypeId != 'comment' || $f->entityCategory != 'instance') // todo: JS not working on comment entity form, hence disabling.
-      $form['#attached']['library'][] = 'simple_sitemap/form';
-    // Only attach fieldset summary js to 'additional settings' vertical tabs.
-    if (isset($form['additional_settings'])) {
-      $form['#attached']['library'][] = 'simple_sitemap/fieldsetSummaries';
-    }
-    $f->displayEntitySitemapSettings($form['simple_sitemap']);
-    $f->displaySitemapRegenerationSetting($form['simple_sitemap']);
-  }
-  else {
+  if (!$f->alteringForm)
     return;
+
+  $form['simple_sitemap'] = [
+    '#type' => 'details',
+    '#group' => isset($form['additional_settings']) ? 'additional_settings' : 'advanced',
+    '#title' => t('Simple XML sitemap'),
+    '#description' => $f->entityCategory == 'instance' ? t('Settings for this specific entity can be overridden here.') : '',
+  ];
+  // Attach some js magic to forms.
+  if ($f->entityTypeId != 'comment' || $f->entityCategory != 'instance') // todo: JS not working on comment entity form, hence disabling.
+    $form['#attached']['library'][] = 'simple_sitemap/form';
+  // Only attach fieldset summary js to 'additional settings' vertical tabs.
+  if (isset($form['additional_settings'])) {
+    $form['#attached']['library'][] = 'simple_sitemap/fieldsetSummaries';
   }
+  $f->displayEntitySettings($form['simple_sitemap']);
+  $f->displayRegenerateNow($form['simple_sitemap']);
 
   // Add submission handler.
   if (isset($form['actions']['submit']['#submit'])) {

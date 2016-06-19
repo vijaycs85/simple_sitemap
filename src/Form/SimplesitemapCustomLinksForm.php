@@ -58,7 +58,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
     ];
 
     $f = new Form();
-    $f->displaySitemapRegenerationSetting($form['simple_sitemap_custom']);
+    $f->displayRegenerateNow($form['simple_sitemap_custom']);
 
     return parent::buildForm($form, $form_state);
   }

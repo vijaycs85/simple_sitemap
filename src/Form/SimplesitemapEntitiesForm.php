@@ -73,11 +73,11 @@ class SimplesitemapEntitiesForm extends ConfigFormBase {
         $f->setEntityCategory('bundle');
         $f->setEntityTypeId($entity_type_id);
         $f->setBundleName($entity_type_id);
-        $f->displayEntitySitemapSettings($form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_settings'], TRUE);
+        $f->displayEntitySettings($form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_settings'], TRUE);
         $form['#attached']['drupalSettings']['simple_sitemap']['atomic_entities'][] = str_replace('_', '-', $entity_type_id);
       }
     }
-    $f->displaySitemapRegenerationSetting($form['simple_sitemap_entities']['entities']);
+    $f->displayRegenerateNow($form['simple_sitemap_entities']['entities']);
     return parent::buildForm($form, $form_state);
   }
 
