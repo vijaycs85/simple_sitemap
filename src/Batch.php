@@ -222,7 +222,8 @@ class Batch {
         $context['results']['generate'][] = [
           'path' => $path,
           'urls' => $urls,
-//          'options' => $url_object->getOptions(),
+          'entity_info' => ['entity_type' => $entity_info['entity_type_name'], 'id' => $entity_id],
+//          'options' => $url_object->getOptions(), // Not needed, removed to save resources
           'lastmod' => method_exists($entity, 'getChangedTime') ? date_iso8601($entity->getChangedTime()) : NULL,
           'priority' => isset($priority) ? $priority : (isset($entity_info['bundle_settings']['priority']) ? $entity_info['bundle_settings']['priority'] : NULL),
         ];
@@ -288,7 +289,7 @@ class Batch {
       $context['results']['generate'][] = [
         'path' => $path,
         'urls' => $urls,
-//        'options' => $url_object->getOptions(),
+//        'options' => $url_object->getOptions(), // Not needed, removed to save resources
         'priority' => isset($custom_path['priority']) ? $custom_path['priority'] : NULL,
       ];
     }
