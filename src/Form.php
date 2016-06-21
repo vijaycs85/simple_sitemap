@@ -24,7 +24,7 @@ class Form {
   private $formState;
   private $generator;
 
-  private static $allowedFormOperations = ['default', 'edit', 'add'];
+  private static $skipFormOperations = ['delete', 'cancel'];
   private static $valuesToCheck = ['simple_sitemap_index_content', 'simple_sitemap_priority', 'simple_sitemap_regenerate_now'];
 
   /**
@@ -104,14 +104,15 @@ class Form {
     }
     $index = isset($settings['index']) ? $settings['index'] : 0;
     $priority = isset($settings['priority']) ? $settings['priority'] : self::PRIORITY_DEFAULT;
+    $bundle_name = !empty($this->bundleName) ? $this->bundleName : t('undefined');
 
     if (!$multiple) {
       $form_fragment[$prefix . 'simple_sitemap_index_content'] = [
         '#type' => 'radios',
         '#default_value' => $index,
         '#options' => [
-          0 => $this->entityCategory == 'instance' ? t('Do not index this entity') : t('Do not index entities of this type'),
-          1 => $this->entityCategory == 'instance' ? t('Index this entity') : t('Index entities of this type'),
+          0 => $this->entityCategory == 'instance' ? t('Do not index this @bundle entity', ['@bundle' => $bundle_name]) : t('Do not index entities of this type'),
+          1 => $this->entityCategory == 'instance' ? t('Index this @bundle entity', ['@bundle' => $bundle_name]) : t('Index entities of this type'),
         ]
       ];
       if ($this->entityCategory == 'instance' && isset($bundle_settings['index'])) {
@@ -119,15 +120,10 @@ class Form {
       }
     }
 
-    if ($this->entityCategory == 'instance') {
-      $priority_description = t('The priority this entity will have in the eyes of search engine bots.');
-    }
-    elseif (!$multiple) {
-      $priority_description = t('The priority entities of this bundle will have in the eyes of search engine bots.');
-    }
-    else {
+    if ($this->entityCategory == 'instance')
+      $priority_description = t('The priority this @bundle entity will have in the eyes of search engine bots.', ['@bundle' => $bundle_name]);
+    else
       $priority_description = t('The priority entities of this type will have in the eyes of search engine bots.');
-    }
     $form_fragment[$prefix . 'simple_sitemap_priority'] = [
       '#type' => 'select',
       '#title' => t('Priority'),
@@ -198,7 +194,7 @@ class Form {
     $form_object = $this->formState->getFormObject();
     if (!is_null($form_object)
       && method_exists($form_object, 'getEntity')
-      && in_array($form_object->getOperation(), self::$allowedFormOperations)) {
+      && !in_array($form_object->getOperation(), self::$skipFormOperations)) {
       return $form_object->getEntity();
     }
     return FALSE;

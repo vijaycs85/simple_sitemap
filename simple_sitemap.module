@@ -28,7 +28,7 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
     '#type' => 'details',
     '#group' => isset($form['additional_settings']) ? 'additional_settings' : 'advanced',
     '#title' => t('Simple XML sitemap'),
-    '#description' => $f->entityCategory == 'instance' ? t('Settings for this specific entity can be overridden here.') : '',
+    '#description' => $f->entityCategory == 'instance' ? t('Settings for this entity can be overridden here.') : '',
   ];
   // Attach some js magic to forms.
   if ($f->entityTypeId != 'comment' || $f->entityCategory != 'instance') // todo: JS not working on comment entity form, hence disabling.
