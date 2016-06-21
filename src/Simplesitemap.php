@@ -354,7 +354,7 @@ class Simplesitemap {
    *  Formatted timestamp of last sitemap generation, otherwise FALSE.
    */
   public function getGeneratedAgo() {
-    $chunks = $this->fetchSitemap();
+    $chunks = $this->fetchSitemapChunks();
     if (isset($chunks[1]->sitemap_created)) {
       return \Drupal::service('date.formatter')
         ->formatInterval(REQUEST_TIME - $chunks[1]->sitemap_created);

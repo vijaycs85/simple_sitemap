@@ -179,14 +179,10 @@ class SitemapGenerator {
           $writer->endElement();
         }
       }
-
-      // Add priority if any.
-      if (isset($link['priority'])) {
+      if (isset($link['priority'])) { // Add priority if any.
         $writer->writeElement('priority', $link['priority']);
       }
-
-      // Add lastmod if any.
-      if (isset($link['lastmod'])) {
+      if (isset($link['lastmod'])) { // Add lastmod if any.
         $writer->writeElement('lastmod', $link['lastmod']);
       }
       $writer->endElement();

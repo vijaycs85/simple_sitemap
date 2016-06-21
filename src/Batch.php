@@ -141,7 +141,6 @@ class Batch {
    */
   public static function generateBundleUrls($entity_info, $batch_info, &$context) {
     $languages = \Drupal::languageManager()->getLanguages();
-    $default_language_id = Simplesitemap::getDefaultLangId();
 
     $query = \Drupal::entityQuery($entity_info['entity_type_name']);
     if (!empty($entity_info['keys']['id'])) {
@@ -184,20 +183,19 @@ class Batch {
           $priority = $batch_info['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['priority'];
         }
 
-        // Loading url object for menu links.
-        if ($entity_info['entity_type_name'] == 'menu_link_content') {
-          if (!$entity->isEnabled())
-            continue;
-          $url_object = $entity->getUrlObject();
-        }
-
-        // Loading url object for other entities.
-        else {
-          $route_name = 'entity.' . $entity_info['entity_type_name'] . '.canonical';
-          $route_parameters = [$entity_info['entity_type_name'] => $entity_id];
-          $url_object = Url::fromRoute($route_name, $route_parameters);
+        switch ($entity_info['entity_type_name']) {
+          case 'menu_link_content': // Loading url object for menu links.
+            if (!$entity->isEnabled())
+              continue;
+            $url_object = $entity->getUrlObject();
+            break;
+          default: // Loading url object for other entities.
+            $route_name = 'entity.' . $entity_info['entity_type_name'] . '.canonical';
+            $route_parameters = [$entity_info['entity_type_name'] => $entity_id];
+            $url_object = Url::fromRoute($route_name, $route_parameters);
         }
         $url_object->setOption('absolute', TRUE);
+        $url_object->setOption('language', $languages[Simplesitemap::getDefaultLangId()]);
 
         // Do not include path if anonymous users do not have access to it.
         if (!$url_object->access($batch_info['anonymous_user_account']))
@@ -210,8 +208,8 @@ class Batch {
 
         $urls = [];
         foreach ($languages as $language) {
-          if ($language->getId() === $default_language_id) {
-            $urls[$default_language_id] = $url_object->toString();
+          if ($language->isDefault()) {
+            $urls[$language->getId()] = $url_object->toString();
           }
           else {
 //            if ($entity->hasTranslation($language->getId())) {
@@ -224,7 +222,7 @@ class Batch {
         $context['results']['generate'][] = [
           'path' => $path,
           'urls' => $urls,
-          'options' => $url_object->getOptions(),
+//          'options' => $url_object->getOptions(),
           'lastmod' => method_exists($entity, 'getChangedTime') ? date_iso8601($entity->getChangedTime()) : NULL,
           'priority' => isset($priority) ? $priority : (isset($entity_info['bundle_settings']['priority']) ? $entity_info['bundle_settings']['priority'] : NULL),
         ];
@@ -250,7 +248,6 @@ class Batch {
   public static function generateCustomUrls($custom_paths, $batch_info, &$context) {
 
     $languages = \Drupal::languageManager()->getLanguages();
-    $default_language_id = Simplesitemap::getDefaultLangId();
 
     // Initialize batch if not done yet.
     if (self::needsInitialization($context)) {
@@ -267,7 +264,7 @@ class Batch {
         self::registerError(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, ['@faulty_path' => $custom_path['path']], 'warning');
         continue;
       }
-      $options = ['absolute' => TRUE, 'language' => $languages[$default_language_id]];
+      $options = ['absolute' => TRUE, 'language' => $languages[Simplesitemap::getDefaultLangId()]];
       $url_object = Url::fromUserInput($user_input, $options);
 
       if (!$url_object->access($batch_info['anonymous_user_account']))
@@ -278,9 +275,9 @@ class Batch {
         continue;
 
       $urls = [];
-      foreach($languages as $language) {
-        if ($language->getId() === $default_language_id) {
-          $urls[$default_language_id] = $url_object->toString();
+      foreach ($languages as $language) {
+        if ($language->isDefault()) {
+          $urls[$language->getId()] = $url_object->toString();
         }
         else {
           $url_object->setOption('language', $language);
@@ -291,7 +288,7 @@ class Batch {
       $context['results']['generate'][] = [
         'path' => $path,
         'urls' => $urls,
-        'options' => $url_object->getOptions(),
+//        'options' => $url_object->getOptions(),
         'priority' => isset($custom_path['priority']) ? $custom_path['priority'] : NULL,
       ];
     }
