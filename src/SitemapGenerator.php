@@ -47,29 +47,35 @@ class SitemapGenerator {
       'remove_duplicates' => $this->generator->getSetting('remove_duplicates'),
       'entity_types' => $this->generator->getConfig('entity_types'),
     ]);
-    $batch->addOperations('custom_paths', $this->batchAddCustomPaths());
-    $batch->addOperations('entity_types', $this->batchAddEntityTypePaths());
+    // Add custom link generating operation.
+    $batch->addOperation('generateCustomUrls', $this->getCustomUrlsData());
+
+    // Add entity link generating operations.
+    foreach($this->getEntityTypeData() as $data) {
+      $batch->addOperation('generateBundleUrls', $data);
+    }
     $batch->start();
   }
 
   /**
-   * Returns the custom path generating operation.
+   * Returns a batch-ready data array for custom link generation.
    *
-   * @return array $operation.
+   * @return array $data
+   *  Data to be processed.
    */
-  private function batchAddCustomPaths() {
+  private function getCustomUrlsData() {
     $link_generator = new CustomLinkGenerator();
     return $link_generator->getCustomPaths($this->generator->getConfig('custom'));
   }
 
   /**
    * Collects entity metadata for entities that are set to be indexed
-   * and returns a batch-ready operation.
+   * and returns an array of batch-ready data sets for entity link generation.
    *
    * @return array $operations.
    */
-  private function batchAddEntityTypePaths() {
-    $operations = [];
+  private function getEntityTypeData() {
+    $data_sets = [];
     $sitemap_entity_types = Simplesitemap::getSitemapEntityTypes();
     $entity_types = $this->generator->getConfig('entity_types');
     foreach($entity_types as $entity_type_name => $bundles) {
@@ -78,19 +84,17 @@ class SitemapGenerator {
         $keys['bundle'] = $entity_type_name == 'menu_link_content' ? 'menu_name' : $keys['bundle']; // Menu fix.
         foreach($bundles as $bundle_name => $bundle_settings) {
           if ($bundle_settings['index']) {
-            $operations[] = [
-              'entity_info' => [
-                'bundle_settings' => $bundle_settings,
-                'bundle_name' => $bundle_name,
-                'entity_type_name' => $entity_type_name,
-                'keys' => $keys,
-              ],
+            $data_sets[] = [
+              'bundle_settings' => $bundle_settings,
+              'bundle_name' => $bundle_name,
+              'entity_type_name' => $entity_type_name,
+              'keys' => $keys,
             ];
           }
         }
       }
     }
-    return $operations;
+    return $data_sets;
   }
 
   /**
@@ -104,7 +108,7 @@ class SitemapGenerator {
    */
   public static function generateSitemap($links, $remove_sitemap = FALSE) {
     // Invoke alter hook.
-    \Drupal::moduleHandler()->alter('simple_sitemap_links', $links);
+        \Drupal::moduleHandler()->alter('simple_sitemap_links', $links);
     $values = [
       'id' => $remove_sitemap ? 1 : \Drupal::service('database')->query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField() + 1,
       'sitemap_string' => self::generateSitemapChunk($links),

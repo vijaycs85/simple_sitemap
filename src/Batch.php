@@ -78,28 +78,15 @@ class Batch {
   }
 
   /**
-   * Adds operations to the batch of type 'entity_types' or 'custom_paths'.
+   * Adds an operation to the batch.
    *
-   * @param string $type
-   * @param array $operations
+   * @param string $processing_method
+   * @param array $data
    */
-  public function addOperations($type, $operations) {
-    switch ($type) {
-      case 'entity_types':
-        foreach ($operations as $operation) {
-          $this->batch['operations'][] = [
-            __CLASS__ . '::generateBundleUrls',
-            [$operation['entity_info'], $this->batchInfo]
-          ];
-        };
-        break;
-      case 'custom_paths':
-        $this->batch['operations'][] = [
-          __CLASS__ . '::generateCustomUrls',
-          [$operations, $this->batchInfo]
-        ];
-        break;
-    }
+  public function addOperation($processing_method, $data) {
+    $this->batch['operations'][] = [
+      __CLASS__ . '::' . $processing_method, [$data, $this->batchInfo]
+    ];
   }
 
   /**
@@ -260,13 +247,13 @@ class Batch {
         self::SetCurrentId($i, $context);
       }
 
-      $user_input = $custom_path['path'][0] === '/' ? $custom_path['path'] : '/' . $custom_path['path'];
+//      $user_input = $custom_path['path'][0] === '/' ? $custom_path['path'] : '/' . $custom_path['path']; // Not needed due to checks on form submit
       if (!\Drupal::service('path.validator')->isValid($custom_path['path'])) { //todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush.
         self::registerError(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, ['@faulty_path' => $custom_path['path']], 'warning');
         continue;
       }
       $options = ['absolute' => TRUE, 'language' => $languages[Simplesitemap::getDefaultLangId()]];
-      $url_object = Url::fromUserInput($user_input, $options);
+      $url_object = Url::fromUserInput($custom_path['path'], $options);
 
       if (!$url_object->access($batch_info['anonymous_user_account']))
         continue;
