@@ -38,7 +38,6 @@ class Batch {
 
   public function setBatchInfo($batch_info) {
     $this->batchInfo = $batch_info;
-    $this->batchInfo['anonymous_user_account'] = User::load(self::ANONYMOUS_USER_ID);
   }
 
   /**
@@ -127,18 +126,14 @@ class Batch {
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
   public static function generateBundleUrls($entity_info, $batch_info, &$context) {
-    $languages = \Drupal::languageManager()->getLanguages();
-
     $query = \Drupal::entityQuery($entity_info['entity_type_name']);
-    if (!empty($entity_info['keys']['id'])) {
+    if (!empty($entity_info['keys']['id']))
       $query->sort($entity_info['keys']['id'], 'ASC');
-    }
-    if (!empty($entity_info['keys']['bundle'])) {
+    if (!empty($entity_info['keys']['bundle']))
       $query->condition($entity_info['keys']['bundle'], $entity_info['bundle_name']);
-    }
-    if (!empty($entity_info['keys']['status'])) {
+    if (!empty($entity_info['keys']['status']))
       $query->condition($entity_info['keys']['status'], 1);
-    }
+
     // Initialize batch if not done yet.
     if (self::needsInitialization($context)) {
       $count_query = clone $query;
@@ -152,6 +147,8 @@ class Batch {
 
     $results = $query->execute();
     if (!empty($results)) {
+      $languages = \Drupal::languageManager()->getLanguages();
+      $anon_user = User::load(self::ANONYMOUS_USER_ID);
       $entities = \Drupal::entityTypeManager()->getStorage($entity_info['entity_type_name'])->loadMultiple($results);
 
       foreach ($entities as $entity_id => $entity) {
@@ -177,15 +174,11 @@ class Batch {
             $url_object = $entity->getUrlObject();
             break;
           default: // Loading url object for other entities.
-            $route_name = 'entity.' . $entity_info['entity_type_name'] . '.canonical';
-            $route_parameters = [$entity_info['entity_type_name'] => $entity_id];
-            $url_object = Url::fromRoute($route_name, $route_parameters);
+            $url_object = $entity->toUrl();
         }
-        $url_object->setOption('absolute', TRUE);
-        $url_object->setOption('language', $languages[Simplesitemap::getDefaultLangId()]);
 
         // Do not include path if anonymous users do not have access to it.
-        if (!$url_object->access($batch_info['anonymous_user_account']))
+        if (!$url_object->access($anon_user))
           continue;
 
         // Do not include path if it already exists.
@@ -236,6 +229,7 @@ class Batch {
   public static function generateCustomUrls($custom_paths, $batch_info, &$context) {
 
     $languages = \Drupal::languageManager()->getLanguages();
+    $anon_user = User::load(self::ANONYMOUS_USER_ID);
 
     // Initialize batch if not done yet.
     if (self::needsInitialization($context)) {
@@ -246,8 +240,6 @@ class Batch {
       if (self::isBatch($batch_info)) {
         self::SetCurrentId($i, $context);
       }
-
-//      $user_input = $custom_path['path'][0] === '/' ? $custom_path['path'] : '/' . $custom_path['path']; // Not needed due to checks on form submit
       if (!\Drupal::service('path.validator')->isValid($custom_path['path'])) { //todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush.
         self::registerError(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, ['@faulty_path' => $custom_path['path']], 'warning');
         continue;
@@ -255,7 +247,7 @@ class Batch {
       $options = ['absolute' => TRUE, 'language' => $languages[Simplesitemap::getDefaultLangId()]];
       $url_object = Url::fromUserInput($custom_path['path'], $options);
 
-      if (!$url_object->access($batch_info['anonymous_user_account']))
+      if (!$url_object->access($anon_user))
         continue;
 
       $path = $url_object->getInternalPath();
