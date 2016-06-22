@@ -186,24 +186,18 @@ class Batch {
         if ($batch_info['remove_duplicates'] && self::pathProcessed($path, $context))
           continue;
 
+        $url_object->setOption('absolute', TRUE);
+
         $urls = [];
         foreach ($languages as $language) {
-          if ($language->isDefault()) {
-            $urls[$language->getId()] = $url_object->toString();
-          }
-          else {
-//            if ($entity->hasTranslation($language->getId())) {
-            $url_object->setOption('language', $language);
-            $urls[$language->getId()] = $url_object->toString();
-//            }
-          }
+          $url_object->setOption('language', $language);
+          $urls[$language->getId()] = $url_object->toString();
         }
 
         $context['results']['generate'][] = [
           'path' => $path,
           'urls' => $urls,
           'entity_info' => ['entity_type' => $entity_info['entity_type_name'], 'id' => $entity_id],
-//          'options' => $url_object->getOptions(), // Not needed, removed to save resources
           'lastmod' => method_exists($entity, 'getChangedTime') ? date_iso8601($entity->getChangedTime()) : NULL,
           'priority' => isset($priority) ? $priority : (isset($entity_info['bundle_settings']['priority']) ? $entity_info['bundle_settings']['priority'] : NULL),
         ];
@@ -256,19 +250,13 @@ class Batch {
 
       $urls = [];
       foreach ($languages as $language) {
-        if ($language->isDefault()) {
-          $urls[$language->getId()] = $url_object->toString();
-        }
-        else {
-          $url_object->setOption('language', $language);
-          $urls[$language->getId()] = $url_object->toString();
-        }
+        $url_object->setOption('language', $language);
+        $urls[$language->getId()] = $url_object->toString();
       }
 
       $context['results']['generate'][] = [
         'path' => $path,
         'urls' => $urls,
-//        'options' => $url_object->getOptions(), // Not needed, removed to save resources
         'priority' => isset($custom_path['priority']) ? $custom_path['priority'] : NULL,
       ];
     }
