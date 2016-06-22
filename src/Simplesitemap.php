@@ -362,10 +362,6 @@ class Simplesitemap {
     return FALSE;
   }
 
-  public static function getDefaultLangId() {
-    return \Drupal::languageManager()->getDefaultLanguage()->getId();
-  }
-
   /**
    * Returns objects of entity types that can be indexed by the sitemap.
    *

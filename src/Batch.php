@@ -238,8 +238,7 @@ class Batch {
         self::registerError(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, ['@faulty_path' => $custom_path['path']], 'warning');
         continue;
       }
-      $options = ['absolute' => TRUE, 'language' => $languages[Simplesitemap::getDefaultLangId()]];
-      $url_object = Url::fromUserInput($custom_path['path'], $options);
+      $url_object = Url::fromUserInput($custom_path['path'], ['absolute' => TRUE]);
 
       if (!$url_object->access($anon_user))
         continue;

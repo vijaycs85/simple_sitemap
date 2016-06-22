@@ -157,7 +157,7 @@ class SitemapGenerator {
    * @return string sitemap chunk
    */
   private static function generateSitemapChunk($links) {
-    $default_language_id = Simplesitemap::getDefaultLangId();
+    $default_language_id = \Drupal::languageManager()->getDefaultLanguage()->getId();
 
     $writer = new XMLWriter();
     $writer->openMemory();
