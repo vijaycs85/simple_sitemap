@@ -137,7 +137,7 @@ class Batch {
     // Initialize batch if not done yet.
     if (self::needsInitialization($context)) {
       $count_query = clone $query;
-      self::InitializeBatch($batch_info, $count_query->count()->execute(), $context);
+      self::initializeBatch($batch_info, $count_query->count()->execute(), $context);
     }
 
     // Creating a query limited to n=batch_process_limit entries.
@@ -153,7 +153,7 @@ class Batch {
 
       foreach ($entities as $entity_id => $entity) {
         if (self::isBatch($batch_info)) {
-          self::SetCurrentId($entity_id, $context); //todo: move outside of this loop
+          self::setCurrentId($entity_id, $context); //todo: move outside of this loop
         }
 
         // Overriding entity settings if it has been overridden on entity edit page...
@@ -227,12 +227,12 @@ class Batch {
 
     // Initialize batch if not done yet.
     if (self::needsInitialization($context)) {
-      self::InitializeBatch($batch_info, count($custom_paths), $context);
+      self::initializeBatch($batch_info, count($custom_paths), $context);
     }
 
     foreach($custom_paths as $i => $custom_path) {
       if (self::isBatch($batch_info)) {
-        self::SetCurrentId($i, $context);
+        self::setCurrentId($i, $context);
       }
       if (!\Drupal::service('path.validator')->isValid($custom_path['path'])) { //todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush.
         self::registerError(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, ['@faulty_path' => $custom_path['path']], 'warning');
@@ -274,7 +274,7 @@ class Batch {
     return FALSE;
   }
 
-  private static function InitializeBatch($batch_info, $max, &$context) {
+  private static function initializeBatch($batch_info, $max, &$context) {
     $context['results']['generate'] = !empty($context['results']['generate']) ? $context['results']['generate'] : [];
     if (self::isBatch($batch_info)) {
       $context['sandbox']['progress'] = 0;
@@ -284,7 +284,7 @@ class Batch {
     }
   }
 
-  private static function SetCurrentId($id, &$context) {
+  private static function setCurrentId($id, &$context) {
     $context['sandbox']['progress']++;
     $context['sandbox']['current_id'] = $id;
     $context['results']['link_count'] = !isset($context['results']['link_count']) ? 1 : $context['results']['link_count'] + 1; //Not used ATM.
