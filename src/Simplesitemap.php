@@ -123,7 +123,7 @@ class Simplesitemap {
    *  Example: ['index' => TRUE, 'priority' => 0.5]
    */
   public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings) {
-    $bundle_name = !empty($bundle_name) ? $bundle_name : $entity_type_id;
+    $bundle_name = is_null($bundle_name) ? $entity_type_id : $bundle_name;
     $entity_types = $this->getConfig('entity_types');
     $this->addLinkSettings('entity', $settings, $entity_types[$entity_type_id][$bundle_name]);
     $this->saveConfig('entity_types', $entity_types);
@@ -165,7 +165,8 @@ class Simplesitemap {
     return FALSE;
   }
 
-  public function getBundleSettings($entity_type_id, $bundle_name) {
+  public function getBundleSettings($entity_type_id, $bundle_name = NULL) {
+    $bundle_name = is_null($bundle_name) ? $entity_type_id : $bundle_name;
     $entity_types = $this->getConfig('entity_types');
     if (isset($entity_types[$entity_type_id][$bundle_name])) {
       $settings = $entity_types[$entity_type_id][$bundle_name];
@@ -175,7 +176,7 @@ class Simplesitemap {
     return FALSE;
   }
 
-  public function bundleIsIndexed($entity_type_id, $bundle_name) {
+  public function bundleIsIndexed($entity_type_id, $bundle_name = NULL) {
     $settings = $this->getBundleSettings($entity_type_id, $bundle_name);
     return !empty($settings['index']);
   }
