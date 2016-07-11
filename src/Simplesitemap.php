@@ -374,7 +374,6 @@ class Simplesitemap {
     foreach ($entity_types as $entity_type_id => $entity_type) {
       if (!$entity_type instanceof ContentEntityTypeInterface || !method_exists($entity_type, 'getBundleEntityType')) {
         unset($entity_types[$entity_type_id]);
-        continue;
       }
     }
     return $entity_types;
@@ -389,7 +388,6 @@ class Simplesitemap {
       if (empty($entity_type->getBundleEntityType())) {
         return TRUE;
       }
-      return FALSE;
     }
     return FALSE; //todo: throw exception
   }

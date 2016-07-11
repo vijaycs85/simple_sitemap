@@ -24,7 +24,7 @@ class Form {
   private $formState;
   private $generator;
 
-  private static $skipFormOperations = ['delete', 'cancel'];
+  private static $allowedFormOperations = ['default', 'edit', 'add', 'register'];
   private static $valuesToCheck = ['simple_sitemap_index_content', 'simple_sitemap_priority', 'simple_sitemap_regenerate_now'];
 
   /**
@@ -194,7 +194,7 @@ class Form {
     $form_object = $this->formState->getFormObject();
     if (!is_null($form_object)
       && method_exists($form_object, 'getEntity')
-      && !in_array($form_object->getOperation(), self::$skipFormOperations)) {
+      && in_array($form_object->getOperation(), self::$allowedFormOperations)) {
       return $form_object->getEntity();
     }
     return FALSE;
