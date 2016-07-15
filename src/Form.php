@@ -6,11 +6,13 @@
 
 namespace Drupal\simple_sitemap;
 
+use Drupal\Core\StringTranslation\StringTranslationTrait;
+
 /**
  * Form class.
  */
 class Form {
-
+  use StringTranslationTrait;
   const PRIORITY_DEFAULT = 0.5;
   const PRIORITY_HIGHEST = 10;
   const PRIORITY_DIVIDER = 10;
@@ -83,12 +85,12 @@ class Form {
   public function displayRegenerateNow(&$form_fragment) {
     $form_fragment['simple_sitemap_regenerate_now'] = [
       '#type' => 'checkbox',
-      '#title' => t('Regenerate sitemap after hitting <em>Save</em>'),
-      '#description' => t('This setting will regenerate the whole sitemap including the above changes.'),
+      '#title' => $this->t('Regenerate sitemap after hitting <em>Save</em>'),
+      '#description' => $this->t('This setting will regenerate the whole sitemap including the above changes.'),
       '#default_value' => FALSE,
     ];
     if ($this->generator->getSetting('cron_generate')) {
-      $form_fragment['simple_sitemap_regenerate_now']['#description'] .= '</br>' . t('Otherwise the sitemap will be regenerated on the next cron run.');
+      $form_fragment['simple_sitemap_regenerate_now']['#description'] .= '</br>' . $this->t('Otherwise the sitemap will be regenerated on the next cron run.');
     }
   }
   
@@ -104,35 +106,35 @@ class Form {
     }
     $index = isset($settings['index']) ? $settings['index'] : 0;
     $priority = isset($settings['priority']) ? $settings['priority'] : self::PRIORITY_DEFAULT;
-    $bundle_name = !empty($this->bundleName) ? $this->bundleName : t('undefined');
+    $bundle_name = !empty($this->bundleName) ? $this->bundleName : $this->t('undefined');
 
     if (!$multiple) {
       $form_fragment[$prefix . 'simple_sitemap_index_content'] = [
         '#type' => 'radios',
         '#default_value' => $index,
         '#options' => [
-          0 => $this->entityCategory == 'instance' ? t('Do not index this @bundle entity', ['@bundle' => $bundle_name]) : t('Do not index entities of this type'),
-          1 => $this->entityCategory == 'instance' ? t('Index this @bundle entity', ['@bundle' => $bundle_name]) : t('Index entities of this type'),
+          0 => $this->entityCategory == 'instance' ? $this->t('Do not index this @bundle entity', ['@bundle' => $bundle_name]) : $this->t('Do not index entities of this type'),
+          1 => $this->entityCategory == 'instance' ? $this->t('Index this @bundle entity', ['@bundle' => $bundle_name]) : $this->t('Index entities of this type'),
         ]
       ];
       if ($this->entityCategory == 'instance' && isset($bundle_settings['index'])) {
-        $form_fragment[$prefix . 'simple_sitemap_index_content']['#options'][$bundle_settings['index']] .= ' <em>(' . t('Default') . ')</em>';
+        $form_fragment[$prefix . 'simple_sitemap_index_content']['#options'][$bundle_settings['index']] .= ' <em>(' . $this->t('Default') . ')</em>';
       }
     }
 
     if ($this->entityCategory == 'instance')
-      $priority_description = t('The priority this @bundle entity will have in the eyes of search engine bots.', ['@bundle' => $bundle_name]);
+      $priority_description = $this->t('The priority this @bundle entity will have in the eyes of search engine bots.', ['@bundle' => $bundle_name]);
     else
-      $priority_description = t('The priority entities of this type will have in the eyes of search engine bots.');
+      $priority_description = $this->t('The priority entities of this type will have in the eyes of search engine bots.');
     $form_fragment[$prefix . 'simple_sitemap_priority'] = [
       '#type' => 'select',
-      '#title' => t('Priority'),
+      '#title' => $this->t('Priority'),
       '#description' => $priority_description,
       '#default_value' => $priority,
       '#options' => self::getPrioritySelectValues(),
     ];
     if ($this->entityCategory == 'instance' && isset($bundle_settings['priority'])) {
-      $form_fragment[$prefix . 'simple_sitemap_priority']['#options'][(string)$bundle_settings['priority']] .= ' (' . t('Default') . ')';
+      $form_fragment[$prefix . 'simple_sitemap_priority']['#options'][(string)$bundle_settings['priority']] .= ' (' . $this->t('Default') . ')';
     }
   }
 

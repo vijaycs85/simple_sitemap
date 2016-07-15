@@ -45,16 +45,16 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
     }
 
     $form['simple_sitemap_custom'] = [
-      '#title' => t('Custom links'),
+      '#title' => $this->t('Custom links'),
       '#type' => 'fieldset',
-      '#markup' => '<p>' . t('Add custom internal drupal paths to the XML sitemap.') . '</p>',
+      '#markup' => '<p>' . $this->t('Add custom internal drupal paths to the XML sitemap.') . '</p>',
     ];
 
     $form['simple_sitemap_custom']['custom_links'] = [
       '#type' => 'textarea',
-      '#title' => t('Relative Drupal paths'),
+      '#title' => $this->t('Relative Drupal paths'),
       '#default_value' => $setting_string,
-      '#description' => t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with a '/'. You can optionally add a priority (0.0 - 1.0) by appending it to the path after a space. The home page with the highest priority would be <em>/ 1.0</em>, the contact page with the default priority would be <em>/contact 0.5</em>."),
+      '#description' => $this->t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with a '/'. You can optionally add a priority (0.0 - 1.0) by appending it to the path after a space. The home page with the highest priority would be <em>/ 1.0</em>, the contact page with the default priority would be <em>/contact 0.5</em>."),
     ];
 
     $f = new Form();
@@ -73,14 +73,14 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
     foreach($custom_link_config as $link_config) {
 
       if (!\Drupal::service('path.validator')->isValid($link_config['path'])) {
-        $form_state->setErrorByName('', t("The path <em>@path</em> does not exist.", ['@path' => $link_config['path']]));
+        $form_state->setErrorByName('', $this->t("The path <em>@path</em> does not exist.", ['@path' => $link_config['path']]));
       }
       if ($link_config['path'][0] != '/') {
-        $form_state->setErrorByName('', t("The path <em>@path</em> needs to start with a '/'.", ['@path' => $link_config['path']]));
+        $form_state->setErrorByName('', $this->t("The path <em>@path</em> needs to start with a '/'.", ['@path' => $link_config['path']]));
       }
       if (isset($link_config['priority'])) {
         if (!Form::isValidPriority($link_config['priority'])) {
-          $form_state->setErrorByName('', t("The priority setting <em>@priority</em> for path <em>@path</em> is incorrect. Set the priority from 0.0 to 1.0.", ['@priority' => $link_config['priority'], '@path' => $link_config['path']]));
+          $form_state->setErrorByName('', $this->t("The priority setting <em>@priority</em> for path <em>@path</em> is incorrect. Set the priority from 0.0 to 1.0.", ['@priority' => $link_config['priority'], '@path' => $link_config['path']]));
         }
       }
     }

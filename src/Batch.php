@@ -13,8 +13,10 @@ use Drupal\user\Entity\User;
 use Drupal\Core\Url;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 class Batch {
+  use StringTranslationTrait;
   private $batch;
   private $batchInfo;
 
@@ -27,10 +29,10 @@ class Batch {
 
   function __construct() {
     $this->batch = [
-      'title' => t('Generating XML sitemap'),
-      'init_message' => t(self::BATCH_INIT_MESSAGE),
-      'error_message' => t(self::BATCH_ERROR_MESSAGE),
-      'progress_message' => t(self::BATCH_PROGRESS_MESSAGE),
+      'title' => $this->t('Generating XML sitemap'),
+      'init_message' => $this->t(self::BATCH_INIT_MESSAGE),
+      'error_message' => $this->t(self::BATCH_ERROR_MESSAGE),
+      'progress_message' => $this->t(self::BATCH_PROGRESS_MESSAGE),
       'operations' => [],
       'finished' => [__CLASS__, 'finishGeneration'], // __CLASS__ . '::finishGeneration' not working possibly due to a drush error.
     ];

@@ -39,9 +39,9 @@ class SimplesitemapEntitiesForm extends ConfigFormBase {
     $generator = \Drupal::service('simple_sitemap.generator');
 
     $form['simple_sitemap_entities']['entities'] = [
-      '#title' => t('Sitemap entities'),
+      '#title' => $this->t('Sitemap entities'),
       '#type' => 'fieldset',
-      '#markup' => '<p>' . t("Simple XML sitemap settings will be added only to entity forms of entity types enabled here. For all entity types featuring bundles (e.g. <em>node</em>) sitemap settings have to be set on their bundle pages (e.g. <em>page</em>).") . '</p>',
+      '#markup' => '<p>' . $this->t("Simple XML sitemap settings will be added only to entity forms of entity types enabled here. For all entity types featuring bundles (e.g. <em>node</em>) sitemap settings have to be set on their bundle pages (e.g. <em>page</em>).") . '</p>',
     ];
 
     $form['#attached']['library'][] = 'simple_sitemap/sitemapEntities';
@@ -63,13 +63,13 @@ class SimplesitemapEntitiesForm extends ConfigFormBase {
     ];
       $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled'] = [
         '#type' => 'checkbox',
-        '#title' => t('Enable @entity_type_label <em>(@entity_type_id)</em> support', ['@entity_type_label' => strtolower($entity_type_label), '@entity_type_id' => $entity_type_id]),
-        '#description' => t('Sitemap settings for this entity type can be set on its bundle pages and overridden on its entity pages.'),
+        '#title' => $this->t('Enable @entity_type_label <em>(@entity_type_id)</em> support', ['@entity_type_label' => strtolower($entity_type_label), '@entity_type_id' => $entity_type_id]),
+        '#description' => $this->t('Sitemap settings for this entity type can be set on its bundle pages and overridden on its entity pages.'),
         '#default_value' => $generator->entityTypeIsEnabled($entity_type_id),
       ];
       $form['#attached']['drupalSettings']['simple_sitemap']['all_entities'][] = str_replace('_', '-', $entity_type_id);
       if (Simplesitemap::entityTypeIsAtomic($entity_type_id)) {
-        $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#description'] = t('Sitemap settings for this entity type can be set below and overridden on its entity pages.');
+        $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#description'] = $this->t('Sitemap settings for this entity type can be set below and overridden on its entity pages.');
         $f->setEntityCategory('bundle');
         $f->setEntityTypeId($entity_type_id);
         $f->setBundleName($entity_type_id);
