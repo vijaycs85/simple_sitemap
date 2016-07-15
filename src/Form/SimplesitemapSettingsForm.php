@@ -15,6 +15,8 @@ use Drupal\Core\Form\FormStateInterface;
  */
 class SimplesitemapSettingsForm extends ConfigFormBase {
 
+  private $form_settings = ['max_links', 'cron_generate', 'remove_duplicates', 'batch_process_limit'];
+
   /**
    * {@inheritdoc}
    */
@@ -118,10 +120,9 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $generator = \Drupal::service('simple_sitemap.generator');
-    $generator->saveSetting('max_links', $form_state->getValue('max_links'));
-    $generator->saveSetting('cron_generate', $form_state->getValue('cron_generate'));
-    $generator->saveSetting('remove_duplicates', $form_state->getValue('remove_duplicates'));
-    $generator->saveSetting('batch_process_limit', $form_state->getValue('batch_process_limit'));
+    foreach($this->form_settings as $setting_name) {
+      $generator->saveSetting($setting_name, $form_state->getValue($setting_name));
+    }
     parent::submitForm($form, $form_state);
   }
 
