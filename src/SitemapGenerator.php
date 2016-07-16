@@ -1,10 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\simple_sitemap\SitemapGenerator.
- *
- * Generates a sitemap for entities and custom links.
- */
 
 namespace Drupal\simple_sitemap;
 

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\simple_sitemap\Form\SimplesitemapEntitiesForm.
- */
-
 namespace Drupal\simple_sitemap\Form;
 
 use Drupal\Core\Form\ConfigFormBase;

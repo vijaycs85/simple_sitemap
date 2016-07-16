@@ -1,10 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\simple_sitemap\LinkGenerators\CustomLinkGenerator.
- *
- * Generates custom sitemap paths provided by the user.
- */
 
 namespace Drupal\simple_sitemap;
 

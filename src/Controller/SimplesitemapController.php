@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\simple_sitemap\Controller\SimplesitemapController.
- */
 
 namespace Drupal\simple_sitemap\Controller;
 

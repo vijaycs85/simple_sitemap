@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\simple_sitemap\Form.
- */
 
 namespace Drupal\simple_sitemap;
 

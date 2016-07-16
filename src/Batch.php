@@ -1,11 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\simple_sitemap\Batch.
- *
- * Helper functions for the Drupal batch API.
- * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
- */
 
 namespace Drupal\simple_sitemap;
 
