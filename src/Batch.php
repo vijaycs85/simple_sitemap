@@ -172,6 +172,10 @@ class Batch {
             $url_object = $entity->toUrl();
         }
 
+        // Do not index if this is an external path.
+        if (!$url_object->isRouted())
+          continue;
+
         // Do not include path if anonymous users do not have access to it.
         if (!$url_object->access($anon_user))
           continue;
