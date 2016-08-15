@@ -297,6 +297,7 @@ class Simplesitemap {
    */
   public function removeCustomLinks() {
     $this->saveConfig('custom', []);
+    return $this;
   }
 
   private function addLinkSettings($type, $settings, &$target) {

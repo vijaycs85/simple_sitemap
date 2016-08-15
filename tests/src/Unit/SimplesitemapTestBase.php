@@ -62,7 +62,7 @@ class SimplesitemapTestBase extends UnitTestCase {
   }
 
   /**
-   * Mock Drupal Digtap service.
+   * Mock Drupal Simplesitemap service.
    */
   protected function mockSimplesitemapService() {
 //    $configFactory = $this->getConfigFactoryStub(['simple_sitemap.settings' => $this->config]);

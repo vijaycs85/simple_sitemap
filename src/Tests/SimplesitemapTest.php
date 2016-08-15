@@ -11,26 +11,31 @@ use Drupal\simpletest\WebTestBase;
  */
 class SimplesitemapTest extends WebTestBase {
 
-  protected $dumpHeaders = TRUE;
-
   /**
    * Modules to enable.
    *
    * @var array
    */
   public static $modules = ['simple_sitemap', 'node'];
+
   protected $generator;
   protected $node;
   protected $node2;
+  protected $privilegedUser;
 
   /**
    * Implements setup().
    */
   protected function setUp() {
     parent::setUp();
+
     $this->drupalCreateContentType(['type' => 'page']);
     $this->node = $this->createNode(['title' => 'Node', 'type' => 'page']);
     $this->node2 = $this->createNode(['title' => 'Node2', 'type' => 'page']);
+
+    $perms = array_keys(\Drupal::service('user.permissions')->getPermissions());
+    $this->privilegedUser = $this->drupalCreateUser($perms);
+
     $this->generator = \Drupal::service('simple_sitemap.generator');
   }
 
@@ -40,12 +45,43 @@ class SimplesitemapTest extends WebTestBase {
   public function testInitialGeneration() {
     $this->drupalGet('sitemap.xml');
     $this->assertRaw('urlset');
-    $this->assertRaw('http');
+    $this->assertRaw($GLOBALS['base_url']);
+    $this->assertRaw('1');
   }
 
-  public function testGenerateSitemap() {
+  public function testSetBundleSettings() {
 
-    // Set up the module.
+    // Index new bundle.
+    $this->generator->setBundleSettings('node', 'page', ['index' => 1, 'priority' => '0.5'])
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('node/' . $this->node->id());
+    $this->assertText('0.5');
+
+    // Only change bundle priority.
+    $this->generator->setBundleSettings('node', 'page', ['priority' => '0.9'])
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('node/' . $this->node->id());
+    $this->assertNoText('0.5');
+    $this->assertText('0.9');
+
+    // Set bundle 'index' setting to 0.
+    $this->generator->setBundleSettings('node', 'page', ['index' => 0])
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertNoText('node/' . $this->node->id());
+    $this->assertNoText('0.5');
+    $this->assertNoText('0.9');
+  }
+
+  /**
+   * Test cacheability of the response.
+   */
+  public function testCacheability() {
     $this->generator->setBundleSettings('node', 'page', ['index' => 1, 'priority' => '0.5'])
       ->generateSitemap('nobatch');
 
@@ -59,7 +95,7 @@ class SimplesitemapTest extends WebTestBase {
   }
 
   /**
-   * Test overriding of bundle entities.
+   * Test overriding of bundle settings for a single entity.
    */
   public function testSetEntityInstanceSettings() {
     $this->generator->setBundleSettings('node', 'page', ['index' => 1, 'priority' => '0.5'])
@@ -67,6 +103,8 @@ class SimplesitemapTest extends WebTestBase {
       ->generateSitemap('nobatch');
 
     $this->drupalGet('sitemap.xml');
+    $this->assertText('node/' . $this->node->id());
+    $this->assertText('0.5');
     $this->assertText('0.1');
   }
 
@@ -75,11 +113,17 @@ class SimplesitemapTest extends WebTestBase {
    */
   public function testDisableEntityType() {
     $this->generator->setBundleSettings('node', 'page', ['index' => 1, 'priority' => '0.5'])
-      ->disableEntityType('node')
-      ->generateSitemap('nobatch');
+      ->disableEntityType('node');
+
+    $this->drupalLogin($this->privilegedUser);
+    $this->drupalGet('admin/structure/types/manage/page');
+    $this->assertNoText('Simple XML sitemap');
+
+    $this->generator->generateSitemap('nobatch');
 
     $this->drupalGet('sitemap.xml');
-    $this->assertNoText('node/');
+    $this->assertNoText('node/' . $this->node->id());
+    $this->assertNoText('0.5');
   }
 
   /**
@@ -87,12 +131,29 @@ class SimplesitemapTest extends WebTestBase {
    */
   public function testEnableEntityType() {
     $this->generator->disableEntityType('node')
-      ->enableEntityType('nobatch')
-      ->setBundleSettings('node', 'page', ['index' => 1, 'priority' => '0.5'])
+      ->enableEntityType('node')
+      ->setBundleSettings('node', 'page', ['index' => 1, 'priority' => '0.5']);
+
+    $this->drupalLogin($this->privilegedUser);
+    $this->drupalGet('admin/structure/types/manage/page');
+    $this->assertText('Simple XML sitemap');
+
+    $this->generator->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('node/' . $this->node->id());
+    $this->assertText('0.5');
+  }
+
+  /**
+   * Test removing all custom paths from the sitemap settings.
+   */
+  public function testRemoveCustomLinks() {
+    $this->generator->removeCustomLinks()
       ->generateSitemap('nobatch');
 
     $this->drupalGet('sitemap.xml');
-    $this->assertText('node/');
+    $this->assertNoText($GLOBALS['base_url']);
   }
 
   /**
@@ -101,10 +162,20 @@ class SimplesitemapTest extends WebTestBase {
   public function testSitemapIndex() {
     $this->generator->setBundleSettings('node', 'page', ['index' => 1, 'priority' => '0.5'])
       ->saveSetting('max_links', 1)
+      ->removeCustomLinks()
       ->generateSitemap('nobatch');
 
     $this->drupalGet('sitemap.xml');
+    $this->assertText('sitemaps/1/sitemap.xml');
     $this->assertText('sitemaps/2/sitemap.xml');
+
+    $this->drupalGet('sitemaps/1/sitemap.xml');
+    $this->assertText('node/' . $this->node->id());
+    $this->assertText('0.5');
+
+    $this->drupalGet('sitemaps/2/sitemap.xml');
+    $this->assertText('node/' . $this->node2->id());
+    $this->assertText('0.5');
   }
 
   /**
@@ -115,6 +186,7 @@ class SimplesitemapTest extends WebTestBase {
       ->generateSitemap('nobatch');
 
     $this->drupalGet('sitemap.xml');
+    $this->assertText('node/' . $this->node->id());
     $this->assertText('0.2');
   }
 
@@ -127,6 +199,7 @@ class SimplesitemapTest extends WebTestBase {
       ->generateSitemap('nobatch');
 
     $this->drupalGet('sitemap.xml');
+    $this->assertNoText('node/' . $this->node->id());
     $this->assertNoText('0.2');
   }
 }
