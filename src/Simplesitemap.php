@@ -2,10 +2,7 @@
 
 namespace Drupal\simple_sitemap;
 
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Database\Database;
 use Drupal\Core\Entity\ContentEntityTypeInterface;
-use Drupal\Core\Entity\EntityTypeManager;
 
 /**
  * Simplesitemap class.
@@ -26,15 +23,13 @@ class Simplesitemap {
    * Simplesitemap constructor.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactoryInterface
-   *   The config factory from the container.
-   *
-   * @param $database
-   *   The database from the container.
+   * @param \Drupal\Core\Database\Database $database
+   * @param \Drupal\Core\Entity\EntityTypeManager $entityTypeManager
    */
   function __construct(
-    ConfigFactoryInterface $configFactoryInterface,
+    \Drupal\Core\Config\ConfigFactoryInterface $configFactoryInterface,
     $database,
-    EntityTypeManager $entityTypeManager) {
+    \Drupal\Core\Entity\EntityTypeManager $entityTypeManager) {
 
     $this->configFactory = $configFactoryInterface;
     $this->db = $database;
@@ -78,6 +73,7 @@ class Simplesitemap {
     return $this;
   }
 
+
   /**
    * Enables sitemap support for an entity type. Enabled entity types show
    * sitemap settings on their bundles. If an enabled entity type does not
@@ -120,7 +116,7 @@ class Simplesitemap {
   }
 
   /**
-   * Sets sitemap settings for a bundle less entity type (e.g. user) or a bundle
+   * Sets sitemap settings for a non-bundle entity type (e.g. user) or a bundle
    * of an entity type (e.g. page).
    *
    * @param string $entity_type_id
@@ -141,16 +137,14 @@ class Simplesitemap {
     return $this;
   }
 
-  public function getEntityInstanceBundleName($entity) {
-    return $entity->getEntityTypeId() == 'menu_link_content'
-      ? $entity->getMenuName() : $entity->bundle(); // Menu fix.
-  }
-
-  public function getBundleEntityTypeId($entity) {
-    return $entity->getEntityTypeId() == 'menu'
-      ? 'menu_link_content' : $entity->getEntityType()->getBundleOf(); // Menu fix.
-  }
-
+  /**
+   * Overrides entity bundle/entity type sitemap settings for a single entity.
+   *
+   * @param $entity_type_id
+   * @param $id
+   * @param $settings
+   * @return $this
+   */
   public function setEntityInstanceSettings($entity_type_id, $id, $settings) {
     $entity_types = $this->getConfig('entity_types');
     $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($id);
@@ -176,6 +170,13 @@ class Simplesitemap {
     return $this;
   }
 
+  /**
+   * Gets sitemap settings for an entity bundle or a non-bundle entity type.
+   *
+   * @param $entity_type_id
+   * @param null $bundle_name
+   * @return bool
+   */
   public function getBundleSettings($entity_type_id, $bundle_name = NULL) {
     $bundle_name = is_null($bundle_name) ? $entity_type_id : $bundle_name;
     $entity_types = $this->getConfig('entity_types');
@@ -187,16 +188,38 @@ class Simplesitemap {
     return FALSE;
   }
 
+  /**
+   * Checks if an entity bundle (or a non-bundle entity type) is set to be
+   * indexed in the sitemap settings.
+   *
+   * @param $entity_type_id
+   * @param null $bundle_name
+   * @return bool
+   */
   public function bundleIsIndexed($entity_type_id, $bundle_name = NULL) {
     $settings = $this->getBundleSettings($entity_type_id, $bundle_name);
     return !empty($settings['index']);
   }
 
+  /**
+   * Checks if an entity type is enabled in the sitemap settings.
+   *
+   * @param $entity_type_id
+   * @return bool
+   */
   public function entityTypeIsEnabled($entity_type_id) {
     $entity_types = $this->getConfig('entity_types');
     return isset($entity_types[$entity_type_id]);
   }
 
+  /**
+   * Gets sitemap settings for an entity instance which overrides bundle
+   * settings.
+   *
+   * @param $entity_type_id
+   * @param $id
+   * @return bool
+   */
   public function getEntityInstanceSettings($entity_type_id, $id) {
     $entity_types = $this->getConfig('entity_types');
     $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($id);
@@ -209,6 +232,13 @@ class Simplesitemap {
     }
   }
 
+  /**
+   * Adds a custom path to the sitemap settings.
+   *
+   * @param $path
+   * @param $settings
+   * @return $this|bool
+   */
   public function addCustomLink($path, $settings) {
     if (!\Drupal::service('path.validator')->isValid($path))
       return FALSE; // todo: log error
@@ -228,6 +258,12 @@ class Simplesitemap {
     return $this;
   }
 
+  /**
+   * Returns settings for a custom path added to the sitemap settings.
+   *
+   * @param $path
+   * @return bool
+   */
   public function getCustomLink($path) {
     $custom_links = $this->getConfig('custom');
     foreach($custom_links as $key => $link) {
@@ -238,6 +274,12 @@ class Simplesitemap {
     return FALSE;
   }
 
+  /**
+   * Removes a custom path from the sitemap settings.
+   *
+   * @param $path
+   * @return $this
+   */
   public function removeCustomLink($path) {
     $custom_links = $this->getConfig('custom');
     foreach($custom_links as $key => $link) {
@@ -250,6 +292,9 @@ class Simplesitemap {
     return $this;
   }
 
+  /**
+   * Removes all custom paths from the sitemap settings.
+   */
   public function removeCustomLinks() {
     $this->saveConfig('custom', []);
   }
@@ -269,6 +314,16 @@ class Simplesitemap {
         $target[$setting_key] = $setting;
       }
     }
+  }
+
+  public function getEntityInstanceBundleName($entity) {
+    return $entity->getEntityTypeId() == 'menu_link_content'
+      ? $entity->getMenuName() : $entity->bundle(); // Menu fix.
+  }
+
+  public function getBundleEntityTypeId($entity) {
+    return $entity->getEntityTypeId() == 'menu'
+      ? 'menu_link_content' : $entity->getEntityType()->getBundleOf(); // Menu fix.
   }
 
   /**
@@ -330,7 +385,7 @@ class Simplesitemap {
   }
 
   /**
-   * Gets a specific sitemap setting.
+   * Returns a specific sitemap setting.
    *
    * @param string $name
    *  Name of the setting, like 'max_links'.

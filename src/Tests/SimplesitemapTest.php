@@ -5,7 +5,7 @@ namespace Drupal\simple_sitemap\Tests;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests Simple XML sitemap integration.
+ * Tests Simple XML sitemap functional integration.
  *
  * @group simple_sitemap
  */
@@ -43,7 +43,7 @@ class SimplesitemapTest extends WebTestBase {
     $this->assertRaw('http');
   }
 
-  public function testGeneration() {
+  public function testGenerateSitemap() {
 
     // Set up the module.
     $this->generator->setBundleSettings('node', 'page', ['index' => 1, 'priority' => '0.5'])
@@ -61,25 +61,13 @@ class SimplesitemapTest extends WebTestBase {
   /**
    * Test overriding of bundle entities.
    */
-  public function testBundleOverride() {
+  public function testSetEntityInstanceSettings() {
     $this->generator->setBundleSettings('node', 'page', ['index' => 1, 'priority' => '0.5'])
       ->setEntityInstanceSettings('node', $this->node->id(), ['index' => 1, 'priority' => '0.1'])
       ->generateSitemap('nobatch');
 
     $this->drupalGet('sitemap.xml');
     $this->assertText('0.1');
-  }
-
-  /**
-   * Test sitemap index.
-   */
-  public function testSitemapIndex() {
-    $this->generator->setBundleSettings('node', 'page', ['index' => 1, 'priority' => '0.5'])
-      ->saveSetting('max_links', 1)
-      ->generateSitemap('nobatch');
-
-    $this->drupalGet('sitemap.xml');
-    $this->assertText('sitemaps/2/sitemap.xml');
   }
 
   /**
@@ -105,6 +93,18 @@ class SimplesitemapTest extends WebTestBase {
 
     $this->drupalGet('sitemap.xml');
     $this->assertText('node/');
+  }
+
+  /**
+   * Test sitemap index.
+   */
+  public function testSitemapIndex() {
+    $this->generator->setBundleSettings('node', 'page', ['index' => 1, 'priority' => '0.5'])
+      ->saveSetting('max_links', 1)
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('sitemaps/2/sitemap.xml');
   }
 
   /**
