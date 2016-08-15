@@ -67,12 +67,15 @@ class Simplesitemap {
    *  Configuration key, like 'entity_types'.
    * @param mixed $value
    *  The configuration to be saved.
+   *
+   * @return $this
    */
   public function saveConfig($key, $value) {
     $this->configFactory->getEditable('simple_sitemap.settings')
       ->set($key, $value)->save();
     // Refresh config object after making changes.
     $this->config = $this->configFactory->get('simple_sitemap.settings');
+    return $this;
   }
 
   /**
@@ -92,9 +95,8 @@ class Simplesitemap {
     if (empty($entity_types[$entity_type_id])) {
       $entity_types[$entity_type_id] = [];
       $this->saveConfig('entity_types', $entity_types);
-      return TRUE;
     }
-    return FALSE;
+    return $this;
   }
 
   /**
@@ -113,9 +115,8 @@ class Simplesitemap {
     if (isset($entity_types[$entity_type_id])) {
       unset($entity_types[$entity_type_id]);
       $this->saveConfig('entity_types', $entity_types);
-      return TRUE;
     }
-    return FALSE;
+    return $this;
   }
 
   /**
@@ -129,12 +130,15 @@ class Simplesitemap {
    * @param array $settings
    *  An array of sitemap settings for this bundle/entity type.
    *  Example: ['index' => TRUE, 'priority' => 0.5]
+   *
+   * @return $this
    */
   public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings) {
     $bundle_name = is_null($bundle_name) ? $entity_type_id : $bundle_name;
     $entity_types = $this->getConfig('entity_types');
     $this->addLinkSettings('entity', $settings, $entity_types[$entity_type_id][$bundle_name]);
     $this->saveConfig('entity_types', $entity_types);
+    return $this;
   }
 
   public function getEntityInstanceBundleName($entity) {
@@ -168,9 +172,8 @@ class Simplesitemap {
         unset($entity_types[$entity_type_id][$bundle_name]['entities'][$id]);
       }
       $this->saveConfig('entity_types', $entity_types);
-      return TRUE;
     }
-    return FALSE;
+    return $this;
   }
 
   public function getBundleSettings($entity_type_id, $bundle_name = NULL) {
@@ -222,7 +225,7 @@ class Simplesitemap {
     $custom_links[$link_key]['path'] = $path;
     $this->addLinkSettings('entity', $settings, $custom_links[$link_key]);
     $this->saveConfig('custom', $custom_links);
-    return TRUE;
+    return $this;
   }
 
   public function getCustomLink($path) {
@@ -242,10 +245,9 @@ class Simplesitemap {
         unset($custom_links[$key]);
         $custom_links = array_values($custom_links);
         $this->saveConfig('custom', $custom_links);
-        return TRUE;
       }
     }
-    return FALSE;
+    return $this;
   }
 
   public function removeCustomLinks() {
@@ -266,7 +268,6 @@ class Simplesitemap {
         }
         $target[$setting_key] = $setting;
       }
-
     }
   }
 
@@ -309,9 +310,9 @@ class Simplesitemap {
    *  This decides how the batch process is to be run.
    */
   public function generateSitemap($from = 'form') {
-    $generator = \Drupal::service('simple_sitemap.sitemap_generator');
-    $generator->setGenerateFrom($from);
-    $generator->startGeneration();
+    \Drupal::service('simple_sitemap.sitemap_generator')
+    ->setGenerateFrom($from)
+    ->startGeneration();
   }
 
   /**
@@ -324,8 +325,8 @@ class Simplesitemap {
    *  The sitemap index.
    */
   private function getSitemapIndex($chunks) {
-    $generator = \Drupal::service('simple_sitemap.sitemap_generator');
-    return $generator->generateSitemapIndex($chunks);
+    return \Drupal::service('simple_sitemap.sitemap_generator')
+      ->generateSitemapIndex($chunks);
   }
 
   /**
@@ -349,11 +350,14 @@ class Simplesitemap {
    *  Setting name, like 'max_links'.
    * @param $setting
    *  The setting to be saved.
+   *
+   * @return $this
    */
   public function saveSetting($name, $setting) {
     $settings = $this->getConfig('settings');
     $settings[$name] = $setting;
     $this->saveConfig('settings', $settings);
+    return $this;
   }
 
   /**

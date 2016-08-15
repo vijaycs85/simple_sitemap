@@ -29,6 +29,7 @@ class SitemapGenerator {
 
   public function setGenerateFrom($from) {
     $this->generateFrom = $from;
+    return $this;
   }
 
   /**
