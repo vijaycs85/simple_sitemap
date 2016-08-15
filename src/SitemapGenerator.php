@@ -15,13 +15,16 @@ class SitemapGenerator {
   const XMLNS_XHTML = 'http://www.w3.org/1999/xhtml';
 
   private $generator;
-  private $links;
-  private $generateFrom;
+  private $db;
+  private $moduleHandler;
+  private $defaultLanguageId;
+  private $generateFrom = 'form';
 
-  function __construct($generator) {
+  function __construct($generator, $database, $language_manager, $module_handler) {
     $this->generator = $generator;
-    $this->links = [];
-    $this->generateFrom = 'form';
+    $this->db = $database;
+    $this->defaultLanguageId = $language_manager->getDefaultLanguage()->getId();
+    $this->moduleHandler = $module_handler;
   }
 
   public function setGenerateFrom($from) {
@@ -70,7 +73,7 @@ class SitemapGenerator {
    */
   private function getEntityTypeData() {
     $data_sets = [];
-    $sitemap_entity_types = Simplesitemap::getSitemapEntityTypes();
+    $sitemap_entity_types = $this->generator->getSitemapEntityTypes();
     $entity_types = $this->generator->getConfig('entity_types');
     foreach($entity_types as $entity_type_name => $bundles) {
       if (isset($sitemap_entity_types[$entity_type_name])) {
@@ -100,18 +103,18 @@ class SitemapGenerator {
    * @param bool $remove_sitemap
    *  Remove old sitemap from database before inserting the new one.
    */
-  public static function generateSitemap($links, $remove_sitemap = FALSE) {
+  public function generateSitemap($links, $remove_sitemap = FALSE) {
     // Invoke alter hook.
-        \Drupal::moduleHandler()->alter('simple_sitemap_links', $links);
+    $this->moduleHandler->alter('simple_sitemap_links', $links);
     $values = [
-      'id' => $remove_sitemap ? 1 : \Drupal::service('database')->query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField() + 1,
-      'sitemap_string' => self::generateSitemapChunk($links),
+      'id' => $remove_sitemap ? 1 : $this->db->query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField() + 1,
+      'sitemap_string' => $this->generateSitemapChunk($links),
       'sitemap_created' => REQUEST_TIME,
     ];
     if ($remove_sitemap) {
-      \Drupal::service('database')->truncate('simple_sitemap')->execute();
+      $this->db->truncate('simple_sitemap')->execute();
     }
-    \Drupal::service('database')->insert('simple_sitemap')->fields($values)->execute();
+    $this->db->insert('simple_sitemap')->fields($values)->execute();
   }
 
   /**
@@ -150,9 +153,7 @@ class SitemapGenerator {
    *
    * @return string sitemap chunk
    */
-  private static function generateSitemapChunk($links) {
-    $default_language_id = \Drupal::languageManager()->getDefaultLanguage()->getId();
-
+  private function generateSitemapChunk($links) {
     $writer = new XMLWriter();
     $writer->openMemory();
     $writer->setIndent(TRUE);
@@ -165,7 +166,7 @@ class SitemapGenerator {
       $writer->startElement('url');
 
       // Adding url to standard language.
-      $writer->writeElement('loc', $link['urls'][$default_language_id]);
+      $writer->writeElement('loc', $link['urls'][$this->defaultLanguageId]);
 
       // Adding alternate urls (other languages) if any.
       if (count($link['urls']) > 1) {

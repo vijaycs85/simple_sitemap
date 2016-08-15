@@ -43,12 +43,12 @@ class SimplesitemapEntitiesForm extends ConfigFormBase {
     $form['#attached']['drupalSettings']['simple_sitemap'] = ['all_entities' => [], 'atomic_entities' => []];
 
     $entity_type_labels = [];
-    foreach (Simplesitemap::getSitemapEntityTypes() as $entity_type_id => $entity_type) {
+    foreach ($generator->getSitemapEntityTypes() as $entity_type_id => $entity_type) {
       $entity_type_labels[$entity_type_id] = $entity_type->getLabel() ? : $entity_type_id;
     }
     asort($entity_type_labels);
 
-    $f = new Form();
+    $f = \Drupal::service('simple_sitemap.form')->processForm($form_state);
 
     foreach ($entity_type_labels as $entity_type_id => $entity_type_label) {
       $form['simple_sitemap_entities']['entities'][$entity_type_id] = [
@@ -63,12 +63,12 @@ class SimplesitemapEntitiesForm extends ConfigFormBase {
         '#default_value' => $generator->entityTypeIsEnabled($entity_type_id),
       ];
       $form['#attached']['drupalSettings']['simple_sitemap']['all_entities'][] = str_replace('_', '-', $entity_type_id);
-      if (Simplesitemap::entityTypeIsAtomic($entity_type_id)) {
+      if ($generator->entityTypeIsAtomic($entity_type_id)) {
         $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#description'] = $this->t('Sitemap settings for this entity type can be set below and overridden on its entity pages.');
-        $f->setEntityCategory('bundle');
-        $f->setEntityTypeId($entity_type_id);
-        $f->setBundleName($entity_type_id);
-        $f->displayEntitySettings($form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_settings'], TRUE);
+        $f->setEntityCategory('bundle')
+          ->setEntityTypeId($entity_type_id)
+          ->setBundleName($entity_type_id)
+          ->displayEntitySettings($form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_settings'], TRUE);
         $form['#attached']['drupalSettings']['simple_sitemap']['atomic_entities'][] = str_replace('_', '-', $entity_type_id);
       }
     }
@@ -87,7 +87,7 @@ class SimplesitemapEntitiesForm extends ConfigFormBase {
         $entity_type_id = substr($field_name, 0, -8);
         if ($value) {
           $generator->enableEntityType($entity_type_id);
-          if (Simplesitemap::entityTypeIsAtomic($entity_type_id)) {
+          if ($generator->entityTypeIsAtomic($entity_type_id)) {
             $generator->setBundleSettings($entity_type_id, $entity_type_id, [
                 'index' => TRUE,
                 'priority' => $values[$entity_type_id . '_simple_sitemap_priority']

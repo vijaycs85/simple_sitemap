@@ -92,7 +92,7 @@ class Batch {
     if ($success) {
       $remove_sitemap = empty($results['chunk_count']);
       if (!empty($results['generate']) || $remove_sitemap) {
-        SitemapGenerator::generateSitemap($results['generate'], $remove_sitemap);
+        \Drupal::service('simple_sitemap.sitemap_generator')->generateSitemap($results['generate'], $remove_sitemap);
       }
       Cache::invalidateTags(['simple_sitemap']);
       drupal_set_message(t("The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.",
@@ -312,7 +312,7 @@ class Batch {
       foreach ($chunks as $i => $chunk_links) {
         if (count($chunk_links) == $batch_info['max_links']) {
           $remove_sitemap = empty($context['results']['chunk_count']);
-          SitemapGenerator::generateSitemap($chunk_links, $remove_sitemap);
+          \Drupal::service('simple_sitemap.sitemap_generator')->generateSitemap($chunk_links, $remove_sitemap);
           $context['results']['chunk_count'] = !isset($context['results']['chunk_count']) ? 1 : $context['results']['chunk_count'] + 1;
           $context['results']['generate'] = array_slice($context['results']['generate'], count($chunk_links));
         }

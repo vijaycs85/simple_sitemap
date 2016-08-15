@@ -9,52 +9,67 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
  */
 class Form {
   use StringTranslationTrait;
+
   const PRIORITY_DEFAULT = 0.5;
   const PRIORITY_HIGHEST = 10;
   const PRIORITY_DIVIDER = 10;
 
-  public $alteringForm;
-  public $entityCategory;
+  private $generator;
+  private $formState;
+
+  public $alteringForm = TRUE;
+  public $entityCategory = NULL;
   public $entityTypeId;
   public $bundleName;
   public $instanceId;
-  
-  private $formState;
-  private $generator;
 
-  private static $allowedFormOperations = ['default', 'edit', 'add', 'register'];
-  private static $valuesToCheck = ['simple_sitemap_index_content', 'simple_sitemap_priority', 'simple_sitemap_regenerate_now'];
+  private static $allowedFormOperations = [
+    'default',
+    'edit',
+    'add',
+    'register'
+  ];
+
+  private static $valuesToCheck = [
+    'simple_sitemap_index_content',
+    'simple_sitemap_priority',
+    'simple_sitemap_regenerate_now'
+  ];
 
   /**
    * Form constructor.
    */
-  function __construct($form_state = NULL) {
+  function __construct($generator) {
+    $this->generator = $generator;
+  }
 
+  public function processForm($form_state) {
     $this->formState = $form_state;
-    $this->entityCategory = NULL;
-    $this->alteringForm = TRUE;
-    $this->generator = \Drupal::service('simple_sitemap.generator');
-
     if (!is_null($this->formState)) {
       $this->getEntityDataFromFormEntity();
       $this->assertAlteringForm();
     }
+    return $this;
   }
 
   public function setEntityCategory($entity_category) {
     $this->entityCategory = $entity_category;
+    return $this;
   }
 
   public function setEntityTypeId($entity_type_id) {
     $this->entityTypeId = $entity_type_id;
+    return $this;
   }
 
   public function setBundleName($bundle_name) {
     $this->bundleName = $bundle_name;
+    return $this;
   }
 
   public function setInstanceId($instance_id) {
     $this->instanceId = $instance_id;
+    return $this;
   }
 
   private function assertAlteringForm() {
@@ -145,7 +160,7 @@ class Form {
     $form_entity = $this->getFormEntity();
     if ($form_entity !== FALSE) {
       $entity_type_id = $form_entity->getEntityTypeId();
-      $sitemap_entity_types = Simplesitemap::getSitemapEntityTypes();
+      $sitemap_entity_types = $this->generator->getSitemapEntityTypes();
       if (isset($sitemap_entity_types[$entity_type_id])) {
         $this->entityCategory = 'instance';
       }
@@ -163,14 +178,14 @@ class Form {
 
       switch ($this->entityCategory) {
         case 'bundle':
-          $this->entityTypeId = Simplesitemap::getBundleEntityTypeId($form_entity);
+          $this->entityTypeId = $this->generator->getBundleEntityTypeId($form_entity);
           $this->bundleName = $form_entity->id();
           $this->instanceId = NULL;
           break;
 
         case 'instance':
           $this->entityTypeId = $entity_type_id;
-          $this->bundleName = Simplesitemap::getEntityInstanceBundleName($form_entity);
+          $this->bundleName = $this->generator->getEntityInstanceBundleName($form_entity);
           $this->instanceId = !empty($form_entity->id()) ? $form_entity->id() : NULL; // New menu link's id is '' instead of NULL, hence checking for empty.
           break;
 
