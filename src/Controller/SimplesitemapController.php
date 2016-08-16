@@ -6,6 +6,7 @@ use Drupal\Core\Cache\CacheableResponse;
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * SimplesitemapController.
@@ -36,12 +37,16 @@ class SimplesitemapController extends ControllerBase {
    *  Optional ID of the sitemap chunk. If none provided, the first chunk or
    *  the sitemap index is fetched.
    *
+   * @throws NotFoundHttpException
+   *
    * @return object Response
    *  Returns an XML response.
    */
   public function getSitemap($chunk_id = NULL) {
     $output = $this->generator->getSitemap($chunk_id);
-    $output = !$output ? '' : $output;
+    if (!$output) {
+      throw new NotFoundHttpException();
+    }
 
     // Display sitemap with correct xml header.
     $response = new CacheableResponse($output, Response::HTTP_OK, ['content-type' => 'application/xml']);
