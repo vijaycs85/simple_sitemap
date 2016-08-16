@@ -58,19 +58,24 @@ class SitemapGenerator {
   /**
    * Returns a batch-ready data array for custom link generation.
    *
-   * @return array $data
+   * @return array $paths
    *  Data to be processed.
    */
   private function getCustomUrlsData() {
-    $link_generator = new CustomLinkGenerator();
-    return $link_generator->getCustomPaths($this->generator->getConfig('custom'));
+    $paths = [];
+    foreach($this->generator->getConfig('custom') as $i => $custom_path) {
+      $paths[$i]['path'] = $custom_path['path'];
+      $paths[$i]['priority'] = isset($custom_path['priority']) ? $custom_path['priority'] : NULL;
+      $paths[$i]['lastmod'] = NULL; //todo: implement lastmod
+    }
+    return $paths;
   }
 
   /**
    * Collects entity metadata for entities that are set to be indexed
    * and returns an array of batch-ready data sets for entity link generation.
    *
-   * @return array $operations.
+   * @return array $data_sets.
    */
   private function getEntityTypeData() {
     $data_sets = [];
