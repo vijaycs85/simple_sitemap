@@ -52,8 +52,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
       '#description' => $this->t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with a '/'. You can optionally add a priority (0.0 - 1.0) by appending it to the path after a space. The home page with the highest priority would be <em>/ 1.0</em>, the contact page with the default priority would be <em>/contact 0.5</em>."),
     ];
 
-    $f = \Drupal::service('simple_sitemap.form')->processForm($form_state);
-    $f->displayRegenerateNow($form['simple_sitemap_custom']);
+    \Drupal::service('simple_sitemap.form')->displayRegenerateNow($form['simple_sitemap_custom']);
 
     return parent::buildForm($form, $form_state);
   }
@@ -62,21 +61,23 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
+    foreach($this->getCustomLinks($form_state->getValue('custom_links')) as $i => $link_config) {
+      $placeholders = ['@line' => ++$i, '@path' => $link_config['path'], '@priority' => isset($link_config['priority']) ? $link_config['priority'] : ''];
 
-    $custom_link_config = $this->getCustomLinkConfig($form_state->getValue('custom_links'));
-
-    foreach($custom_link_config as $link_config) {
-
-      if (!\Drupal::service('path.validator')->isValid($link_config['path'])) {
-        $form_state->setErrorByName('', $this->t("The path <em>@path</em> does not exist.", ['@path' => $link_config['path']]));
+      // Checking if internal path exists.
+      if (!\Drupal::service('path.validator')->isValid($link_config['path'])
+       || strpos($link_config['path'], '//') !== FALSE) { // Path validator does not see a double slash as an error. Catching this to prevent breaking path generation.
+        $form_state->setErrorByName('', $this->t("<strong>Line @line</strong>: The path <em>@path</em> does not exist.", $placeholders));
       }
+
+      // Making sure the paths start with a slash.
       if ($link_config['path'][0] != '/') {
-        $form_state->setErrorByName('', $this->t("The path <em>@path</em> needs to start with a '/'.", ['@path' => $link_config['path']]));
+        $form_state->setErrorByName('', $this->t("<strong>Line @line</strong>: The path <em>@path</em> needs to start with a '/'.", $placeholders));
       }
-      if (isset($link_config['priority'])) {
-        if (!Form::isValidPriority($link_config['priority'])) {
-          $form_state->setErrorByName('', $this->t("The priority setting <em>@priority</em> for path <em>@path</em> is incorrect. Set the priority from 0.0 to 1.0.", ['@priority' => $link_config['priority'], '@path' => $link_config['path']]));
-        }
+
+      // Making sure the priority is formatted correctly.
+      if (isset($link_config['priority']) && !Form::isValidPriority($link_config['priority'])) {
+        $form_state->setErrorByName('', $this->t("<strong>Line @line</strong>: The priority setting <em>@priority</em> for path <em>@path</em> is incorrect. Set the priority from 0.0 to 1.0.", $placeholders));
       }
     }
   }
@@ -85,10 +86,9 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $generator = \Drupal::service('simple_sitemap.generator');
-    $custom_link_config = $this->getCustomLinkConfig($form_state->getValue('custom_links'));
-    $generator->removeCustomLinks();
-    foreach ($custom_link_config as $link_config) {
+    $custom_links = $this->getCustomLinks($form_state->getValue('custom_links'));
+    $generator = \Drupal::service('simple_sitemap.generator')->removeCustomLinks();
+    foreach ($custom_links as $link_config) {
       $generator->addCustomLink($link_config['path'], $link_config);
     }
     parent::submitForm($form, $form_state);
@@ -99,19 +99,19 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
     }
   }
 
-  private function getCustomLinkConfig($custom_links_string) {
+  private function getCustomLinks($custom_links_string) {
     // Unify newline characters and explode into array.
     $custom_links_string_lines = explode("\n", str_replace("\r\n", "\n", $custom_links_string));
     // Remove whitespace from array values.
     $custom_links_string_lines = array_filter(array_map('trim', $custom_links_string_lines));
-    $custom_link_config = [];
+    $custom_links = [];
     foreach($custom_links_string_lines as $i => &$line) {
       $link_settings = explode(' ', $line, 2);
-      $custom_link_config[$i]['path'] = $link_settings[0];
+      $custom_links[$i]['path'] = $link_settings[0];
       if (isset($link_settings[1]) && $link_settings[1] != '') {
-        $custom_link_config[$i]['priority'] = $link_settings[1];
+        $custom_links[$i]['priority'] = $link_settings[1];
       }
     }
-    return $custom_link_config;
+    return $custom_links;
   }
 }

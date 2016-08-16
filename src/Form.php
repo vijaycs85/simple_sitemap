@@ -147,6 +147,7 @@ class Form {
     if ($this->entityCategory == 'instance' && isset($bundle_settings['priority'])) {
       $form_fragment[$prefix . 'simple_sitemap_priority']['#options'][(string)$bundle_settings['priority']] .= ' (' . $this->t('Default') . ')';
     }
+    return $this;
   }
 
   /**

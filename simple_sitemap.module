@@ -37,8 +37,8 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
   if (isset($form['additional_settings'])) {
     $form['#attached']['library'][] = 'simple_sitemap/fieldsetSummaries';
   }
-  $f->displayEntitySettings($form['simple_sitemap']);
-  $f->displayRegenerateNow($form['simple_sitemap']); // todo: do not show setting when creating new bundle
+  $f->displayEntitySettings($form['simple_sitemap'])
+    ->displayRegenerateNow($form['simple_sitemap']); // todo: do not show setting when creating new bundle
 
   // Add submission handler.
   if (isset($form['actions']['submit']['#submit'])) {
