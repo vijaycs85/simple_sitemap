@@ -13,6 +13,9 @@ simple_sitemap.settings:
         remove_duplicates:
           label: 'Remove duplicates'
           type: boolean
+        skip_untranslated:
+          label: 'Skip untranslated'
+          type: boolean
         batch_process_limit:
           label: 'Batch process limit'
           type: integer

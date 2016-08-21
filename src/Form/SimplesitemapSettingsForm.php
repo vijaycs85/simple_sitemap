@@ -10,7 +10,13 @@ use Drupal\Core\Form\FormStateInterface;
  */
 class SimplesitemapSettingsForm extends ConfigFormBase {
 
-  private $form_settings = ['max_links', 'cron_generate', 'remove_duplicates', 'batch_process_limit'];
+  private $form_settings = [
+    'max_links',
+    'cron_generate',
+    'remove_duplicates',
+    'skip_untranslated',
+    'batch_process_limit'
+  ];
 
   /**
    * {@inheritdoc}
@@ -69,7 +75,14 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
       '#type' => 'checkbox',
       '#title' => $this->t('Exclude duplicate links'),
       '#description' => $this->t('Uncheck this to significantly speed up the sitemap generation process on a huge site (more than 20 000 indexed entities).'),
-      '#default_value' => $generator->getSetting('remove_duplicates'),
+      '#default_value' => $generator->getSetting('remove_duplicates', TRUE),
+    ];
+
+    $form['simple_sitemap_settings']['advanced']['skip_untranslated'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Skip non-existent translations'),
+      '#description' => $this->t('If unchecked, the sitemap will include links to all content translation variants, even when the content has not been translated yet. If checked, only links to the translated content are included.'),
+      '#default_value' => $generator->getSetting('skip_untranslated', FALSE),
     ];
 
     $form['simple_sitemap_settings']['advanced']['max_links'] = [

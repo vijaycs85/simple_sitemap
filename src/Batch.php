@@ -189,8 +189,19 @@ class Batch {
 
         $urls = [];
         foreach ($languages as $language) {
-          $url_object->setOption('language', $language);
-          $urls[$language->getId()] = $url_object->toString();
+          $langcode = $language->getId();
+
+          // Exclude untranslated paths.
+          if ($batch_info['skip_untranslated']) {
+            if ($language->isDefault() || $entity->hasTranslation($langcode)) {
+              $url_object->setOption('language', $language);
+              $urls[$langcode] = $url_object->toString();
+            }
+          }
+          else {
+            $url_object->setOption('language', $language);
+            $urls[$langcode] = $url_object->toString();
+          }
         }
 
         $context['results']['generate'][] = [
@@ -246,10 +257,27 @@ class Batch {
       if ($batch_info['remove_duplicates'] && self::pathProcessed($path, $context))
         continue;
 
+      // Load entity object if this is an entity route.
+      $route_parameters = $url_object->getRouteParameters();
+      $entity = !empty(key($route_parameters))
+        ? \Drupal::entityTypeManager()->getStorage(key($route_parameters))->load($route_parameters[key($route_parameters)])
+        : NULL;
+
       $urls = [];
       foreach ($languages as $language) {
-        $url_object->setOption('language', $language);
-        $urls[$language->getId()] = $url_object->toString();
+        $langcode = $language->getId();
+
+        // Exclude untranslated paths.
+        if (!is_null($entity) && $batch_info['skip_untranslated']) {
+          if ($language->isDefault() || $entity->hasTranslation($langcode)) {
+            $url_object->setOption('language', $language);
+            $urls[$langcode] = $url_object->toString();
+          }
+        }
+        else {
+          $url_object->setOption('language', $language);
+          $urls[$langcode] = $url_object->toString();
+        }
       }
 
       $context['results']['generate'][] = [
