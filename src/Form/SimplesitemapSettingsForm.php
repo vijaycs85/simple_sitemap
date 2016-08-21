@@ -88,6 +88,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
       '#maxlength' => 5,
       '#size' => 5,
       '#default_value' => $generator->getSetting('batch_process_limit'),
+      '#required' => TRUE, //TODO: test
     ];
 
     return parent::buildForm($form, $form_state);
