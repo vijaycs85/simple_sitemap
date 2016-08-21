@@ -172,15 +172,15 @@ class Batch {
             $url_object = $entity->toUrl();
         }
 
-        // Do not index if this is an external path.
+        // Do not include external paths.
         if (!$url_object->isRouted())
           continue;
 
-        // Do not include path if anonymous users do not have access to it.
+        // Do not include paths inaccessible to anonymous users.
         if (!$url_object->access($anon_user))
           continue;
 
-        // Do not include path if it already exists.
+        // Do not include paths that have been already indexed.
         $path = $url_object->getInternalPath();
         if ($batch_info['remove_duplicates'] && self::pathProcessed($path, $context))
           continue;

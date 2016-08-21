@@ -63,7 +63,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
       '#type' => 'checkbox',
       '#title' => $this->t('Regenerate the sitemap on every cron run'),
       '#description' => $this->t('Uncheck this if you intend to only regenerate the sitemap manually or via drush.'),
-      '#default_value' => $generator->getSetting('cron_generate'),
+      '#default_value' => $generator->getSetting('cron_generate', TRUE),
     ];
 
     $form['simple_sitemap_settings']['advanced'] = [
@@ -91,7 +91,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#maxlength' => 5,
       '#size' => 5,
-      '#default_value' => $generator->getSetting('max_links'),
+      '#default_value' => $generator->getSetting('max_links', 2000),
     ];
 
     $form['simple_sitemap_settings']['advanced']['batch_process_limit'] = [
@@ -100,7 +100,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#maxlength' => 5,
       '#size' => 5,
-      '#default_value' => $generator->getSetting('batch_process_limit'),
+      '#default_value' => $generator->getSetting('batch_process_limit', 1500),
       '#required' => TRUE, //TODO: test
     ];
 

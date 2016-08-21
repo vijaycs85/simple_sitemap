@@ -391,12 +391,15 @@ class Simplesitemap {
    * @param string $name
    *  Name of the setting, like 'max_links'.
    *
+   * @param mixed $default
+   *  Value to be returned if the setting does not exist in the conifuration.
+   *
    * @return mixed
-   *  The current setting from db or FALSE if setting does not exist.
+   *  The current setting from db or a default value.
    */
-  public function getSetting($name) {
+  public function getSetting($name, $default = FALSE) {
     $settings = $this->getConfig('settings');
-    return isset($settings[$name]) ? $settings[$name] : FALSE;
+    return isset($settings[$name]) ? $settings[$name] : $default;
   }
 
   /**

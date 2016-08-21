@@ -41,8 +41,9 @@ class SitemapGenerator {
       'from' => $this->generateFrom,
       'batch_process_limit' => !empty($this->generator->getSetting('batch_process_limit'))
         ? $this->generator->getSetting('batch_process_limit') : NULL,
-      'max_links' => $this->generator->getSetting('max_links'),
-      'remove_duplicates' => $this->generator->getSetting('remove_duplicates'),
+      'max_links' => $this->generator->getSetting('max_links', 2000),
+      'skip_untranslated' => $this->generator->getSetting('skip_untranslated', FALSE),
+      'remove_duplicates' => $this->generator->getSetting('remove_duplicates', TRUE),
       'entity_types' => $this->generator->getConfig('entity_types'),
     ]);
     // Add custom link generating operation.
