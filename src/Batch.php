@@ -259,7 +259,7 @@ class Batch {
 
       // Load entity object if this is an entity route.
       $route_parameters = $url_object->getRouteParameters();
-      $entity = !empty(key($route_parameters))
+      $entity = !empty($route_parameters)
         ? \Drupal::entityTypeManager()->getStorage(key($route_parameters))->load($route_parameters[key($route_parameters)])
         : NULL;
 
@@ -283,6 +283,7 @@ class Batch {
       $context['results']['generate'][] = [
         'path' => $path,
         'urls' => $urls,
+        'lastmod' => method_exists($entity, 'getChangedTime') ? date_iso8601($entity->getChangedTime()) : NULL,
         'priority' => isset($custom_path['priority']) ? $custom_path['priority'] : NULL,
       ];
     }
