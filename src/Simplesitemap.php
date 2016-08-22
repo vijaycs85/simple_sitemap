@@ -83,8 +83,7 @@ class Simplesitemap {
    * @param string $entity_type_id
    *  Entity type id like 'node'.
    *
-   * @return bool
-   *  TRUE if entity type has been enabled, FALSE if it was not.
+   * @return $this
    */
   public function enableEntityType($entity_type_id) {
     $entity_types = $this->getConfig('entity_types');
@@ -103,8 +102,7 @@ class Simplesitemap {
    * @param string $entity_type_id
    *  Entity type id like 'node'.
    *
-   * @return bool
-   *  TRUE if entity type has been disabled, FALSE if it was not.
+   * @return $this
    */
   public function disableEntityType($entity_type_id) {
     $entity_types = $this->getConfig('entity_types');
@@ -140,9 +138,9 @@ class Simplesitemap {
   /**
    * Overrides entity bundle/entity type sitemap settings for a single entity.
    *
-   * @param $entity_type_id
-   * @param $id
-   * @param $settings
+   * @param string $entity_type_id
+   * @param int $id
+   * @param array $settings
    * @return $this
    */
   public function setEntityInstanceSettings($entity_type_id, $id, $settings) {
@@ -173,9 +171,9 @@ class Simplesitemap {
   /**
    * Gets sitemap settings for an entity bundle or a non-bundle entity type.
    *
-   * @param $entity_type_id
-   * @param null $bundle_name
-   * @return bool
+   * @param string $entity_type_id
+   * @param string|null $bundle_name
+   * @return array|false
    */
   public function getBundleSettings($entity_type_id, $bundle_name = NULL) {
     $bundle_name = is_null($bundle_name) ? $entity_type_id : $bundle_name;
@@ -216,9 +214,9 @@ class Simplesitemap {
    * Gets sitemap settings for an entity instance which overrides bundle
    * settings.
    *
-   * @param $entity_type_id
-   * @param $id
-   * @return bool
+   * @param string $entity_type_id
+   * @param int $id
+   * @return array
    */
   public function getEntityInstanceSettings($entity_type_id, $id) {
     $entity_types = $this->getConfig('entity_types');
@@ -235,15 +233,16 @@ class Simplesitemap {
   /**
    * Adds a custom path to the sitemap settings.
    *
-   * @param $path
-   * @param $settings
-   * @return $this|bool
+   * @param string $path
+   * @param array $settings
+   * @return $this
    */
   public function addCustomLink($path, $settings) {
     if (!\Drupal::service('path.validator')->isValid($path))
-      return FALSE; // todo: log error
+      return $this; // todo: log error
     if ($path[0] != '/')
-      return FALSE; // todo: log error
+      return $this; // todo: log error
+
     $custom_links = $this->getConfig('custom');
     foreach($custom_links as $key => $link) {
       if ($link['path'] == $path) {
@@ -261,8 +260,8 @@ class Simplesitemap {
   /**
    * Returns settings for a custom path added to the sitemap settings.
    *
-   * @param $path
-   * @return bool
+   * @param string $path
+   * @return array|false
    */
   public function getCustomLink($path) {
     $custom_links = $this->getConfig('custom');
@@ -277,7 +276,7 @@ class Simplesitemap {
   /**
    * Removes a custom path from the sitemap settings.
    *
-   * @param $path
+   * @param string $path
    * @return $this
    */
   public function removeCustomLink($path) {
@@ -294,6 +293,8 @@ class Simplesitemap {
 
   /**
    * Removes all custom paths from the sitemap settings.
+   *
+   * @return $this
    */
   public function removeCustomLinks() {
     $this->saveConfig('custom', []);
@@ -333,7 +334,7 @@ class Simplesitemap {
    *
    * @param int $chunk_id
    *
-   * @return string $sitemap
+   * @return string|false
    *  If no sitemap id provided, either a sitemap index is returned, or the
    *  whole sitemap, if the amount of links does not exceed the max links setting.
    *  If a sitemap id is provided, a sitemap chunk is returned.
@@ -392,7 +393,7 @@ class Simplesitemap {
    *  Name of the setting, like 'max_links'.
    *
    * @param mixed $default
-   *  Value to be returned if the setting does not exist in the conifuration.
+   *  Value to be returned if the setting does not exist in the configuration.
    *
    * @return mixed
    *  The current setting from db or a default value.
@@ -405,9 +406,9 @@ class Simplesitemap {
   /**
    * Saves a specific sitemap setting to db.
    *
-   * @param $name
+   * @param string $name
    *  Setting name, like 'max_links'.
-   * @param $setting
+   * @param mixed $setting
    *  The setting to be saved.
    *
    * @return $this
@@ -422,7 +423,7 @@ class Simplesitemap {
   /**
    * Returns a 'time ago' string of last timestamp generation.
    *
-   * @return mixed
+   * @return string|false
    *  Formatted timestamp of last sitemap generation, otherwise FALSE.
    */
   public function getGeneratedAgo() {

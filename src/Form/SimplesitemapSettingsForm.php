@@ -81,7 +81,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
     $form['simple_sitemap_settings']['advanced']['skip_untranslated'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Skip non-existent translations'),
-      '#description' => $this->t('If unchecked, the sitemap will include links to all content translation variants, even when the content has not been translated yet. If checked, only links to the translated content are included.'),
+      '#description' => $this->t('If checked, only links to the translated content will be included, otherwise the sitemap will include links to all content translation variants, even when the content has not been translated yet.'),
       '#default_value' => $generator->getSetting('skip_untranslated', FALSE),
     ];
 
@@ -101,7 +101,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
       '#maxlength' => 5,
       '#size' => 5,
       '#default_value' => $generator->getSetting('batch_process_limit', 1500),
-      '#required' => TRUE, //TODO: test
+      '#required' => TRUE,
     ];
 
     return parent::buildForm($form, $form_state);
@@ -114,13 +114,13 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
     $max_links = $form_state->getValue('max_links');
     if ($max_links != '') {
       if (!is_numeric($max_links) || $max_links < 1 || $max_links != round($max_links)) {
-        $form_state->setErrorByName('', $this->t("The value of the <em>Maximum links in a sitemap</em> field must be empty, or a positive integer greater than 0."));
+        $form_state->setErrorByName('max_links', $this->t("The value of the <em>Maximum links in a sitemap</em> field must be empty, or a positive integer greater than 0."));
       }
     }
 
   $batch_process_limit = $form_state->getValue('batch_process_limit');
     if (!is_numeric($batch_process_limit) || $batch_process_limit < 1 || $batch_process_limit != round($batch_process_limit)) {
-      $form_state->setErrorByName('', $this->t("The value of the <em>Refresh batch every n links</em> field must be a positive integer greater than 0."));
+      $form_state->setErrorByName('batch_process_limit', $this->t("The value of the <em>Refresh batch every n links</em> field must be a positive integer greater than 0."));
     }
   }
 
@@ -136,7 +136,6 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
   }
 
   public function generateSitemap(array &$form, FormStateInterface $form_state) {
-    $generator = \Drupal::service('simple_sitemap.generator');
-    $generator->generateSitemap();
+    \Drupal::service('simple_sitemap.generator')->generateSitemap();
   }
 }

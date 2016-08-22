@@ -39,7 +39,7 @@ class SimplesitemapController extends ControllerBase {
    *
    * @throws NotFoundHttpException
    *
-   * @return object Response
+   * @return object
    *  Returns an XML response.
    */
   public function getSitemap($chunk_id = NULL) {

@@ -13,8 +13,7 @@ class Batch {
   private $batch;
   private $batchInfo;
 
-  const PATH_DOES_NOT_EXIST = "The path @faulty_path has been omitted from the XML sitemap, as it does not exist.";
-  const PATH_DOES_NOT_EXIST_OR_NO_ACCESS = "The path @faulty_path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users.";
+  const PATH_DOES_NOT_EXIST_OR_NO_ACCESS = "The path @path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users.";
   const BATCH_INIT_MESSAGE = 'Initializing batch...';
   const BATCH_ERROR_MESSAGE = 'An error has occurred. This may result in an incomplete XML sitemap.';
   const BATCH_PROGRESS_MESSAGE = 'Processing @current out of @total link types.';
@@ -148,7 +147,7 @@ class Batch {
 
       foreach ($entities as $entity_id => $entity) {
         if (self::isBatch($batch_info)) {
-          self::setCurrentId($entity_id, $context); //todo: move outside of this loop
+          self::setCurrentId($entity_id, $context);
         }
 
         // Overriding entity settings if it has been overridden on entity edit page...
@@ -244,8 +243,9 @@ class Batch {
       if (self::isBatch($batch_info)) {
         self::setCurrentId($i, $context);
       }
+
       if (!\Drupal::service('path.validator')->isValid($custom_path['path'])) { //todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush.
-        self::registerError(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, ['@faulty_path' => $custom_path['path']], 'warning');
+        self::registerError(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, ['@path' => $custom_path['path']], 'warning');
         continue;
       }
       $url_object = Url::fromUserInput($custom_path['path'], ['absolute' => TRUE]);
@@ -308,14 +308,14 @@ class Batch {
       $context['sandbox']['progress'] = 0;
       $context['sandbox']['current_id'] = 0;
       $context['sandbox']['max'] = $max;
-      $context['results']['processed_paths'] = !empty($context['results']['processed_paths']) ? $context['results']['processed_paths'] : [];
+      $context['results']['processed_paths'] = !empty($context['results']['processed_paths'])
+        ? $context['results']['processed_paths'] : [];
     }
   }
 
   private static function setCurrentId($id, &$context) {
     $context['sandbox']['progress']++;
     $context['sandbox']['current_id'] = $id;
-    $context['results']['link_count'] = !isset($context['results']['link_count']) ? 1 : $context['results']['link_count'] + 1; //Not used ATM.
   }
 
   private static function setProgressInfo(&$context) {
@@ -342,7 +342,8 @@ class Batch {
         if (count($chunk_links) == $batch_info['max_links']) {
           $remove_sitemap = empty($context['results']['chunk_count']);
           \Drupal::service('simple_sitemap.sitemap_generator')->generateSitemap($chunk_links, $remove_sitemap);
-          $context['results']['chunk_count'] = !isset($context['results']['chunk_count']) ? 1 : $context['results']['chunk_count'] + 1;
+          $context['results']['chunk_count'] = !isset($context['results']['chunk_count'])
+            ? 1 : $context['results']['chunk_count'] + 1;
           $context['results']['generate'] = array_slice($context['results']['generate'], count($chunk_links));
         }
       }

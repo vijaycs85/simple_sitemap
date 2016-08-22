@@ -201,7 +201,8 @@ class Form {
   /**
    * Gets the object entity of the form if available.
    *
-   * @return object $entity or FALSE if non-existent or if form operation is
+   * @return object|false
+   *  Entity or FALSE if non-existent or if form operation is
    *  'delete'.
    */
   private function getFormEntity() {
@@ -218,7 +219,8 @@ class Form {
    * Gets new entity Id after entity creation.
    * To be used in an entity form submit.
    *
-   * @return int entity ID.
+   * @return int
+   *  Entity ID.
    */
   public function getFormEntityId() {
     return $this->formState->getFormObject()->getEntity()->id();

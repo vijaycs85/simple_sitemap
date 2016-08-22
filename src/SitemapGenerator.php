@@ -59,7 +59,7 @@ class SitemapGenerator {
   /**
    * Returns a batch-ready data array for custom link generation.
    *
-   * @return array $paths
+   * @return array
    *  Data to be processed.
    */
   private function getCustomUrlsData() {
@@ -76,7 +76,7 @@ class SitemapGenerator {
    * Collects entity metadata for entities that are set to be indexed
    * and returns an array of batch-ready data sets for entity link generation.
    *
-   * @return array $data_sets.
+   * @return array
    */
   private function getEntityTypeData() {
     $data_sets = [];
@@ -158,7 +158,8 @@ class SitemapGenerator {
    * @param array $links
    *  All links with their multilingual versions and settings.
    *
-   * @return string sitemap chunk
+   * @return string
+   *  Sitemap chunk
    */
   private function generateSitemapChunk($links) {
     $writer = new XMLWriter();
