@@ -7,10 +7,8 @@ use Drupal\Core\DependencyInjection\ContainerBuilder;
 
 /**
  * Base for SimplesitemapTest.
- *
- * @group simple_sitemap
  */
-class SimplesitemapTestBase extends UnitTestCase {
+abstract class SimplesitemapTestBase extends UnitTestCase {
 
   protected $config;
   protected $container;
