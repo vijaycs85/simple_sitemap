@@ -171,20 +171,18 @@ class SitemapGenerator {
     $writer->writeAttribute('xmlns:xhtml', self::XMLNS_XHTML);
 
     foreach ($links as $link) {
+
+      // Add each translation variant URL to the sitemap.
       $writer->startElement('url');
+      $writer->writeElement('loc', $link['url']);
 
-      // Adding url to standard language.
-      $writer->writeElement('loc', $link['urls'][$this->defaultLanguageId]);
-
-      // Adding alternate urls (other languages) if any.
-      if (count($link['urls']) > 1) {
-        foreach($link['urls'] as $language_id => $localised_url) {
-          $writer->startElement('xhtml:link');
-          $writer->writeAttribute('rel', 'alternate');
-          $writer->writeAttribute('hreflang', $language_id);
-          $writer->writeAttribute('href', $localised_url);
-          $writer->endElement();
-        }
+      // Add all alternate URLs to this translation variant.
+      foreach($link['alternate_urls'] as $language_id => $alternate_url) {
+        $writer->startElement('xhtml:link');
+        $writer->writeAttribute('rel', 'alternate');
+        $writer->writeAttribute('hreflang', $language_id);
+        $writer->writeAttribute('href', $alternate_url);
+        $writer->endElement();
       }
       if (isset($link['priority'])) { // Add priority if any.
         $writer->writeElement('priority', $link['priority']);

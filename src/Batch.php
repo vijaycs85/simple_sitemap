@@ -186,34 +186,27 @@ class Batch {
 
         $url_object->setOption('absolute', TRUE);
 
-        $urls = [];
-        foreach ($languages as $language) {
-          $langcode = $language->getId();
-
-          // Exclude untranslated paths.
-          if ($batch_info['skip_untranslated']) {
-            if ($language->isDefault() || $entity->hasTranslation($langcode)) {
-              $url_object->setOption('language', $language);
-              $urls[$langcode] = $url_object->toString();
-            }
-          }
-          else {
-            $url_object->setOption('language', $language);
-            $urls[$langcode] = $url_object->toString();
-          }
-        }
-
-        $context['results']['generate'][] = [
+        $path_data = [
           'path' => $path,
-          'urls' => $urls,
           'entity_info' => ['entity_type' => $entity_info['entity_type_name'], 'id' => $entity_id],
           'lastmod' => method_exists($entity, 'getChangedTime') ? date_iso8601($entity->getChangedTime()) : NULL,
           'priority' => isset($priority) ? $priority : (isset($entity_info['bundle_settings']['priority']) ? $entity_info['bundle_settings']['priority'] : NULL),
         ];
         $priority = NULL;
+
+        $alternate_urls = [];
+        foreach ($languages as $language) {
+          $langcode = $language->getId();
+          if (!$batch_info['skip_untranslated'] || $language->isDefault() || $entity->hasTranslation($langcode)) {
+            $url_object->setOption('language', $language);
+            $alternate_urls[$langcode] = $url_object->toString();
+          }
+        }
+        foreach($alternate_urls as $langcode => $url) {
+          $context['results']['generate'][] = $path_data + ['langcode' => $langcode, 'url' => $url, 'alternate_urls' => $alternate_urls];
+        }
       }
     }
-
     if (self::isBatch($batch_info)) {
       self::setProgressInfo($context);
     }
@@ -263,29 +256,25 @@ class Batch {
         ? \Drupal::entityTypeManager()->getStorage(key($route_parameters))->load($route_parameters[key($route_parameters)])
         : NULL;
 
-      $urls = [];
-      foreach ($languages as $language) {
-        $langcode = $language->getId();
-
-        // Exclude untranslated paths.
-        if (!is_null($entity) && $batch_info['skip_untranslated']) {
-          if ($language->isDefault() || $entity->hasTranslation($langcode)) {
-            $url_object->setOption('language', $language);
-            $urls[$langcode] = $url_object->toString();
-          }
-        }
-        else {
-          $url_object->setOption('language', $language);
-          $urls[$langcode] = $url_object->toString();
-        }
-      }
-
-      $context['results']['generate'][] = [
+      $path_data = [
         'path' => $path,
-        'urls' => $urls,
         'lastmod' => method_exists($entity, 'getChangedTime') ? date_iso8601($entity->getChangedTime()) : NULL,
         'priority' => isset($custom_path['priority']) ? $custom_path['priority'] : NULL,
       ];
+      if (!is_null($entity)) {
+        $path_data['entity_info'] = ['entity_type' => $entity->getEntityTypeId(), 'id' => $entity->id()];
+      }
+      $alternate_urls = [];
+      foreach ($languages as $language) {
+        $langcode = $language->getId();
+        if (!$batch_info['skip_untranslated'] || is_null($entity) || $entity->hasTranslation($langcode) || $language->isDefault()) {
+          $url_object->setOption('language', $language);
+          $alternate_urls[$langcode] = $url_object->toString();
+        }
+      }
+      foreach($alternate_urls as $langcode => $url) {
+        $context['results']['generate'][] = $path_data + ['langcode' => $langcode, 'url' => $url, 'alternate_urls' => $alternate_urls];
+      }
     }
     if (self::isBatch($batch_info)) {
       self::setProgressInfo($context);
