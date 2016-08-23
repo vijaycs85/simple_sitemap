@@ -168,7 +168,7 @@ class Batch {
             $url_object = $entity->getUrlObject();
             break;
           default: // Loading url object for other entities.
-            $url_object = $entity->toUrl();
+            $url_object = $entity->toUrl(); //todo: file entity type does not have a canonical url and breaks generation, hopefully fixed in https://www.drupal.org/node/2402533
         }
 
         // Do not include external paths.

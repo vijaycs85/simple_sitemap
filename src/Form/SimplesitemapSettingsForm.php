@@ -2,13 +2,12 @@
 
 namespace Drupal\simple_sitemap\Form;
 
-use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
  * SimplesitemapSettingsFrom
  */
-class SimplesitemapSettingsForm extends ConfigFormBase {
+class SimplesitemapSettingsForm extends SimplesitemapFormBase {
 
   private $form_settings = [
     'max_links',
@@ -28,18 +27,11 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  protected function getEditableConfigNames() {
-    return ['simple_sitemap.settings'];
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     $generator = \Drupal::service('simple_sitemap.generator');
 
-    $form['simple_sitemap_settings']['#prefix'] = "<div class='description'>" .t("If you would like to say thanks and support the development of this module, a <a target='_blank' href='@url'>donation</a> is always appreciated.", ['@url' => 'https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5AFYRSBLGSC3W']) . "</div>";
+    $form['simple_sitemap_settings']['#prefix'] = $this->getDonationLink();
 
     $form['simple_sitemap_settings']['regenerate'] = [
       '#title' => $this->t('Regenerate sitemap'),
@@ -68,7 +60,7 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
 
     $form['simple_sitemap_settings']['advanced'] = [
       '#title' => $this->t('Advanced settings'),
-      '#type' => 'details',
+      '#type' => 'fieldset',
     ];
 
     $form['simple_sitemap_settings']['advanced']['remove_duplicates'] = [
@@ -104,6 +96,8 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
       '#required' => TRUE,
     ];
 
+    \Drupal::service('simple_sitemap.form')->displayRegenerateNow($form['simple_sitemap_settings']);
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -133,6 +127,11 @@ class SimplesitemapSettingsForm extends ConfigFormBase {
       $generator->saveSetting($setting_name, $form_state->getValue($setting_name));
     }
     parent::submitForm($form, $form_state);
+
+    // Regenerate sitemaps according to user setting.
+    if ($form_state->getValue('simple_sitemap_regenerate_now')) {
+      $generator->generateSitemap();
+    }
   }
 
   public function generateSitemap(array &$form, FormStateInterface $form_state) {

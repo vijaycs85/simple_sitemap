@@ -2,15 +2,12 @@
 
 namespace Drupal\simple_sitemap\Form;
 
-use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\simple_sitemap\Simplesitemap;
-use Drupal\simple_sitemap\Form;
 
 /**
  * SimplesitemapSettingsFrom
  */
-class SimplesitemapEntitiesForm extends ConfigFormBase {
+class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
 
   /**
    * {@inheritdoc}
@@ -22,16 +19,11 @@ class SimplesitemapEntitiesForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  protected function getEditableConfigNames() {
-    return ['simple_sitemap.settings'];
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     $generator = \Drupal::service('simple_sitemap.generator');
+
+    $form['simple_sitemap_entities']['#prefix'] = $this->getDonationLink();
 
     $form['simple_sitemap_entities']['entities'] = [
       '#title' => $this->t('Sitemap entities'),

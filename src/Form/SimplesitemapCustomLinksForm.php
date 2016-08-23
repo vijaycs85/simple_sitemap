@@ -2,27 +2,19 @@
 
 namespace Drupal\simple_sitemap\Form;
 
-use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\simple_sitemap\Form;
 
 /**
  * SimplesitemapCustomLinksFrom
  */
-class SimplesitemapCustomLinksForm extends ConfigFormBase {
+class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
 
   /**
    * {@inheritdoc}
    */
   public function getFormID() {
     return 'simple_sitemap_custom_links_form';
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function getEditableConfigNames() {
-    return ['simple_sitemap.settings_custom'];
   }
 
   /**
@@ -43,6 +35,7 @@ class SimplesitemapCustomLinksForm extends ConfigFormBase {
       '#title' => $this->t('Custom links'),
       '#type' => 'fieldset',
       '#markup' => '<p>' . $this->t('Add custom internal drupal paths to the XML sitemap.') . '</p>',
+      '#prefix' => $this->getDonationLink(),
     ];
 
     $form['simple_sitemap_custom']['custom_links'] = [
