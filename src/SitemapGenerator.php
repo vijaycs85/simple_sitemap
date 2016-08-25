@@ -20,11 +20,13 @@ class SitemapGenerator {
   private $moduleHandler;
   private $defaultLanguageId;
   private $generateFrom = 'form';
+  private $isHreflangSitemap;
 
   public function __construct($generator, $database, $language_manager, $module_handler) {
     $this->generator = $generator;
     $this->db = $database;
     $this->defaultLanguageId = $language_manager->getDefaultLanguage()->getId();
+    $this->isHreflangSitemap = count($language_manager->getLanguages()) > 1;
     $this->moduleHandler = $module_handler;
   }
 
@@ -171,26 +173,34 @@ class SitemapGenerator {
     $writer->writeComment(self::GENERATED_BY);
     $writer->startElement('urlset');
     $writer->writeAttribute('xmlns', self::XMLNS);
-    $writer->writeAttribute('xmlns:xhtml', self::XMLNS_XHTML);
+    if ($this->isHreflangSitemap) {
+      $writer->writeAttribute('xmlns:xhtml', self::XMLNS_XHTML);
+    }
 
     foreach ($links as $link) {
 
-      // Add each translation variant URL to the sitemap.
+      // Add each translation variant URL as location to the sitemap.
       $writer->startElement('url');
       $writer->writeElement('loc', $link['url']);
 
-      // Add all alternate URLs to this translation variant.
-      foreach($link['alternate_urls'] as $language_id => $alternate_url) {
-        $writer->startElement('xhtml:link');
-        $writer->writeAttribute('rel', 'alternate');
-        $writer->writeAttribute('hreflang', $language_id);
-        $writer->writeAttribute('href', $alternate_url);
-        $writer->endElement();
+      // If more than one language is enabled, add all translation variant URLs
+      // as alternate links to this location turning the sitemap into a hreflang
+      // sitemap.
+      if ($this->isHreflangSitemap) {
+        foreach($link['alternate_urls'] as $language_id => $alternate_url) {
+          $writer->startElement('xhtml:link');
+          $writer->writeAttribute('rel', 'alternate');
+          $writer->writeAttribute('hreflang', $language_id);
+          $writer->writeAttribute('href', $alternate_url);
+          $writer->endElement();
+        }
       }
-      if (isset($link['priority'])) { // Add priority if any.
+      // Add priority if any.
+      if (isset($link['priority'])) {
         $writer->writeElement('priority', $link['priority']);
       }
-      if (isset($link['lastmod'])) { // Add lastmod if any.
+      // Add lastmod if any.
+      if (isset($link['lastmod'])) {
         $writer->writeElement('lastmod', $link['lastmod']);
       }
       $writer->endElement();
@@ -200,4 +210,3 @@ class SitemapGenerator {
     return $writer->outputMemory();
   }
 }
-
