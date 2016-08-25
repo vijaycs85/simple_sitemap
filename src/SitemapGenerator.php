@@ -21,7 +21,7 @@ class SitemapGenerator {
   private $defaultLanguageId;
   private $generateFrom = 'form';
 
-  function __construct($generator, $database, $language_manager, $module_handler) {
+  public function __construct($generator, $database, $language_manager, $module_handler) {
     $this->generator = $generator;
     $this->db = $database;
     $this->defaultLanguageId = $language_manager->getDefaultLanguage()->getId();

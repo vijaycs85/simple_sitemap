@@ -39,7 +39,7 @@ class Form {
   /**
    * Form constructor.
    */
-  function __construct($generator) {
+  public function __construct($generator) {
     $this->generator = $generator;
   }
 

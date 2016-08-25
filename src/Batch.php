@@ -19,7 +19,7 @@ class Batch {
   const BATCH_PROGRESS_MESSAGE = 'Processing @current out of @total link types.';
   const ANONYMOUS_USER_ID = 0;
 
-  function __construct() {
+  public function __construct() {
     $this->batch = [
       'title' => $this->t('Generating XML sitemap'),
       'init_message' => $this->t(self::BATCH_INIT_MESSAGE),

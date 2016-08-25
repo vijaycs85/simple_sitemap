@@ -29,9 +29,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $generator = \Drupal::service('simple_sitemap.generator');
-
-    $form['simple_sitemap_settings']['#prefix'] = $this->getDonationLink();
+    $form['simple_sitemap_settings']['#prefix'] = $this->getDonationText();
 
     $form['simple_sitemap_settings']['regenerate'] = [
       '#title' => $this->t('Regenerate sitemap'),
@@ -47,34 +45,35 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     ];
 
     $form['simple_sitemap_settings']['settings'] = [
-      '#title' => $this->t('Settings'),
       '#type' => 'fieldset',
+      '#title' => $this->t('Settings'),
     ];
 
     $form['simple_sitemap_settings']['settings']['cron_generate'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Regenerate the sitemap on every cron run'),
       '#description' => $this->t('Uncheck this if you intend to only regenerate the sitemap manually or via drush.'),
-      '#default_value' => $generator->getSetting('cron_generate', TRUE),
+      '#default_value' => $this->generator->getSetting('cron_generate', TRUE),
     ];
 
     $form['simple_sitemap_settings']['advanced'] = [
+      '#type' => 'details',
       '#title' => $this->t('Advanced settings'),
-      '#type' => 'fieldset',
+      '#open' => TRUE,
     ];
 
     $form['simple_sitemap_settings']['advanced']['remove_duplicates'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Exclude duplicate links'),
       '#description' => $this->t('Uncheck this to significantly speed up the sitemap generation process on a huge site (more than 20 000 indexed entities).'),
-      '#default_value' => $generator->getSetting('remove_duplicates', TRUE),
+      '#default_value' => $this->generator->getSetting('remove_duplicates', TRUE),
     ];
 
     $form['simple_sitemap_settings']['advanced']['skip_untranslated'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Skip non-existent translations'),
       '#description' => $this->t('If checked, only links to the translated content will be included, otherwise the sitemap will include links to all content translation variants, even when the content has not been translated yet.'),
-      '#default_value' => $generator->getSetting('skip_untranslated', FALSE),
+      '#default_value' => $this->generator->getSetting('skip_untranslated', FALSE),
     ];
 
     $form['simple_sitemap_settings']['advanced']['max_links'] = [
@@ -83,7 +82,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
       '#type' => 'textfield',
       '#maxlength' => 5,
       '#size' => 5,
-      '#default_value' => $generator->getSetting('max_links', 2000),
+      '#default_value' => $this->generator->getSetting('max_links', 2000),
     ];
 
     $form['simple_sitemap_settings']['advanced']['batch_process_limit'] = [
@@ -92,11 +91,11 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
       '#type' => 'textfield',
       '#maxlength' => 5,
       '#size' => 5,
-      '#default_value' => $generator->getSetting('batch_process_limit', 1500),
+      '#default_value' => $this->generator->getSetting('batch_process_limit', 1500),
       '#required' => TRUE,
     ];
 
-    \Drupal::service('simple_sitemap.form')->displayRegenerateNow($form['simple_sitemap_settings']);
+    $this->form->displayRegenerateNow($form['simple_sitemap_settings']);
 
     return parent::buildForm($form, $form_state);
   }
@@ -122,19 +121,18 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $generator = \Drupal::service('simple_sitemap.generator');
     foreach($this->form_settings as $setting_name) {
-      $generator->saveSetting($setting_name, $form_state->getValue($setting_name));
+      $this->generator->saveSetting($setting_name, $form_state->getValue($setting_name));
     }
     parent::submitForm($form, $form_state);
 
     // Regenerate sitemaps according to user setting.
     if ($form_state->getValue('simple_sitemap_regenerate_now')) {
-      $generator->generateSitemap();
+      $this->generator->generateSitemap();
     }
   }
 
   public function generateSitemap(array &$form, FormStateInterface $form_state) {
-    \Drupal::service('simple_sitemap.generator')->generateSitemap();
+    $this->generator->generateSitemap();
   }
 }

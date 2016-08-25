@@ -26,7 +26,7 @@ class Simplesitemap {
    * @param \Drupal\Core\Database\Database $database
    * @param \Drupal\Core\Entity\EntityTypeManager $entityTypeManager
    */
-  function __construct(
+  public function __construct(
     \Drupal\Core\Config\ConfigFactoryInterface $configFactoryInterface,
     $database,
     \Drupal\Core\Entity\EntityTypeManager $entityTypeManager) {
