@@ -32,8 +32,8 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     $form['simple_sitemap_settings']['#prefix'] = $this->getDonationText();
 
     $form['simple_sitemap_settings']['regenerate'] = [
-      '#title' => $this->t('Regenerate sitemap'),
       '#type' => 'fieldset',
+      '#title' => $this->t('Regenerate sitemap'),
       '#markup' => '<p>' . $this->t('This will regenerate the XML sitemap for all languages.') . '</p>',
     ];
 
@@ -77,20 +77,18 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     ];
 
     $form['simple_sitemap_settings']['advanced']['max_links'] = [
+      '#type' => 'number',
       '#title' => $this->t('Maximum links in a sitemap'),
+      '#min' => 1,
       '#description' => $this->t("The maximum number of links one sitemap can hold. If more links are generated than set here, a sitemap index will be created and the links split into several sub-sitemaps.<br/>50 000 links is the maximum Google will parse per sitemap, however it is advisable to set this to a lower number. If left blank, all links will be shown on a single sitemap."),
-      '#type' => 'textfield',
-      '#maxlength' => 5,
-      '#size' => 5,
       '#default_value' => $this->generator->getSetting('max_links', 2000),
     ];
 
     $form['simple_sitemap_settings']['advanced']['batch_process_limit'] = [
+      '#type' => 'number',
       '#title' => $this->t('Refresh batch every n links'),
+      '#min' => 1,
       '#description' => $this->t("During sitemap generation, the batch process will issue a page refresh after n links processed to prevent PHP timeouts and memory exhaustion. Increasing this number will reduce the number of times Drupal has to bootstrap (thus speeding up the generation process), but will require more memory and less strict PHP timeout settings."),
-      '#type' => 'textfield',
-      '#maxlength' => 5,
-      '#size' => 5,
       '#default_value' => $this->generator->getSetting('batch_process_limit', 1500),
       '#required' => TRUE,
     ];
@@ -103,19 +101,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state) {
-    $max_links = $form_state->getValue('max_links');
-    if ($max_links != '') {
-      if (!is_numeric($max_links) || $max_links < 1 || $max_links != round($max_links)) {
-        $form_state->setErrorByName('max_links', $this->t("The value of the <em>Maximum links in a sitemap</em> field must be empty, or a positive integer greater than 0."));
-      }
-    }
-
-  $batch_process_limit = $form_state->getValue('batch_process_limit');
-    if (!is_numeric($batch_process_limit) || $batch_process_limit < 1 || $batch_process_limit != round($batch_process_limit)) {
-      $form_state->setErrorByName('batch_process_limit', $this->t("The value of the <em>Refresh batch every n links</em> field must be a positive integer greater than 0."));
-    }
-  }
+  public function validateForm(array &$form, FormStateInterface $form_state) {}
 
   /**
    * {@inheritdoc}

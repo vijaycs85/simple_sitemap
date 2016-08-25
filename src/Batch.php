@@ -237,7 +237,7 @@ class Batch {
         self::setCurrentId($i, $context);
       }
 
-      if (!\Drupal::service('path.validator')->isValid($custom_path['path'])) { //todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush.
+      if (!\Drupal::service('path.validator')->isValid($custom_path['path'])) { //todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush. Use getUrlIfValidWithoutAccessCheck()?
         self::registerError(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, ['@path' => $custom_path['path']], 'warning');
         continue;
       }
