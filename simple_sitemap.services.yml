@@ -10,3 +10,11 @@ services:
   simple_sitemap.form:
     class: Drupal\simple_sitemap\Form
     arguments: ['@simple_sitemap.generator']
+
+  simple_sitemap.bundle_url_generator:
+    class: Drupal\simple_sitemap\BatchBundleUrlGenerator
+    arguments: ['@simple_sitemap.generator', '@language_manager', '@entity_type.manager', '@path.validator', '@entity.query']
+
+  simple_sitemap.custom_url_generator:
+    class: Drupal\simple_sitemap\BatchCustomUrlGenerator
+    arguments: ['@simple_sitemap.generator', '@language_manager', '@entity_type.manager', '@path.validator']
