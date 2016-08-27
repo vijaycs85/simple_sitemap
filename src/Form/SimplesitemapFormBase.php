@@ -6,7 +6,8 @@ use Drupal\Core\Form\ConfigFormBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * SimplesitemapFormBase
+ * Class SimplesitemapFormBase
+ * @package Drupal\simple_sitemap\Form
  */
 abstract class SimplesitemapFormBase extends ConfigFormBase {
 
@@ -14,6 +15,13 @@ abstract class SimplesitemapFormBase extends ConfigFormBase {
   protected $form;
   protected $pathValidator;
 
+  /**
+   * SimplesitemapFormBase constructor.
+   *
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $generator
+   * @param $form
+   * @param $path_validator
+   */
   public function __construct($generator, $form, $path_validator) {
     $this->generator = $generator;
     $this->form = $form;

@@ -5,7 +5,8 @@ namespace Drupal\simple_sitemap\Form;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * SimplesitemapSettingsFrom
+ * Class SimplesitemapEntitiesForm
+ * @package Drupal\simple_sitemap\Form
  */
 class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
 

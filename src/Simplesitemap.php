@@ -5,9 +5,8 @@ namespace Drupal\simple_sitemap;
 use Drupal\Core\Entity\ContentEntityTypeInterface;
 
 /**
- * Simplesitemap class.
- *
- * Main module class.
+ * Class Simplesitemap
+ * @package Drupal\simple_sitemap
  */
 class Simplesitemap {
 
@@ -318,11 +317,19 @@ class Simplesitemap {
     }
   }
 
+  /**
+   * @param $entity
+   * @return mixed
+   */
   public function getEntityInstanceBundleName($entity) {
     return $entity->getEntityTypeId() == 'menu_link_content'
       ? $entity->getMenuName() : $entity->bundle(); // Menu fix.
   }
 
+  /**
+   * @param $entity
+   * @return string
+   */
   public function getBundleEntityTypeId($entity) {
     return $entity->getEntityTypeId() == 'menu'
       ? 'menu_link_content' : $entity->getEntityType()->getBundleOf(); // Menu fix.
@@ -452,6 +459,10 @@ class Simplesitemap {
     return $entity_types;
   }
 
+  /**
+   * @param $entity_type_id
+   * @return bool
+   */
   public function entityTypeIsAtomic($entity_type_id) {
     if ($entity_type_id == 'menu_link_content') // Menu fix.
       return FALSE;

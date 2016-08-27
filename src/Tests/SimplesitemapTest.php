@@ -5,8 +5,11 @@ namespace Drupal\simple_sitemap\Tests;
 use Drupal\simpletest\WebTestBase;
 
 /**
+ * Class SimplesitemapTest
+ *
  * Tests Simple XML sitemap functional integration.
  *
+ * @package Drupal\simple_sitemap\Tests
  * @group simple_sitemap
  */
 class SimplesitemapTest extends WebTestBase {

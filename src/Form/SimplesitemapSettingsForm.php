@@ -5,7 +5,8 @@ namespace Drupal\simple_sitemap\Form;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * SimplesitemapSettingsFrom
+ * Class SimplesitemapSettingsForm
+ * @package Drupal\simple_sitemap\Form
  */
 class SimplesitemapSettingsForm extends SimplesitemapFormBase {
 
@@ -118,6 +119,10 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     }
   }
 
+  /**
+   * @param array $form
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   */
   public function generateSitemap(array &$form, FormStateInterface $form_state) {
     $this->generator->generateSitemap();
   }

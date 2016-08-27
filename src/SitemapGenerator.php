@@ -5,7 +5,8 @@ namespace Drupal\simple_sitemap;
 use \XMLWriter;
 
 /**
- * SitemapGenerator class.
+ * Class SitemapGenerator
+ * @package Drupal\simple_sitemap
  */
 class SitemapGenerator {
 
