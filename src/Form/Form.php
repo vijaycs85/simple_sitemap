@@ -1,11 +1,12 @@
 <?php
 
-namespace Drupal\simple_sitemap;
+namespace Drupal\simple_sitemap\Form;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
- * Form class.
+ * Class Form
+ * @package Drupal\simple_sitemap\Form
  */
 class Form {
   use StringTranslationTrait;
@@ -15,6 +16,7 @@ class Form {
   const PRIORITY_DIVIDER = 10;
 
   private $generator;
+  private $currentUser;
   private $formState;
 
   public $alteringForm = TRUE;
@@ -38,11 +40,19 @@ class Form {
 
   /**
    * Form constructor.
+   *
+   * @param $generator
+   * @param $current_user
    */
-  public function __construct($generator) {
+  public function __construct($generator, $current_user) {
     $this->generator = $generator;
+    $this->currentUser = $current_user;
   }
 
+  /**
+   * @param $form_state
+   * @return $this
+   */
   public function processForm($form_state) {
     $this->formState = $form_state;
     if (!is_null($this->formState)) {
@@ -52,21 +62,37 @@ class Form {
     return $this;
   }
 
+  /**
+   * @param $entity_category
+   * @return $this
+   */
   public function setEntityCategory($entity_category) {
     $this->entityCategory = $entity_category;
     return $this;
   }
 
+  /**
+   * @param $entity_type_id
+   * @return $this
+   */
   public function setEntityTypeId($entity_type_id) {
     $this->entityTypeId = $entity_type_id;
     return $this;
   }
 
+  /**
+   * @param $bundle_name
+   * @return $this
+   */
   public function setBundleName($bundle_name) {
     $this->bundleName = $bundle_name;
     return $this;
   }
 
+  /**
+   * @param $instance_id
+   * @return $this
+   */
   public function setInstanceId($instance_id) {
     $this->instanceId = $instance_id;
     return $this;
@@ -75,7 +101,7 @@ class Form {
   private function assertAlteringForm() {
 
     // Do not alter the form if user lacks certain permissions.
-    if (!\Drupal::currentUser()->hasPermission('administer sitemap settings'))
+    if (!$this->currentUser->hasPermission('administer sitemap settings'))
       $this->alteringForm = FALSE;
 
     // Do not alter the form if it is irrelevant to sitemap generation.
@@ -93,6 +119,9 @@ class Form {
       $this->alteringForm = FALSE;
   }
 
+  /**
+   * @param $form_fragment
+   */
   public function displayRegenerateNow(&$form_fragment) {
     $form_fragment['simple_sitemap_regenerate_now'] = [
       '#type' => 'checkbox',
@@ -104,7 +133,12 @@ class Form {
       $form_fragment['simple_sitemap_regenerate_now']['#description'] .= '</br>' . $this->t('Otherwise the sitemap will be regenerated on the next cron run.');
     }
   }
-  
+
+  /**
+   * @param $form_fragment
+   * @param bool $multiple
+   * @return $this
+   */
   public function displayEntitySettings(&$form_fragment, $multiple = FALSE) {
     $prefix = $multiple ? $this->entityTypeId . '_' : '';
 
@@ -142,7 +176,7 @@ class Form {
       '#title' => $this->t('Priority'),
       '#description' => $priority_description,
       '#default_value' => $priority,
-      '#options' => self::getPrioritySelectValues(),
+      '#options' => $this->getPrioritySelectValues(),
     ];
     if ($this->entityCategory == 'instance' && isset($bundle_settings['priority'])) {
       $form_fragment[$prefix . 'simple_sitemap_priority']['#options'][(string)$bundle_settings['priority']] .= ' (' . $this->t('Default') . ')';
@@ -230,10 +264,12 @@ class Form {
    * Checks if simple_sitemap values have been changed after submitting the form.
    * To be used in an entity form submit.
    *
+   * @param $form
+   * @param $values
    * @return bool
    *  TRUE if simple_sitemap form values have been altered by the user.
    */
-  public static function valuesChanged($form, $values) {
+  public function valuesChanged($form, $values) { //todo make non-static
     foreach (self::$valuesToCheck as $field_name) {
       if (isset($values[$field_name]) && $values[$field_name] != $form['simple_sitemap'][$field_name]['#default_value']) {
         return TRUE;
@@ -245,21 +281,29 @@ class Form {
   /**
    * Gets the values needed to display the priority dropdown setting.
    *
-   * @return array $options
+   * @return array
    */
-  public static function getPrioritySelectValues() {
+  public function getPrioritySelectValues() {
     $options = [];
     foreach(range(0, self::PRIORITY_HIGHEST) as $value) {
-      $value = self::formatPriority($value / self::PRIORITY_DIVIDER);
+      $value = $this->formatPriority($value / self::PRIORITY_DIVIDER);
       $options[$value] = $value;
     }
     return $options;
   }
 
-  public static function formatPriority($priority) {
+  /**
+   * @param $priority
+   * @return string
+   */
+  public function formatPriority($priority) {
     return number_format((float)$priority, 1, '.', '');
   }
 
+  /**
+   * @param $priority
+   * @return bool
+   */
   public static function isValidPriority($priority) {
     return !is_numeric($priority) || $priority < 0 || $priority > 1 ? FALSE : TRUE;
   }

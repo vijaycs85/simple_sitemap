@@ -3,6 +3,7 @@
 namespace Drupal\simple_sitemap;
 
 use Drupal\Core\Entity\ContentEntityTypeInterface;
+use Drupal\simple_sitemap\Form\Form;
 
 /**
  * Class Simplesitemap
@@ -10,13 +11,15 @@ use Drupal\Core\Entity\ContentEntityTypeInterface;
  */
 class Simplesitemap {
 
+  private $sitemapGenerator;
   private $configFactory;
-  private $config;
   private $db;
   private $entityTypeManager;
+  private $pathValidator;
   private static $allowed_link_settings = [
     'entity' => ['index', 'priority'],
-    'custom' => ['priority']];
+    'custom' => ['priority']
+  ];
 
   /**
    * Simplesitemap constructor.
@@ -26,14 +29,17 @@ class Simplesitemap {
    * @param \Drupal\Core\Entity\EntityTypeManager $entityTypeManager
    */
   public function __construct(
+    $sitemapGenerator,
     \Drupal\Core\Config\ConfigFactoryInterface $configFactoryInterface,
     $database,
-    \Drupal\Core\Entity\EntityTypeManager $entityTypeManager) {
-
+    \Drupal\Core\Entity\EntityTypeManager $entityTypeManager,
+    $pathValidator
+  ) {
+    $this->sitemapGenerator = $sitemapGenerator;
     $this->configFactory = $configFactoryInterface;
     $this->db = $database;
     $this->entityTypeManager = $entityTypeManager;
-    $this->config = $this->configFactory->get('simple_sitemap.settings');
+    $this->pathValidator = $pathValidator;
   }
 
   /**
@@ -45,7 +51,7 @@ class Simplesitemap {
    *  The requested configuration.
    */
   public function getConfig($key) {
-    return $this->config->get($key);
+    return $this->configFactory->get('simple_sitemap.settings')->get($key);
   }
 
   private function fetchSitemapChunks() {
@@ -67,8 +73,6 @@ class Simplesitemap {
   public function saveConfig($key, $value) {
     $this->configFactory->getEditable('simple_sitemap.settings')
       ->set($key, $value)->save();
-    // Refresh config object after making changes.
-    $this->config = $this->configFactory->get('simple_sitemap.settings');
     return $this;
   }
 
@@ -127,7 +131,7 @@ class Simplesitemap {
    * @return $this
    */
   public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings) {
-    $bundle_name = is_null($bundle_name) ? $entity_type_id : $bundle_name;
+    $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
     $entity_types = $this->getConfig('entity_types');
     $this->addLinkSettings('entity', $settings, $entity_types[$entity_type_id][$bundle_name]);
     $this->saveConfig('entity_types', $entity_types);
@@ -175,7 +179,7 @@ class Simplesitemap {
    * @return array|false
    */
   public function getBundleSettings($entity_type_id, $bundle_name = NULL) {
-    $bundle_name = is_null($bundle_name) ? $entity_type_id : $bundle_name;
+    $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
     $entity_types = $this->getConfig('entity_types');
     if (isset($entity_types[$entity_type_id][$bundle_name])) {
       $settings = $entity_types[$entity_type_id][$bundle_name];
@@ -237,7 +241,7 @@ class Simplesitemap {
    * @return $this
    */
   public function addCustomLink($path, $settings) {
-    if (!\Drupal::service('path.validator')->isValid($path))
+    if (!$this->pathValidator->isValid($path))
       return $this; // todo: log error
     if ($path[0] != '/')
       return $this; // todo: log error
@@ -305,7 +309,7 @@ class Simplesitemap {
       if (in_array($setting_key, self::$allowed_link_settings[$type])) {
         switch($setting_key) {
           case 'priority':
-            if (Form::isValidPriority($setting)) {
+            if (!Form::isValidPriority($setting)) {
               // todo: register error
               continue;
             }
@@ -374,9 +378,10 @@ class Simplesitemap {
    *  This decides how the batch process is to be run.
    */
   public function generateSitemap($from = 'form') {
-    \Drupal::service('simple_sitemap.sitemap_generator')
-    ->setGenerateFrom($from)
-    ->startGeneration();
+    $this->sitemapGenerator
+      ->setGenerator($this)
+      ->setGenerateFrom($from)
+      ->startGeneration();
   }
 
   /**
@@ -389,7 +394,8 @@ class Simplesitemap {
    *  The sitemap index.
    */
   private function getSitemapIndex($chunks) {
-    return \Drupal::service('simple_sitemap.sitemap_generator')
+    return $this->sitemapGenerator
+      ->setGenerator($this)
       ->generateSitemapIndex($chunks);
   }
 

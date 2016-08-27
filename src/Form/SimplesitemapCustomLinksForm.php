@@ -3,7 +3,6 @@
 namespace Drupal\simple_sitemap\Form;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\simple_sitemap\Form;
 
 /**
  * Class SimplesitemapCustomLinksForm
@@ -26,7 +25,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
     $setting_string = '';
     foreach ($this->generator->getConfig('custom') as $custom_link) {
       $setting_string .= isset($custom_link['priority'])
-        ? $custom_link['path'] . ' ' . Form::formatPriority($custom_link['priority'])
+        ? $custom_link['path'] . ' ' . $this->form->formatPriority($custom_link['priority'])
         : $custom_link['path'];
       $setting_string .= "\r\n";
     }
