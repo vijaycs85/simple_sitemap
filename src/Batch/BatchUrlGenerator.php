@@ -122,6 +122,28 @@ class BatchUrlGenerator {
 
   /**
    * @param $context
+   * @param $batch_info
+   */
+  protected function processSegment(&$context, $batch_info) {
+    if ($this->isBatch($batch_info)) {
+      $this->setProgressInfo($context);
+    }
+    if (!empty($batch_info['max_links']) && count($context['results']['generate']) >= $batch_info['max_links']) {
+      $chunks = array_chunk($context['results']['generate'], $batch_info['max_links']);
+      foreach ($chunks as $i => $chunk_links) {
+        if (count($chunk_links) == $batch_info['max_links']) {
+          $remove_sitemap = empty($context['results']['chunk_count']);
+          $this->sitemapGenerator->generateSitemap($chunk_links, $remove_sitemap);
+          $context['results']['chunk_count'] = !isset($context['results']['chunk_count'])
+            ? 1 : $context['results']['chunk_count'] + 1;
+          $context['results']['generate'] = array_slice($context['results']['generate'], count($chunk_links));
+        }
+      }
+    }
+  }
+
+  /**
+   * @param $context
    */
   protected function setProgressInfo(&$context) {
     if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
@@ -139,26 +161,7 @@ class BatchUrlGenerator {
       }
     }
   }
-
-  /**
-   * @param $context
-   * @param $batch_info
-   */
-  protected function processSegment(&$context, $batch_info) {
-    if (!empty($batch_info['max_links']) && count($context['results']['generate']) >= $batch_info['max_links']) {
-      $chunks = array_chunk($context['results']['generate'], $batch_info['max_links']);
-      foreach ($chunks as $i => $chunk_links) {
-        if (count($chunk_links) == $batch_info['max_links']) {
-          $remove_sitemap = empty($context['results']['chunk_count']);
-          $this->sitemapGenerator->generateSitemap($chunk_links, $remove_sitemap);
-          $context['results']['chunk_count'] = !isset($context['results']['chunk_count'])
-            ? 1 : $context['results']['chunk_count'] + 1;
-          $context['results']['generate'] = array_slice($context['results']['generate'], count($chunk_links));
-        }
-      }
-    }
-  }
-
+  
   /**
    * Logs and displays an error.
    *
@@ -272,9 +275,6 @@ class BatchUrlGenerator {
         }
       }
     }
-    if ($this->isBatch($batch_info)) {
-      $this->setProgressInfo($context);
-    }
     $this->processSegment($context, $batch_info);
   }
 
@@ -337,9 +337,6 @@ class BatchUrlGenerator {
       foreach($alternate_urls as $langcode => $url) {
         $context['results']['generate'][] = $path_data + ['langcode' => $langcode, 'url' => $url, 'alternate_urls' => $alternate_urls];
       }
-    }
-    if ($this->isBatch($batch_info)) {
-      $this->setProgressInfo($context);
     }
     $this->processSegment($context, $batch_info);
   }
