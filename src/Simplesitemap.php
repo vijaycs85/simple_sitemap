@@ -23,23 +23,27 @@ class Simplesitemap {
 
   /**
    * Simplesitemap constructor.
-   *
+   * @param $sitemapGenerator
    * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactoryInterface
-   * @param \Drupal\Core\Database\Database $database
+   * @param $database
    * @param \Drupal\Core\Entity\EntityTypeManager $entityTypeManager
+   * @param $pathValidator
+   * @param $dateFormatter
    */
   public function __construct(
     $sitemapGenerator,
     \Drupal\Core\Config\ConfigFactoryInterface $configFactoryInterface,
     $database,
     \Drupal\Core\Entity\EntityTypeManager $entityTypeManager,
-    $pathValidator
+    $pathValidator,
+    $dateFormatter
   ) {
     $this->sitemapGenerator = $sitemapGenerator;
     $this->configFactory = $configFactoryInterface;
     $this->db = $database;
     $this->entityTypeManager = $entityTypeManager;
     $this->pathValidator = $pathValidator;
+    $this->dateFormatter = $dateFormatter;
   }
 
   /**
@@ -442,7 +446,7 @@ class Simplesitemap {
   public function getGeneratedAgo() {
     $chunks = $this->fetchSitemapChunks();
     if (isset($chunks[1]->sitemap_created)) {
-      return \Drupal::service('date.formatter')
+      return $this->dateFormatter
         ->formatInterval(REQUEST_TIME - $chunks[1]->sitemap_created);
     }
     return FALSE;

@@ -1,19 +1,41 @@
 services:
   simple_sitemap.generator:
     class: Drupal\simple_sitemap\Simplesitemap
-    arguments: ['@simple_sitemap.sitemap_generator', '@config.factory', '@database', '@entity_type.manager', '@path.validator']
+    public: true
+    arguments:
+      - @simple_sitemap.sitemap_generator
+      - @config.factory
+      - @database
+      - @entity_type.manager
+      - @path.validator
+      - @date.formatter
 
   simple_sitemap.sitemap_generator:
     class: Drupal\simple_sitemap\SitemapGenerator
-    arguments: ['@simple_sitemap.batch', '@database', '@module_handler', '@language_manager']
+    public: false
+    arguments:
+      - @simple_sitemap.batch
+      - @database
+      - @module_handler
+      - @language_manager
 
   simple_sitemap.form:
     class: Drupal\simple_sitemap\Form\Form
-    arguments: ['@simple_sitemap.generator', '@current_user']
+    public: true
+    arguments:
+      - @simple_sitemap.generator
+      - @current_user
 
   simple_sitemap.batch:
     class: Drupal\simple_sitemap\Batch\Batch
+    public: false
 
   simple_sitemap.batch_url_generator:
     class: Drupal\simple_sitemap\Batch\BatchUrlGenerator
-    arguments: ['@simple_sitemap.sitemap_generator', '@language_manager', '@entity_type.manager', '@path.validator', '@entity.query']
+    public: true
+    arguments:
+      - @simple_sitemap.sitemap_generator
+      - @language_manager
+      - @entity_type.manager
+      - @path.validator
+      - @entity.query
