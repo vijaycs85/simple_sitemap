@@ -39,3 +39,16 @@ services:
       - @entity_type.manager
       - @path.validator
       - @entity.query
+      - @simple_sitemap.logger
+
+  simple_sitemap.logger:
+    class: Drupal\simple_sitemap\Logger
+    prublic: false
+    arguments:
+      - @logger.channel.simple_sitemap
+      - @current_user
+
+  logger.channel.simple_sitemap:
+    parent: logger.channel_base
+    arguments:
+      - simple_sitemap

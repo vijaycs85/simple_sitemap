@@ -23,29 +23,32 @@ class BatchUrlGenerator {
   protected $entityTypeManager;
   protected $pathValidator;
   protected $entityQuery;
+  protected $logger;
   protected $anonUser;
 
   /**
    * BatchUrlGenerator constructor.
-   *
    * @param $sitemap_generator
    * @param $language_manager
    * @param $entity_type_manager
    * @param $path_validator
    * @param $entity_query
+   * @param $logger
    */
   public function __construct(
     $sitemap_generator,
     $language_manager,
     $entity_type_manager,
     $path_validator,
-    $entity_query
+    $entity_query,
+    $logger
   ) {
     $this->sitemapGenerator = $sitemap_generator; //todo using only one method, maybe make method static instead?
     $this->languages = $language_manager->getLanguages();
     $this->entityTypeManager = $entity_type_manager;
     $this->pathValidator = $path_validator;
     $this->entityQuery = $entity_query;
+    $this->logger = $logger;
     $this->anonUser = $this->entityTypeManager->getStorage('user')->load(self::ANONYMOUS_USER_ID);
   }
 
@@ -160,23 +163,6 @@ class BatchUrlGenerator {
         ]);
       }
     }
-  }
-  
-  /**
-   * Logs and displays an error.
-   *
-   * @param $message
-   *  Untranslated message.
-   * @param array $substitutions (optional)
-   *  Substitutions (placeholder => substitution) which will replace placeholders
-   *  with strings.
-   * @param string $type (optional)
-   *  Message type (status/warning/error).
-   */
-  protected function registerError($message, $substitutions = [], $type = 'error') {
-    $message = strtr(t($message), $substitutions);
-    \Drupal::logger('simple_sitemap')->notice($message); //todo DI
-    drupal_set_message($message, $type);
   }
 
   /**
@@ -300,7 +286,7 @@ class BatchUrlGenerator {
       }
 
       if (!$this->pathValidator->isValid($custom_path['path'])) { //todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush. Use getUrlIfValidWithoutAccessCheck()?
-        $this->registerError(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, ['@path' => $custom_path['path']], 'warning');
+        $this->logger->registerError([self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS, ['@path' => $custom_path['path']]], 'warning');
         continue;
       }
       $url_object = Url::fromUserInput($custom_path['path'], ['absolute' => TRUE]);
