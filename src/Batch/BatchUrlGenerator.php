@@ -25,6 +25,15 @@ class BatchUrlGenerator {
   protected $entityQuery;
   protected $anonUser;
 
+  /**
+   * BatchUrlGenerator constructor.
+   *
+   * @param $sitemap_generator
+   * @param $language_manager
+   * @param $entity_type_manager
+   * @param $path_validator
+   * @param $entity_query
+   */
   public function __construct(
     $sitemap_generator,
     $language_manager,
@@ -38,6 +47,22 @@ class BatchUrlGenerator {
     $this->pathValidator = $path_validator;
     $this->entityQuery = $entity_query;
     $this->anonUser = $this->entityTypeManager->getStorage('user')->load(self::ANONYMOUS_USER_ID);
+  }
+
+  /**
+   * The Drupal batch API can only call procedural functions or static methods.
+   * To circumvent exclusively procedural code, on every batch iteration this
+   * static method is called by the batch API and returns a freshly created
+   * Drupal service object of this class. All following calls can be made on
+   * the returned service the OOP way. This is is obviously trading performance
+   * for cleanness. The service is created within its own class to improve
+   * testability.
+   *
+   * @return object
+   *   Symfony service object of this class
+   */
+  public static function service() {
+    return \Drupal::service('simple_sitemap.batch_url_generator');
   }
 
   /**

@@ -43,10 +43,12 @@ class Batch {
     switch ($this->batchInfo['from']) {
 
       case 'form':
+        // Start batch process.
         batch_set($this->batch);
         break;
 
       case 'drush':
+        // Start drush batch process.
         batch_set($this->batch);
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
@@ -55,6 +57,7 @@ class Batch {
         break;
 
       case 'backend':
+        // Start backend batch process.
         batch_set($this->batch);
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
@@ -62,6 +65,9 @@ class Batch {
         break;
 
       case 'nobatch':
+        // Call each batch operation the way the Drupal batch API would do, but
+        // within one process (so in fact not using batch API here, just
+        // mimicking it to avoid code duplication.
         $context = [];
         foreach($this->batch['operations'] as $i => $operation) {
           $operation[1][] = &$context;
@@ -92,7 +98,8 @@ class Batch {
    * @param array &$context
    */
   public static function generateBundleUrls($entity_info, $batch_info, &$context) {
-    \Drupal::service('simple_sitemap.batch_url_generator')->generateBundleUrls($entity_info, $batch_info, $context);
+    BatchUrlGenerator::service()
+      ->generateBundleUrls($entity_info, $batch_info, $context);
   }
 
   /**
@@ -103,7 +110,8 @@ class Batch {
    * @param array &$context
    */
   public static function generateCustomUrls($custom_paths, $batch_info, &$context) {
-    \Drupal::service('simple_sitemap.batch_url_generator')->generateCustomUrls($custom_paths, $batch_info, $context);
+    BatchUrlGenerator::service()
+      ->generateCustomUrls($custom_paths, $batch_info, $context);
   }
 
   /**
@@ -114,6 +122,7 @@ class Batch {
    * @param $operations
    */
   public static function finishGeneration($success, $results, $operations) {
-    \Drupal::service('simple_sitemap.batch_url_generator')->finishGeneration($success, $results, $operations);
+    BatchUrlGenerator::service()
+        ->finishGeneration($success, $results, $operations);
   }
 }

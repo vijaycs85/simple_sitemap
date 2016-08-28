@@ -351,8 +351,9 @@ class Simplesitemap {
    *
    * @return string|false
    *  If no sitemap id provided, either a sitemap index is returned, or the
-   *  whole sitemap, if the amount of links does not exceed the max links setting.
-   *  If a sitemap id is provided, a sitemap chunk is returned.
+   *  whole sitemap, if the amount of links does not exceed the max links
+   *  setting. If a sitemap id is provided, a sitemap chunk is returned. False
+   *  if sitemap is not retrievable from the database.
    */
   public function getSitemap($chunk_id = NULL) {
     $chunks = $this->fetchSitemapChunks();
