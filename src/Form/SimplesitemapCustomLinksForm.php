@@ -25,7 +25,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
     $setting_string = '';
     foreach ($this->generator->getConfig('custom') as $custom_link) {
       $setting_string .= isset($custom_link['priority'])
-        ? $custom_link['path'] . ' ' . $this->form->formatPriority($custom_link['priority'])
+        ? $custom_link['path'] . ' ' . $this->formHelper->formatPriority($custom_link['priority'])
         : $custom_link['path'];
       $setting_string .= "\r\n";
     }
@@ -44,7 +44,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
       '#description' => $this->t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with a '/'. You can optionally add a priority (0.0 - 1.0) by appending it to the path after a space. The home page with the highest priority would be <em>/ 1.0</em>, the contact page with the default priority would be <em>/contact 0.5</em>."),
     ];
 
-    $this->form->displayRegenerateNow($form['simple_sitemap_custom']);
+    $this->formHelper->displayRegenerateNow($form['simple_sitemap_custom']);
 
     return parent::buildForm($form, $form_state);
   }
@@ -68,7 +68,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
       }
 
       // Making sure the priority is formatted correctly.
-      if (isset($link_config['priority']) && !Form::isValidPriority($link_config['priority'])) {
+      if (isset($link_config['priority']) && !FormHelper::isValidPriority($link_config['priority'])) {
         $form_state->setErrorByName('', $this->t("<strong>Line @line</strong>: The priority setting <em>@priority</em> for path <em>@path</em> is incorrect. Set the priority from 0.0 to 1.0.", $placeholders));
       }
     }

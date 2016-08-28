@@ -5,10 +5,10 @@ namespace Drupal\simple_sitemap\Form;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
- * Class Form
+ * Class FormHelper
  * @package Drupal\simple_sitemap\Form
  */
-class Form {
+class FormHelper {
   use StringTranslationTrait;
 
   const PRIORITY_DEFAULT = 0.5;
@@ -269,7 +269,7 @@ class Form {
    * @return bool
    *  TRUE if simple_sitemap form values have been altered by the user.
    */
-  public function valuesChanged($form, $values) { //todo make non-static
+  public function valuesChanged($form, $values) {
     foreach (self::$valuesToCheck as $field_name) {
       if (isset($values[$field_name]) && $values[$field_name] != $form['simple_sitemap'][$field_name]['#default_value']) {
         return TRUE;

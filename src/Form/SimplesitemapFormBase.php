@@ -12,19 +12,19 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 abstract class SimplesitemapFormBase extends ConfigFormBase {
 
   protected $generator;
-  protected $form;
+  protected $formHelper;
   protected $pathValidator;
 
   /**
    * SimplesitemapFormBase constructor.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $generator
-   * @param $form
+   * @param $form_helper
    * @param $path_validator
    */
-  public function __construct($generator, $form, $path_validator) {
+  public function __construct($generator, $form_helper, $path_validator) {
     $this->generator = $generator;
-    $this->form = $form;
+    $this->formHelper = $form_helper;
     $this->pathValidator = $path_validator;
   }
 
@@ -34,7 +34,7 @@ abstract class SimplesitemapFormBase extends ConfigFormBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('simple_sitemap.generator'),
-      $container->get('simple_sitemap.form'),
+      $container->get('simple_sitemap.form_helper'),
       $container->get('path.validator')
     );
   }

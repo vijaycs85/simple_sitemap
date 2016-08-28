@@ -10,7 +10,7 @@ use Drupal\Core\Form\FormStateInterface;
  */
 class SimplesitemapSettingsForm extends SimplesitemapFormBase {
 
-  private $form_settings = [
+  private $formSettings = [
     'max_links',
     'cron_generate',
     'remove_duplicates',
@@ -94,7 +94,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
       '#required' => TRUE,
     ];
 
-    $this->form->displayRegenerateNow($form['simple_sitemap_settings']);
+    $this->formHelper->displayRegenerateNow($form['simple_sitemap_settings']);
 
     return parent::buildForm($form, $form_state);
   }
@@ -108,7 +108,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    foreach($this->form_settings as $setting_name) {
+    foreach($this->formSettings as $setting_name) {
       $this->generator->saveSetting($setting_name, $form_state->getValue($setting_name));
     }
     parent::submitForm($form, $form_state);

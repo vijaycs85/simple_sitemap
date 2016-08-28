@@ -99,7 +99,9 @@ class Batch {
    */
   public static function generateBundleUrls($entity_info, $batch_info, &$context) {
     BatchUrlGenerator::service()
-      ->generateBundleUrls($entity_info, $batch_info, $context);
+      ->setContext($context)
+      ->setBatchInfo($batch_info)
+      ->generateBundleUrls($entity_info);
   }
 
   /**
@@ -108,10 +110,14 @@ class Batch {
    * @param array $custom_paths
    * @param array $batch_info
    * @param array &$context
+   *
+   * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
   public static function generateCustomUrls($custom_paths, $batch_info, &$context) {
     BatchUrlGenerator::service()
-      ->generateCustomUrls($custom_paths, $batch_info, $context);
+      ->setContext($context)
+      ->setBatchInfo($batch_info)
+      ->generateCustomUrls($custom_paths);
   }
 
   /**
@@ -120,9 +126,11 @@ class Batch {
    * @param $success
    * @param $results
    * @param $operations
+   *
+   * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
   public static function finishGeneration($success, $results, $operations) {
     BatchUrlGenerator::service()
-        ->finishGeneration($success, $results, $operations);
+      ->finishGeneration($success, $results, $operations);
   }
 }

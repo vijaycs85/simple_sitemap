@@ -19,8 +19,8 @@ services:
       - @module_handler
       - @language_manager
 
-  simple_sitemap.form:
-    class: Drupal\simple_sitemap\Form\Form
+  simple_sitemap.form_helper:
+    class: Drupal\simple_sitemap\Form\FormHelper
     public: true
     arguments:
       - @simple_sitemap.generator

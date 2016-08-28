@@ -4,8 +4,6 @@
  * Main module file containing hooks.
  */
 
-use Drupal\simple_sitemap\Form\Form;
-
 /**
  * Implements hook_help.
  */
@@ -20,7 +18,7 @@ function simple_sitemap_help($route_name, \Drupal\Core\Routing\RouteMatchInterfa
  * Adds sitemap settings to entity types that are supported via plugins.
  */
 function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
-  $f = \Drupal::service('simple_sitemap.form')->processForm($form_state);
+  $f = \Drupal::service('simple_sitemap.form_helper')->processForm($form_state);
   if (!$f->alteringForm)
     return;
 
@@ -58,7 +56,7 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
  */
 function simple_sitemap_entity_form_submit($form, &$form_state) {
 
-  $f = \Drupal::service('simple_sitemap.form')->processForm($form_state);
+  $f = \Drupal::service('simple_sitemap.form_helper')->processForm($form_state);
 
   $values = $form_state->getValues();
 

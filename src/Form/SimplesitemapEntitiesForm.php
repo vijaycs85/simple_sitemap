@@ -39,7 +39,7 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
     }
     asort($entity_type_labels);
 
-    $this->form->processForm($form_state);
+    $this->formHelper->processForm($form_state);
 
     foreach ($entity_type_labels as $entity_type_id => $entity_type_label) {
       $form['simple_sitemap_entities']['entities'][$entity_type_id] = [
@@ -56,14 +56,14 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
       $form['#attached']['drupalSettings']['simple_sitemap']['all_entities'][] = str_replace('_', '-', $entity_type_id);
       if ($this->generator->entityTypeIsAtomic($entity_type_id)) {
         $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#description'] = $this->t('Sitemap settings for this entity type can be set below and overridden on its entity pages.');
-        $this->form->setEntityCategory('bundle')
+        $this->formHelper->setEntityCategory('bundle')
           ->setEntityTypeId($entity_type_id)
           ->setBundleName($entity_type_id)
           ->displayEntitySettings($form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_settings'], TRUE);
         $form['#attached']['drupalSettings']['simple_sitemap']['atomic_entities'][] = str_replace('_', '-', $entity_type_id);
       }
     }
-    $this->form->displayRegenerateNow($form['simple_sitemap_entities']['entities']);
+    $this->formHelper->displayRegenerateNow($form['simple_sitemap_entities']['entities']);
     return parent::buildForm($form, $form_state);
   }
 

@@ -3,7 +3,7 @@
 namespace Drupal\simple_sitemap;
 
 use Drupal\Core\Entity\ContentEntityTypeInterface;
-use Drupal\simple_sitemap\Form\Form;
+use Drupal\simple_sitemap\Form\FormHelper;
 
 /**
  * Class Simplesitemap
@@ -24,17 +24,17 @@ class Simplesitemap {
   /**
    * Simplesitemap constructor.
    * @param $sitemapGenerator
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactoryInterface
+   * @param $configFactoryInterface
    * @param $database
-   * @param \Drupal\Core\Entity\EntityTypeManager $entityTypeManager
+   * @param $entityTypeManager
    * @param $pathValidator
    * @param $dateFormatter
    */
   public function __construct(
     $sitemapGenerator,
-    \Drupal\Core\Config\ConfigFactoryInterface $configFactoryInterface,
+    $configFactoryInterface,
     $database,
-    \Drupal\Core\Entity\EntityTypeManager $entityTypeManager,
+    $entityTypeManager,
     $pathValidator,
     $dateFormatter
   ) {
@@ -313,7 +313,7 @@ class Simplesitemap {
       if (in_array($setting_key, self::$allowed_link_settings[$type])) {
         switch($setting_key) {
           case 'priority':
-            if (!Form::isValidPriority($setting)) {
+            if (!FormHelper::isValidPriority($setting)) {
               // todo: register error
               continue;
             }
