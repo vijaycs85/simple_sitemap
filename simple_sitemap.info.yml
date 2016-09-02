@@ -1,4 +1,4 @@
-name: Simple XML Sitemap
+name: 'Simple XML Sitemap'
 type: module
 description: 'Creates a standard conform XML sitemap of your content.'
 configure: simple_sitemap.settings
