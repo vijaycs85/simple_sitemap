@@ -3,6 +3,7 @@
 namespace Drupal\simple_sitemap\Form;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Form\ConfigFormBase;
 
 /**
  * Class SimplesitemapFormBase
