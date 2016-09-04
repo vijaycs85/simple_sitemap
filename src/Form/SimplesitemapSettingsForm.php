@@ -73,7 +73,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     $form['simple_sitemap_settings']['advanced']['skip_untranslated'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Skip non-existent translations'),
-      '#description' => $this->t('If checked, only links to the translated content will be included, otherwise the sitemap will include links to all content translation variants, even when the content has not been translated yet.'),
+      '#description' => $this->t('If unchecked, entity links are generated for every language installed on the site, regardless whether the entity has been translated to a language or not. If checked, entity links are generated exclusively for languages the entity has been translated to. This setting has no effect on non-entity paths like homepage.'),
       '#default_value' => $this->generator->getSetting('skip_untranslated', FALSE),
     ];
 

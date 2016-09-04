@@ -21,7 +21,9 @@ class BatchUrlGenerator {
   const REGENERATION_FINISHED_MESSAGE= "The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.";
 
   protected $sitemapGenerator;
+  protected $languageManager;
   protected $languages;
+  protected $defaultLanguageId;
   protected $entityTypeManager;
   protected $pathValidator;
   protected $entityQuery;
@@ -49,7 +51,9 @@ class BatchUrlGenerator {
     $logger
   ) {
     $this->sitemapGenerator = $sitemap_generator; //todo using only one method, maybe make method static instead?
+    $this->languageManager = $language_manager;
     $this->languages = $language_manager->getLanguages();
+    $this->defaultLanguageId = $language_manager->getDefaultLanguage()->getId();
     $this->entityTypeManager = $entity_type_manager;
     $this->pathValidator = $path_validator;
     $this->entityQuery = $entity_query;
@@ -206,8 +210,9 @@ class BatchUrlGenerator {
     if (!empty($results)) {
       $entities = $this->entityTypeManager->getStorage($entity_info['entity_type_name'])->loadMultiple($results);
 
-      foreach ($entities as $entity_id => $entity) {
+      foreach($entities as $entity_id => $entity) {
         $this->setCurrentId($entity_id);
+        $priority = NULL;
 
         // Overriding entity settings if it has been overridden on entity edit page...
         if (isset($this->batchInfo['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['index'])) {
@@ -251,19 +256,7 @@ class BatchUrlGenerator {
           'lastmod' => method_exists($entity, 'getChangedTime') ? date_iso8601($entity->getChangedTime()) : NULL,
           'priority' => isset($priority) ? $priority : (isset($entity_info['bundle_settings']['priority']) ? $entity_info['bundle_settings']['priority'] : NULL),
         ];
-        $priority = NULL;
-
-        $alternate_urls = [];
-        foreach ($this->languages as $language) {
-          $langcode = $language->getId();
-          if (!$this->batchInfo['skip_untranslated'] || $language->isDefault() || $entity->hasTranslation($langcode)) {
-            $url_object->setOption('language', $language);
-            $alternate_urls[$langcode] = $url_object->toString();
-          }
-        }
-        foreach($alternate_urls as $langcode => $url) {
-          $this->context['results']['generate'][] = $path_data + ['langcode' => $langcode, 'url' => $url, 'alternate_urls' => $alternate_urls];
-        }
+        $this->addUrlVariants($url_object, $path_data, $entity);
       }
     }
     $this->processSegment();
@@ -297,7 +290,8 @@ class BatchUrlGenerator {
       // Load entity object if this is an entity route.
       $route_parameters = $url_object->getRouteParameters();
       $entity = !empty($route_parameters)
-        ? $this->entityTypeManager->getStorage(key($route_parameters))->load($route_parameters[key($route_parameters)])
+        ? $this->entityTypeManager->getStorage(key($route_parameters))
+          ->load($route_parameters[key($route_parameters)])
         : NULL;
 
       $path_data = [
@@ -308,19 +302,44 @@ class BatchUrlGenerator {
       if (!is_null($entity)) {
         $path_data['entity_info'] = ['entity_type' => $entity->getEntityTypeId(), 'id' => $entity->id()];
       }
-      $alternate_urls = [];
-      foreach ($this->languages as $language) {
-        $langcode = $language->getId();
-        if (!$this->batchInfo['skip_untranslated'] || is_null($entity) || $entity->hasTranslation($langcode) || $language->isDefault()) {
-          $url_object->setOption('language', $language);
-          $alternate_urls[$langcode] = $url_object->toString();
-        }
-      }
-      foreach($alternate_urls as $langcode => $url) {
-        $this->context['results']['generate'][] = $path_data + ['langcode' => $langcode, 'url' => $url, 'alternate_urls' => $alternate_urls];
-      }
+      $this->addUrlVariants($url_object, $path_data, $entity);
     }
     $this->processSegment();
+  }
+
+  /**
+   * @param $url_object
+   * @param $path_data
+   * @param $entity
+   */
+  private function addUrlVariants($url_object, $path_data, $entity) {
+    $alternate_urls = [];
+
+    $translation_languages = !is_null($entity) && $this->batchInfo['skip_untranslated']
+      ? $entity->getTranslationLanguages() : $this->languages;
+
+    if (!is_null($entity) && isset($translation_languages['und'])) {
+      $alternate_urls[$this->defaultLanguageId] = $url_object
+        ->setOption('language', $this->languages[$this->defaultLanguageId])
+        ->toString();
+    }
+    else {
+      foreach($translation_languages as $language) {
+        if (!is_null($entity) && $this->batchInfo['skip_untranslated']) {
+          $translation = $entity->getTranslation($language->getId());
+          if (!$translation->access('view')) {
+            continue;
+          }
+        }
+        $alternate_urls[$language->getId()] = $url_object
+          ->setOption('language', $language)
+          ->toString();
+      }
+    }
+
+    foreach($alternate_urls as $langcode => $url) {
+      $this->context['results']['generate'][] = $path_data + ['langcode' => $langcode, 'url' => $url, 'alternate_urls' => $alternate_urls];
+    }
   }
 
   /**
