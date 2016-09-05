@@ -73,7 +73,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     $form['simple_sitemap_settings']['advanced']['skip_untranslated'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Skip non-existent translations'),
-      '#description' => $this->t('If unchecked, entity links are generated for every language installed on the site, regardless whether the entity has been translated to a language or not. If checked, entity links are generated exclusively for languages the entity has been translated to. This setting has no effect on non-entity paths like homepage.'),
+      '#description' => $this->t('If unchecked, entity links are generated for every language installed on the site, regardless whether the entity has been translated to a language or not.<br/>If checked, entity links are generated exclusively for languages the entity has been translated to. This setting has no effect on non-entity paths like homepage.'),
       '#default_value' => $this->generator->getSetting('skip_untranslated', FALSE),
     ];
 
@@ -89,7 +89,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
       '#type' => 'number',
       '#title' => $this->t('Refresh batch every n links'),
       '#min' => 1,
-      '#description' => $this->t("During sitemap generation, the batch process will issue a page refresh after n links processed to prevent PHP timeouts and memory exhaustion. Increasing this number will reduce the number of times Drupal has to bootstrap (thus speeding up the generation process), but will require more memory and less strict PHP timeout settings."),
+      '#description' => $this->t("During sitemap generation, the batch process will issue a page refresh after n links processed to prevent PHP timeouts and memory exhaustion.<br/>Increasing this number will reduce the number of times Drupal has to bootstrap (thus speeding up the generation process), but will require more memory and less strict PHP timeout settings."),
       '#default_value' => $this->generator->getSetting('batch_process_limit', 1500),
       '#required' => TRUE,
     ];
