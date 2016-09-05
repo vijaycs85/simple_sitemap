@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Module install and update procedures.
@@ -19,7 +20,7 @@ function simple_sitemap_requirements($phase) {
     ];
   }
 
-  switch($phase) {
+  switch ($phase) {
     case 'runtime':
       $generated_ago = \Drupal::service('simple_sitemap.generator')->getGeneratedAgo();
       if (!$generated_ago) {
@@ -96,7 +97,7 @@ function simple_sitemap_update_8201() {
     'commerce_product_type' => 'commerce_product',
     'media_bundle' => 'media',
   ];
-  foreach($entity_types as $entity_type_name => $settings) {
+  foreach ($entity_types as $entity_type_name => $settings) {
     if (isset($naming_changes[$entity_type_name])) {
       $entity_types[$naming_changes[$entity_type_name]] = $entity_types[$entity_type_name];
       unset($entity_types[$entity_type_name]);

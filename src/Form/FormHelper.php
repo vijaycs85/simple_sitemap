@@ -5,7 +5,8 @@ namespace Drupal\simple_sitemap\Form;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
- * Class FormHelper
+ * Class FormHelper.
+ *
  * @package Drupal\simple_sitemap\Form
  */
 class FormHelper {
@@ -29,13 +30,13 @@ class FormHelper {
     'default',
     'edit',
     'add',
-    'register'
+    'register',
   ];
 
   private static $valuesToCheck = [
     'simple_sitemap_index_content',
     'simple_sitemap_priority',
-    'simple_sitemap_regenerate_now'
+    'simple_sitemap_regenerate_now',
   ];
 
   /**
@@ -98,25 +99,32 @@ class FormHelper {
     return $this;
   }
 
+  /**
+   *
+   */
   private function assertAlteringForm() {
 
     // Do not alter the form if user lacks certain permissions.
-    if (!$this->currentUser->hasPermission('administer sitemap settings'))
+    if (!$this->currentUser->hasPermission('administer sitemap settings')) {
       $this->alteringForm = FALSE;
+    }
 
     // Do not alter the form if it is irrelevant to sitemap generation.
-    elseif (empty($this->entityCategory))
+    elseif (empty($this->entityCategory)) {
       $this->alteringForm = FALSE;
+    }
 
     // Do not alter the form if entity is not enabled in sitemap settings.
-    elseif (!$this->generator->entityTypeIsEnabled($this->entityTypeId))
+    elseif (!$this->generator->entityTypeIsEnabled($this->entityTypeId)) {
       $this->alteringForm = FALSE;
+    }
 
     // Do not alter the form, if sitemap is disabled for the entity type of this
     // entity instance.
     elseif ($this->entityCategory == 'instance'
-      && !$this->generator->bundleIsIndexed($this->entityTypeId, $this->bundleName))
+      && !$this->generator->bundleIsIndexed($this->entityTypeId, $this->bundleName)) {
       $this->alteringForm = FALSE;
+    }
   }
 
   /**
@@ -160,17 +168,19 @@ class FormHelper {
         '#options' => [
           0 => $this->entityCategory == 'instance' ? $this->t('Do not index this @bundle entity', ['@bundle' => $bundle_name]) : $this->t('Do not index entities of this type'),
           1 => $this->entityCategory == 'instance' ? $this->t('Index this @bundle entity', ['@bundle' => $bundle_name]) : $this->t('Index entities of this type'),
-        ]
+        ],
       ];
       if ($this->entityCategory == 'instance' && isset($bundle_settings['index'])) {
         $form_fragment[$prefix . 'simple_sitemap_index_content']['#options'][$bundle_settings['index']] .= ' <em>(' . $this->t('Default') . ')</em>';
       }
     }
 
-    if ($this->entityCategory == 'instance')
+    if ($this->entityCategory == 'instance') {
       $priority_description = $this->t('The priority this @bundle entity will have in the eyes of search engine bots.', ['@bundle' => $bundle_name]);
-    else
+    }
+    else {
       $priority_description = $this->t('The priority entities of this type will have in the eyes of search engine bots.');
+    }
     $form_fragment[$prefix . 'simple_sitemap_priority'] = [
       '#type' => 'select',
       '#title' => $this->t('Priority'),
@@ -179,7 +189,7 @@ class FormHelper {
       '#options' => $this->getPrioritySelectValues(),
     ];
     if ($this->entityCategory == 'instance' && isset($bundle_settings['priority'])) {
-      $form_fragment[$prefix . 'simple_sitemap_priority']['#options'][(string)$bundle_settings['priority']] .= ' (' . $this->t('Default') . ')';
+      $form_fragment[$prefix . 'simple_sitemap_priority']['#options'][(string) $bundle_settings['priority']] .= ' (' . $this->t('Default') . ')';
     }
     return $this;
   }
@@ -189,7 +199,7 @@ class FormHelper {
    * and gathers sitemap settings from the database.
    *
    * @return bool
-   *  TRUE if this is a bundle or bundle instance form, FALSE otherwise.
+   *   TRUE if this is a bundle or bundle instance form, FALSE otherwise.
    */
   private function getEntityDataFromFormEntity() {
     $form_entity = $this->getFormEntity();
@@ -200,7 +210,7 @@ class FormHelper {
         $this->entityCategory = 'instance';
       }
       else {
-        foreach($sitemap_entity_types as $sitemap_entity) {
+        foreach ($sitemap_entity_types as $sitemap_entity) {
           if ($sitemap_entity->getBundleEntityType() == $entity_type_id) {
             $this->entityCategory = 'bundle';
             break;
@@ -221,7 +231,8 @@ class FormHelper {
         case 'instance':
           $this->entityTypeId = $entity_type_id;
           $this->bundleName = $this->generator->getEntityInstanceBundleName($form_entity);
-          $this->instanceId = !empty($form_entity->id()) ? $form_entity->id() : NULL; // New menu link's id is '' instead of NULL, hence checking for empty.
+          // New menu link's id is '' instead of NULL, hence checking for empty.
+          $this->instanceId = !empty($form_entity->id()) ? $form_entity->id() : NULL;
           break;
 
         default:
@@ -236,8 +247,8 @@ class FormHelper {
    * Gets the object entity of the form if available.
    *
    * @return object|false
-   *  Entity or FALSE if non-existent or if form operation is
-   *  'delete'.
+   *   Entity or FALSE if non-existent or if form operation is
+   *   'delete'.
    */
   private function getFormEntity() {
     $form_object = $this->formState->getFormObject();
@@ -254,7 +265,7 @@ class FormHelper {
    * To be used in an entity form submit.
    *
    * @return int
-   *  Entity ID.
+   *   Entity ID.
    */
   public function getFormEntityId() {
     return $this->formState->getFormObject()->getEntity()->id();
@@ -266,8 +277,9 @@ class FormHelper {
    *
    * @param $form
    * @param $values
+   *
    * @return bool
-   *  TRUE if simple_sitemap form values have been altered by the user.
+   *   TRUE if simple_sitemap form values have been altered by the user.
    */
   public function valuesChanged($form, $values) {
     foreach (self::$valuesToCheck as $field_name) {
@@ -285,7 +297,7 @@ class FormHelper {
    */
   public function getPrioritySelectValues() {
     $options = [];
-    foreach(range(0, self::PRIORITY_HIGHEST) as $value) {
+    foreach (range(0, self::PRIORITY_HIGHEST) as $value) {
       $value = $this->formatPriority($value / self::PRIORITY_DIVIDER);
       $options[$value] = $value;
     }
@@ -297,7 +309,7 @@ class FormHelper {
    * @return string
    */
   public function formatPriority($priority) {
-    return number_format((float)$priority, 1, '.', '');
+    return number_format((float) $priority, 1, '.', '');
   }
 
   /**
@@ -307,4 +319,5 @@ class FormHelper {
   public static function isValidPriority($priority) {
     return !is_numeric($priority) || $priority < 0 || $priority > 1 ? FALSE : TRUE;
   }
+
 }

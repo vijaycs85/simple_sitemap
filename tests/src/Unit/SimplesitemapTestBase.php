@@ -63,15 +63,16 @@ abstract class SimplesitemapTestBase extends UnitTestCase {
    * Mock Drupal Simplesitemap service.
    */
   protected function mockSimplesitemapService() {
-//    $configFactory = $this->getConfigFactoryStub(['simple_sitemap.settings' => $this->config]);
-//    $this->simplesitemapMock = $this->getMockBuilder('\Drupal\simple_sitemap\Simplesitemap')
-//      ->setConstructorArgs([
-//        $configFactory
-//        // todo: Add constructor args
-//      ])
-//      ->setMethods(NULL)
-//      ->getMock();
-//    $this->container->set('simple_sitemap.settings', $this->simplesitemapMock);
-//    \Drupal::setContainer($this->container);
+    // $configFactory = $this->getConfigFactoryStub(['simple_sitemap.settings' => $this->config]);
+    //    $this->simplesitemapMock = $this->getMockBuilder('\Drupal\simple_sitemap\Simplesitemap')
+    //      ->setConstructorArgs([
+    //        $configFactory
+    //        // todo: Add constructor args
+    //      ])
+    //      ->setMethods(NULL)
+    //      ->getMock();
+    //    $this->container->set('simple_sitemap.settings', $this->simplesitemapMock);
+    //    \Drupal::setContainer($this->container);.
   }
+
 }

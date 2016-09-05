@@ -5,7 +5,7 @@ namespace Drupal\simple_sitemap\Tests;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Class SimplesitemapTest
+ * Class SimplesitemapTest.
  *
  * Tests Simple XML sitemap functional integration.
  *
@@ -52,6 +52,9 @@ class SimplesitemapTest extends WebTestBase {
     $this->assertRaw('1');
   }
 
+  /**
+   *
+   */
   public function testSetBundleSettings() {
 
     // Index new bundle.
@@ -62,24 +65,24 @@ class SimplesitemapTest extends WebTestBase {
     $this->assertText('node/' . $this->node->id());
     $this->assertText('0.5');
 
-    //todo: These tests are failing for some reason...
-//    // Only change bundle priority.
-//    $this->generator->setBundleSettings('node', 'page', ['priority' => '0.9'])
-//      ->generateSitemap('nobatch');
-//
-//    $this->drupalGet('sitemap.xml');
-//    $this->assertText('node/' . $this->node->id());
-//    $this->assertNoText('0.5');
-//    $this->assertText('0.9');
-//
-//    // Set bundle 'index' setting to 0.
-//    $this->generator->setBundleSettings('node', 'page', ['index' => 0])
-//      ->generateSitemap('nobatch');
-//
-//    $this->drupalGet('sitemap.xml');
-//    $this->assertNoText('node/' . $this->node->id());
-//    $this->assertNoText('0.5');
-//    $this->assertNoText('0.9');
+    // todo: These tests are failing for some reason...
+    //    // Only change bundle priority.
+    //    $this->generator->setBundleSettings('node', 'page', ['priority' => '0.9'])
+    //      ->generateSitemap('nobatch');
+    //
+    //    $this->drupalGet('sitemap.xml');
+    //    $this->assertText('node/' . $this->node->id());
+    //    $this->assertNoText('0.5');
+    //    $this->assertText('0.9');
+    //
+    //    // Set bundle 'index' setting to 0.
+    //    $this->generator->setBundleSettings('node', 'page', ['index' => 0])
+    //      ->generateSitemap('nobatch');
+    //
+    //    $this->drupalGet('sitemap.xml');
+    //    $this->assertNoText('node/' . $this->node->id());
+    //    $this->assertNoText('0.5');
+    //    $this->assertNoText('0.9');
   }
 
   /**
@@ -206,4 +209,5 @@ class SimplesitemapTest extends WebTestBase {
     $this->assertNoText('node/' . $this->node->id());
     $this->assertNoText('0.2');
   }
+
 }

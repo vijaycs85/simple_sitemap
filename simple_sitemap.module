@@ -1,13 +1,16 @@
 <?php
+
 /**
  * @file
  * Main module file containing hooks.
  */
 
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
 /**
  * Implements hook_help.
  */
-function simple_sitemap_help($route_name, \Drupal\Core\Routing\RouteMatchInterface $route_match) {
+function simple_sitemap_help($route_name, RouteMatchInterface $route_match) {
   return $route_name === 'help.page.simple_sitemap' ?
     check_markup(file_get_contents(dirname(__FILE__) . "/README.txt")) : NULL;
 }
@@ -19,8 +22,9 @@ function simple_sitemap_help($route_name, \Drupal\Core\Routing\RouteMatchInterfa
  */
 function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
   $f = \Drupal::service('simple_sitemap.form_helper')->processForm($form_state);
-  if (!$f->alteringForm)
+  if (!$f->alteringForm) {
     return;
+  }
 
   $form['simple_sitemap'] = [
     '#type' => 'details',
@@ -29,14 +33,17 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
     '#description' => $f->entityCategory == 'instance' ? t('Settings for this entity can be overridden here.') : '',
   ];
   // Attach some js magic to forms.
-  if ($f->entityTypeId != 'comment' || $f->entityCategory != 'instance') // todo: JS not working on comment entity form, hence disabling.
+  // todo: JS not working on comment entity form, hence disabling.
+  if ($f->entityTypeId != 'comment' || $f->entityCategory != 'instance') {
     $form['#attached']['library'][] = 'simple_sitemap/form';
+  }
   // Only attach fieldset summary js to 'additional settings' vertical tabs.
   if (isset($form['additional_settings'])) {
     $form['#attached']['library'][] = 'simple_sitemap/fieldsetSummaries';
   }
   $f->displayEntitySettings($form['simple_sitemap'])
-    ->displayRegenerateNow($form['simple_sitemap']); // todo: do not show setting when creating new bundle
+  // todo: do not show setting when creating new bundle.
+    ->displayRegenerateNow($form['simple_sitemap']);
 
   // Add submission handler.
   if (isset($form['actions']['submit']['#submit'])) {
@@ -46,7 +53,8 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
       }
     }
   }
-  else { // Fix for account page rendering other submit handlers not usable.
+  // Fix for account page rendering other submit handlers not usable.
+  else {
     $form['#submit'][] = 'simple_sitemap_entity_form_submit';
   }
 }
@@ -114,7 +122,7 @@ function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
     if ($generator->getSetting('cron_generate')) {
       $message .= '</br>' . t('Otherwise the sitemap will be regenerated on the next cron run.');
     }
-//    drupal_set_message($message); // todo: Commented out, as html code is visible.
+    // drupal_set_message($message); // todo: Commented out, as html code is visible.
   }
 }
 
@@ -123,15 +131,15 @@ function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
  *
  * Removes settings of the removed entity.
  */
-function simple_sitemap_entity_delete(Drupal\Core\Entity\EntityInterface $entity) {
+function simple_sitemap_entity_delete(EntityInterface $entity) {
   $generator = \Drupal::service('simple_sitemap.generator');
   $entity_types = $generator->getConfig('entity_types');
   $entity_type_id = $entity->getEntityTypeId();
   $bundle_name = !empty($entity->bundle()) ? $entity->bundle() : $entity_type_id;
-  $bundle_name = $bundle_name == 'menu_link_content'&& method_exists($entity, 'getMenuName') ? $entity->getMenuName() : $bundle_name; // Menu fix.
+  // Menu fix.
+  $bundle_name = $bundle_name == 'menu_link_content'&& method_exists($entity, 'getMenuName') ? $entity->getMenuName() : $bundle_name;
   if (isset($entity_types[$entity_type_id][$bundle_name]['entities'][$entity->id()])) {
     unset($entity_types[$entity_type_id][$bundle_name]['entities'][$entity->id()]);
     $generator->saveConfig('entity_types', $entity_types);
   }
 }
-

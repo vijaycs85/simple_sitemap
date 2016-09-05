@@ -22,4 +22,5 @@ class SimplesitemapTest extends SimplesitemapTestBase {
    */
   public function testGetSetting() {
   }
+
 }

@@ -5,7 +5,8 @@ namespace Drupal\simple_sitemap;
 use \XMLWriter;
 
 /**
- * Class SitemapGenerator
+ * Class SitemapGenerator.
+ *
  * @package Drupal\simple_sitemap
  */
 class SitemapGenerator {
@@ -26,6 +27,7 @@ class SitemapGenerator {
 
   /**
    * SitemapGenerator constructor.
+   *
    * @param $batch
    * @param $database
    * @param $module_handler
@@ -48,6 +50,9 @@ class SitemapGenerator {
     return $this;
   }
 
+  /**
+   *
+   */
   public function setGenerateFrom($from) {
     $this->generateFrom = $from;
     return $this;
@@ -60,7 +65,7 @@ class SitemapGenerator {
     $this->batch->setBatchInfo([
       'from' => $this->generateFrom,
       'batch_process_limit' => !empty($this->generator->getSetting('batch_process_limit'))
-        ? $this->generator->getSetting('batch_process_limit') : NULL,
+      ? $this->generator->getSetting('batch_process_limit') : NULL,
       'max_links' => $this->generator->getSetting('max_links', 2000),
       'skip_untranslated' => $this->generator->getSetting('skip_untranslated', FALSE),
       'remove_duplicates' => $this->generator->getSetting('remove_duplicates', TRUE),
@@ -70,7 +75,7 @@ class SitemapGenerator {
     $this->batch->addOperation('generateCustomUrls', $this->getCustomUrlsData());
 
     // Add entity link generating operations.
-    foreach($this->getEntityTypeData() as $data) {
+    foreach ($this->getEntityTypeData() as $data) {
       $this->batch->addOperation('generateBundleUrls', $data);
     }
     $this->batch->start();
@@ -80,14 +85,15 @@ class SitemapGenerator {
    * Returns a batch-ready data array for custom link generation.
    *
    * @return array
-   *  Data to be processed.
+   *   Data to be processed.
    */
   private function getCustomUrlsData() {
     $paths = [];
-    foreach($this->generator->getConfig('custom') as $i => $custom_path) {
+    foreach ($this->generator->getConfig('custom') as $i => $custom_path) {
       $paths[$i]['path'] = $custom_path['path'];
       $paths[$i]['priority'] = isset($custom_path['priority']) ? $custom_path['priority'] : NULL;
-      $paths[$i]['lastmod'] = NULL; //todo: implement lastmod
+      // todo: implement lastmod.
+      $paths[$i]['lastmod'] = NULL;
     }
     return $paths;
   }
@@ -102,11 +108,12 @@ class SitemapGenerator {
     $data_sets = [];
     $sitemap_entity_types = $this->generator->getSitemapEntityTypes();
     $entity_types = $this->generator->getConfig('entity_types');
-    foreach($entity_types as $entity_type_name => $bundles) {
+    foreach ($entity_types as $entity_type_name => $bundles) {
       if (isset($sitemap_entity_types[$entity_type_name])) {
         $keys = $sitemap_entity_types[$entity_type_name]->getKeys();
-        $keys['bundle'] = $entity_type_name == 'menu_link_content' ? 'menu_name' : $keys['bundle']; // Menu fix.
-        foreach($bundles as $bundle_name => $bundle_settings) {
+        // Menu fix.
+        $keys['bundle'] = $entity_type_name == 'menu_link_content' ? 'menu_name' : $keys['bundle'];
+        foreach ($bundles as $bundle_name => $bundle_settings) {
           if ($bundle_settings['index']) {
             $data_sets[] = [
               'bundle_settings' => $bundle_settings,
@@ -126,9 +133,9 @@ class SitemapGenerator {
    * modules alter the links and then generates and saves the sitemap.
    *
    * @param array $links
-   *  All links with their multilingual versions and settings.
+   *   All links with their multilingual versions and settings.
    * @param bool $remove_sitemap
-   *  Remove old sitemap from database before inserting the new one.
+   *   Remove old sitemap from database before inserting the new one.
    */
   public function generateSitemap($links, $remove_sitemap = FALSE) {
     // Invoke alter hook.
@@ -148,7 +155,7 @@ class SitemapGenerator {
    * Generates and returns the sitemap index for all sitemap chunks.
    *
    * @param array $chunks
-   *  All sitemap chunks keyed by the chunk ID.
+   *   All sitemap chunks keyed by the chunk ID.
    *
    * @return string sitemap index
    */
@@ -177,10 +184,10 @@ class SitemapGenerator {
    * Generates and returns a sitemap chunk.
    *
    * @param array $links
-   *  All links with their multilingual versions and settings.
+   *   All links with their multilingual versions and settings.
    *
    * @return string
-   *  Sitemap chunk
+   *   Sitemap chunk
    */
   private function generateSitemapChunk($links) {
     $writer = new XMLWriter();
@@ -204,7 +211,7 @@ class SitemapGenerator {
       // as alternate links to this location turning the sitemap into a hreflang
       // sitemap.
       if ($this->isHreflangSitemap) {
-        foreach($link['alternate_urls'] as $language_id => $alternate_url) {
+        foreach ($link['alternate_urls'] as $language_id => $alternate_url) {
           $writer->startElement('xhtml:link');
           $writer->writeAttribute('rel', 'alternate');
           $writer->writeAttribute('hreflang', $language_id);
@@ -226,4 +233,5 @@ class SitemapGenerator {
     $writer->endDocument();
     return $writer->outputMemory();
   }
+
 }

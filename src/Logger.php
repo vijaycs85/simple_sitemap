@@ -5,7 +5,8 @@ namespace Drupal\simple_sitemap;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
- * Class Logger
+ * Class Logger.
+ *
  * @package Drupal\simple_sitemap
  */
 class Logger {
@@ -17,6 +18,7 @@ class Logger {
 
   /**
    * Logger constructor.
+   *
    * @param $logger
    */
   public function __construct($logger, $current_user) {
@@ -28,12 +30,12 @@ class Logger {
    * Logs error and optionally displays it to the privileged user.
    *
    * @param $message
-   *  Can be string or an array where the first value is the message string and
-   *  the second value an array with arrays containing
-   *  placeholder => replacement values for the message.
+   *   Can be string or an array where the first value is the message string and
+   *   the second value an array with arrays containing
+   *   placeholder => replacement values for the message.
    * @param string $display
-   *  Message type (status/warning/error), if set, message is displayed to
-   *  privileged user in addition to being logged.
+   *   Message type (status/warning/error), if set, message is displayed to
+   *   privileged user in addition to being logged.
    */
   public function registerError($message, $display = NULL) {
     $substitutions = isset($message[1]) && is_array($message[1]) ? $message[1] : [];
@@ -44,4 +46,5 @@ class Logger {
       drupal_set_message($this->t($message, $substitutions), $display);
     }
   }
+
 }

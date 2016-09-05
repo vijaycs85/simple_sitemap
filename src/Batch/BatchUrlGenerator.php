@@ -8,7 +8,8 @@ use Drupal\Core\Cache\Cache;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
- * Class BatchUrlGenerator
+ * Class BatchUrlGenerator.
+ *
  * @package Drupal\simple_sitemap\Batch
  */
 class BatchUrlGenerator {
@@ -18,7 +19,7 @@ class BatchUrlGenerator {
   const ANONYMOUS_USER_ID = 0;
   const PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE = "The path @path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users.";
   const PROCESSING_PATH_MESSAGE = 'Processing path #@current out of @max: @path';
-  const REGENERATION_FINISHED_MESSAGE= "The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.";
+  const REGENERATION_FINISHED_MESSAGE = "The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.";
 
   protected $sitemapGenerator;
   protected $languageManager;
@@ -35,6 +36,7 @@ class BatchUrlGenerator {
 
   /**
    * BatchUrlGenerator constructor.
+   *
    * @param $sitemap_generator
    * @param $language_manager
    * @param $entity_type_manager
@@ -50,7 +52,8 @@ class BatchUrlGenerator {
     $entity_query,
     $logger
   ) {
-    $this->sitemapGenerator = $sitemap_generator; //todo using only one method, maybe make method static instead?
+    // Todo using only one method, maybe make method static instead?
+    $this->sitemapGenerator = $sitemap_generator;
     $this->languageManager = $language_manager;
     $this->languages = $language_manager->getLanguages();
     $this->defaultLanguageId = $language_manager->getDefaultLanguage()->getId();
@@ -148,6 +151,9 @@ class BatchUrlGenerator {
     }
   }
 
+  /**
+   *
+   */
   protected function processSegment() {
     if ($this->isBatch()) {
       $this->setProgressInfo();
@@ -166,6 +172,9 @@ class BatchUrlGenerator {
     }
   }
 
+  /**
+   *
+   */
   protected function setProgressInfo() {
     if ($this->context['sandbox']['progress'] != $this->context['sandbox']['max']) {
       // Providing progress info to the batch API.
@@ -191,12 +200,15 @@ class BatchUrlGenerator {
   public function generateBundleUrls($entity_info) {
 
     $query = $this->entityQuery->get($entity_info['entity_type_name']);
-    if (!empty($entity_info['keys']['id']))
+    if (!empty($entity_info['keys']['id'])) {
       $query->sort($entity_info['keys']['id'], 'ASC');
-    if (!empty($entity_info['keys']['bundle']))
+    }
+    if (!empty($entity_info['keys']['bundle'])) {
       $query->condition($entity_info['keys']['bundle'], $entity_info['bundle_name']);
-    if (!empty($entity_info['keys']['status']))
+    }
+    if (!empty($entity_info['keys']['status'])) {
       $query->condition($entity_info['keys']['status'], 1);
+    }
 
     $count_query = clone $query;
     $this->initializeBatch($count_query->count()->execute());
@@ -210,7 +222,7 @@ class BatchUrlGenerator {
     if (!empty($results)) {
       $entities = $this->entityTypeManager->getStorage($entity_info['entity_type_name'])->loadMultiple($results);
 
-      foreach($entities as $entity_id => $entity) {
+      foreach ($entities as $entity_id => $entity) {
         $this->setCurrentId($entity_id);
         $priority = NULL;
 
@@ -226,27 +238,35 @@ class BatchUrlGenerator {
         }
 
         switch ($entity_info['entity_type_name']) {
-          case 'menu_link_content': // Loading url object for menu links.
-            if (!$entity->isEnabled())
+          // Loading url object for menu links.
+          case 'menu_link_content':
+            if (!$entity->isEnabled()) {
               continue;
+            }
             $url_object = $entity->getUrlObject();
             break;
-          default: // Loading url object for other entities.
-            $url_object = $entity->toUrl(); //todo: file entity type does not have a canonical url and breaks generation, hopefully fixed in https://www.drupal.org/node/2402533
+
+          // Loading url object for other entities.
+          default:
+            // todo: file entity type does not have a canonical url and breaks generation, hopefully fixed in https://www.drupal.org/node/2402533
+            $url_object = $entity->toUrl();
         }
 
         // Do not include external paths.
-        if (!$url_object->isRouted())
+        if (!$url_object->isRouted()) {
           continue;
+        }
 
         // Do not include paths inaccessible to anonymous users.
-        if (!$url_object->access($this->anonUser))
+        if (!$url_object->access($this->anonUser)) {
           continue;
+        }
 
         // Do not include paths that have been already indexed.
         $path = $url_object->getInternalPath();
-        if ($this->batchInfo['remove_duplicates'] && $this->pathProcessed($path))
+        if ($this->batchInfo['remove_duplicates'] && $this->pathProcessed($path)) {
           continue;
+        }
 
         $url_object->setOption('absolute', TRUE);
 
@@ -271,21 +291,24 @@ class BatchUrlGenerator {
 
     $this->initializeBatch(count($custom_paths));
 
-    foreach($custom_paths as $i => $custom_path) {
+    foreach ($custom_paths as $i => $custom_path) {
       $this->setCurrentId($i);
 
-      if (!$this->pathValidator->isValid($custom_path['path'])) { //todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush. Use getUrlIfValidWithoutAccessCheck()?
+      // todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush. Use getUrlIfValidWithoutAccessCheck()?
+      if (!$this->pathValidator->isValid($custom_path['path'])) {
         $this->logger->registerError([self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE, ['@path' => $custom_path['path']]], 'warning');
         continue;
       }
       $url_object = Url::fromUserInput($custom_path['path'], ['absolute' => TRUE]);
 
-      if (!$url_object->access($this->anonUser))
+      if (!$url_object->access($this->anonUser)) {
         continue;
+      }
 
       $path = $url_object->getInternalPath();
-      if ($this->batchInfo['remove_duplicates'] && $this->pathProcessed($path))
+      if ($this->batchInfo['remove_duplicates'] && $this->pathProcessed($path)) {
         continue;
+      }
 
       // Load entity object if this is an entity route.
       $route_parameters = $url_object->getRouteParameters();
@@ -324,7 +347,7 @@ class BatchUrlGenerator {
         ->toString();
     }
     else {
-      foreach($translation_languages as $language) {
+      foreach ($translation_languages as $language) {
         if (!is_null($entity) && $this->batchInfo['skip_untranslated']) {
           $translation = $entity->getTranslation($language->getId());
           if (!$translation->access('view')) {
@@ -337,7 +360,7 @@ class BatchUrlGenerator {
       }
     }
 
-    foreach($alternate_urls as $langcode => $url) {
+    foreach ($alternate_urls as $langcode => $url) {
       $this->context['results']['generate'][] = $path_data + ['langcode' => $langcode, 'url' => $url, 'alternate_urls' => $alternate_urls];
     }
   }
@@ -358,7 +381,8 @@ class BatchUrlGenerator {
         ['@url' => $GLOBALS['base_url'] . '/sitemap.xml']));
     }
     else {
-      //todo: register error
+      // todo: register error.
     }
   }
+
 }

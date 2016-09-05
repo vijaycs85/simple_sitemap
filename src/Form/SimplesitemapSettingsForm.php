@@ -5,7 +5,8 @@ namespace Drupal\simple_sitemap\Form;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Class SimplesitemapSettingsForm
+ * Class SimplesitemapSettingsForm.
+ *
  * @package Drupal\simple_sitemap\Form
  */
 class SimplesitemapSettingsForm extends SimplesitemapFormBase {
@@ -15,7 +16,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     'cron_generate',
     'remove_duplicates',
     'skip_untranslated',
-    'batch_process_limit'
+    'batch_process_limit',
   ];
 
   /**
@@ -42,7 +43,8 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
       '#type' => 'submit',
       '#value' => $this->t('Regenerate sitemap'),
       '#submit' => ['::generateSitemap'],
-      '#validate' => [], // Skip form-level validator.
+    // Skip form-level validator.
+      '#validate' => [],
     ];
 
     $form['simple_sitemap_settings']['settings'] = [
@@ -108,7 +110,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    foreach($this->formSettings as $setting_name) {
+    foreach ($this->formSettings as $setting_name) {
       $this->generator->saveSetting($setting_name, $form_state->getValue($setting_name));
     }
     parent::submitForm($form, $form_state);
@@ -126,4 +128,5 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
   public function generateSitemap(array &$form, FormStateInterface $form_state) {
     $this->generator->generateSitemap();
   }
+
 }

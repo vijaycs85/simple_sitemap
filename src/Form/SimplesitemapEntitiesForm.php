@@ -5,7 +5,8 @@ namespace Drupal\simple_sitemap\Form;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Class SimplesitemapEntitiesForm
+ * Class SimplesitemapEntitiesForm.
+ *
  * @package Drupal\simple_sitemap\Form
  */
 class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
@@ -43,10 +44,10 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
 
     foreach ($entity_type_labels as $entity_type_id => $entity_type_label) {
       $form['simple_sitemap_entities']['entities'][$entity_type_id] = [
-      '#type' => 'details',
-      '#title' => $entity_type_label,
-      '#open' => $this->generator->entityTypeIsEnabled($entity_type_id),
-    ];
+        '#type' => 'details',
+        '#title' => $entity_type_label,
+        '#open' => $this->generator->entityTypeIsEnabled($entity_type_id),
+      ];
       $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled'] = [
         '#type' => 'checkbox',
         '#title' => $this->t('Enable @entity_type_label <em>(@entity_type_id)</em> support', ['@entity_type_label' => strtolower($entity_type_label), '@entity_type_id' => $entity_type_id]),
@@ -72,20 +73,21 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
-    foreach($values as $field_name => $value) {
+    foreach ($values as $field_name => $value) {
       if (substr($field_name, -strlen('_enabled')) == '_enabled') {
         $entity_type_id = substr($field_name, 0, -8);
         if ($value) {
           $this->generator->enableEntityType($entity_type_id);
           if ($this->generator->entityTypeIsAtomic($entity_type_id)) {
             $this->generator->setBundleSettings($entity_type_id, $entity_type_id, [
-                'index' => TRUE,
-                'priority' => $values[$entity_type_id . '_simple_sitemap_priority']
-              ]);
+              'index' => TRUE,
+              'priority' => $values[$entity_type_id . '_simple_sitemap_priority'],
+            ]);
           }
         }
-        else
+        else {
           $this->generator->disableEntityType($entity_type_id);
+        }
       }
     }
     parent::submitForm($form, $form_state);
@@ -95,4 +97,5 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
       $this->generator->generateSitemap();
     }
   }
+
 }

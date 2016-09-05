@@ -9,7 +9,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * Class SimplesitemapController
+ * Class SimplesitemapController.
+ *
  * @package Drupal\simple_sitemap\Controller
  */
 class SimplesitemapController extends ControllerBase {
@@ -35,13 +36,13 @@ class SimplesitemapController extends ControllerBase {
    * Returns the whole sitemap, a requested sitemap chunk, or the sitemap index file.
    *
    * @param int $chunk_id
-   *  Optional ID of the sitemap chunk. If none provided, the first chunk or
-   *  the sitemap index is fetched.
+   *   Optional ID of the sitemap chunk. If none provided, the first chunk or
+   *   the sitemap index is fetched.
    *
    * @throws NotFoundHttpException
    *
    * @return object
-   *  Returns an XML response.
+   *   Returns an XML response.
    */
   public function getSitemap($chunk_id = NULL) {
     $output = $this->generator->getSitemap($chunk_id);
@@ -62,4 +63,5 @@ class SimplesitemapController extends ControllerBase {
   public static function create(ContainerInterface $container) {
     return new static($container->get('simple_sitemap.generator'));
   }
+
 }

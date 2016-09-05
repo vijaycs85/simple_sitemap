@@ -4,6 +4,9 @@ namespace Drupal\simple_sitemap\Batch;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
+/**
+ *
+ */
 class Batch {
 
   use StringTranslationTrait;
@@ -25,7 +28,8 @@ class Batch {
       'error_message' => $this->t(self::BATCH_ERROR_MESSAGE),
       'progress_message' => $this->t(self::BATCH_PROGRESS_MESSAGE),
       'operations' => [],
-      'finished' => [__CLASS__, 'finishGeneration'], // __CLASS__ . '::finishGeneration' not working possibly due to a drush error.
+    // __CLASS__ . '::finishGeneration' not working possibly due to a drush error.
+      'finished' => [__CLASS__, 'finishGeneration'],
     ];
   }
 
@@ -61,7 +65,8 @@ class Batch {
         batch_set($this->batch);
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
-        batch_process(); //todo: Does not take advantage of batch API and eventually runs out of memory on very large sites.
+        // todo: Does not take advantage of batch API and eventually runs out of memory on very large sites.
+        batch_process();
         break;
 
       case 'nobatch':
@@ -69,7 +74,7 @@ class Batch {
         // within one process (so in fact not using batch API here, just
         // mimicking it to avoid code duplication.
         $context = [];
-        foreach($this->batch['operations'] as $i => $operation) {
+        foreach ($this->batch['operations'] as $i => $operation) {
           $operation[1][] = &$context;
           call_user_func_array($operation[0], $operation[1]);
         }
@@ -86,7 +91,7 @@ class Batch {
    */
   public function addOperation($processing_method, $data) {
     $this->batch['operations'][] = [
-      __CLASS__ . '::' . $processing_method, [$data, $this->batchInfo]
+      __CLASS__ . '::' . $processing_method, [$data, $this->batchInfo],
     ];
   }
 
@@ -133,4 +138,5 @@ class Batch {
     BatchUrlGenerator::service()
       ->finishGeneration($success, $results, $operations);
   }
+
 }

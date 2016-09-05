@@ -5,7 +5,8 @@ namespace Drupal\simple_sitemap\Form;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Class SimplesitemapCustomLinksForm
+ * Class SimplesitemapCustomLinksForm.
+ *
  * @package Drupal\simple_sitemap\Form
  */
 class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
@@ -53,12 +54,13 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    foreach($this->getCustomLinks($form_state->getValue('custom_links')) as $i => $link_config) {
+    foreach ($this->getCustomLinks($form_state->getValue('custom_links')) as $i => $link_config) {
       $placeholders = ['@line' => ++$i, '@path' => $link_config['path'], '@priority' => isset($link_config['priority']) ? $link_config['priority'] : ''];
 
       // Checking if internal path exists.
       if (!$this->pathValidator->isValid($link_config['path'])
-       || strpos($link_config['path'], '//') !== FALSE) { // Path validator does not see a double slash as an error. Catching this to prevent breaking path generation.
+      // Path validator does not see a double slash as an error. Catching this to prevent breaking path generation.
+       || strpos($link_config['path'], '//') !== FALSE) {
         $form_state->setErrorByName('', $this->t("<strong>Line @line</strong>: The path <em>@path</em> does not exist.", $placeholders));
       }
 
@@ -101,7 +103,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
     // Remove empty values and whitespaces from array.
     $custom_links_string_lines = array_filter(array_map('trim', $custom_links_string_lines));
     $custom_links = [];
-    foreach($custom_links_string_lines as $i => &$line) {
+    foreach ($custom_links_string_lines as $i => &$line) {
       $link_settings = explode(' ', $line, 2);
       $custom_links[$i]['path'] = $link_settings[0];
       if (isset($link_settings[1]) && $link_settings[1] != '') {
@@ -110,4 +112,5 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
     }
     return $custom_links;
   }
+
 }

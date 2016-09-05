@@ -6,7 +6,8 @@ use Drupal\Core\Entity\ContentEntityTypeInterface;
 use Drupal\simple_sitemap\Form\FormHelper;
 
 /**
- * Class Simplesitemap
+ * Class Simplesitemap.
+ *
  * @package Drupal\simple_sitemap
  */
 class Simplesitemap {
@@ -18,11 +19,12 @@ class Simplesitemap {
   private $pathValidator;
   private static $allowed_link_settings = [
     'entity' => ['index', 'priority'],
-    'custom' => ['priority']
+    'custom' => ['priority'],
   ];
 
   /**
    * Simplesitemap constructor.
+   *
    * @param $sitemapGenerator
    * @param $configFactoryInterface
    * @param $database
@@ -50,14 +52,18 @@ class Simplesitemap {
    * Gets a specific sitemap configuration from the configuration storage.
    *
    * @param string $key
-   *  Configuration key, like 'entity_types'.
+   *   Configuration key, like 'entity_types'.
+   *
    * @return mixed
-   *  The requested configuration.
+   *   The requested configuration.
    */
   public function getConfig($key) {
     return $this->configFactory->get('simple_sitemap.settings')->get($key);
   }
 
+  /**
+   *
+   */
   private function fetchSitemapChunks() {
     return $this->db
       ->query("SELECT * FROM {simple_sitemap}")
@@ -68,9 +74,9 @@ class Simplesitemap {
    * Saves a specific sitemap configuration to db.
    *
    * @param string $key
-   *  Configuration key, like 'entity_types'.
+   *   Configuration key, like 'entity_types'.
    * @param mixed $value
-   *  The configuration to be saved.
+   *   The configuration to be saved.
    *
    * @return $this
    */
@@ -80,7 +86,6 @@ class Simplesitemap {
     return $this;
   }
 
-
   /**
    * Enables sitemap support for an entity type. Enabled entity types show
    * sitemap settings on their bundles. If an enabled entity type does not
@@ -88,7 +93,7 @@ class Simplesitemap {
    * setBundleSettings() as well.
    *
    * @param string $entity_type_id
-   *  Entity type id like 'node'.
+   *   Entity type id like 'node'.
    *
    * @return $this
    */
@@ -107,7 +112,7 @@ class Simplesitemap {
    * settings from entity forms.
    *
    * @param string $entity_type_id
-   *  Entity type id like 'node'.
+   *   Entity type id like 'node'.
    *
    * @return $this
    */
@@ -125,12 +130,12 @@ class Simplesitemap {
    * of an entity type (e.g. page).
    *
    * @param string $entity_type_id
-   *  Entity type id like 'node' the bundle belongs to.
+   *   Entity type id like 'node' the bundle belongs to.
    * @param string $bundle_name
-   *  Name of the bundle. NULL if entity type has no bundles.
+   *   Name of the bundle. NULL if entity type has no bundles.
    * @param array $settings
-   *  An array of sitemap settings for this bundle/entity type.
-   *  Example: ['index' => TRUE, 'priority' => 0.5]
+   *   An array of sitemap settings for this bundle/entity type.
+   *   Example: ['index' => TRUE, 'priority' => 0.5].
    *
    * @return $this
    */
@@ -148,6 +153,7 @@ class Simplesitemap {
    * @param string $entity_type_id
    * @param int $id
    * @param array $settings
+   *
    * @return $this
    */
   public function setEntityInstanceSettings($entity_type_id, $id, $settings) {
@@ -164,10 +170,12 @@ class Simplesitemap {
           break;
         }
       }
-      if ($override) { //Save overrides for this entity if something is different.
+      // Save overrides for this entity if something is different.
+      if ($override) {
         $this->addLinkSettings('entity', $settings, $entity_types[$entity_type_id][$bundle_name]['entities'][$id]);
       }
-      else { // Else unset override.
+      // Else unset override.
+      else {
         unset($entity_types[$entity_type_id][$bundle_name]['entities'][$id]);
       }
       $this->saveConfig('entity_types', $entity_types);
@@ -180,6 +188,7 @@ class Simplesitemap {
    *
    * @param string $entity_type_id
    * @param string|null $bundle_name
+   *
    * @return array|false
    */
   public function getBundleSettings($entity_type_id, $bundle_name = NULL) {
@@ -199,6 +208,7 @@ class Simplesitemap {
    *
    * @param $entity_type_id
    * @param null $bundle_name
+   *
    * @return bool
    */
   public function bundleIsIndexed($entity_type_id, $bundle_name = NULL) {
@@ -210,6 +220,7 @@ class Simplesitemap {
    * Checks if an entity type is enabled in the sitemap settings.
    *
    * @param $entity_type_id
+   *
    * @return bool
    */
   public function entityTypeIsEnabled($entity_type_id) {
@@ -223,6 +234,7 @@ class Simplesitemap {
    *
    * @param string $entity_type_id
    * @param int $id
+   *
    * @return array
    */
   public function getEntityInstanceSettings($entity_type_id, $id) {
@@ -242,16 +254,21 @@ class Simplesitemap {
    *
    * @param string $path
    * @param array $settings
+   *
    * @return $this
    */
   public function addCustomLink($path, $settings) {
-    if (!$this->pathValidator->isValid($path))
-      return $this; // todo: log error
-    if ($path[0] != '/')
-      return $this; // todo: log error
+    if (!$this->pathValidator->isValid($path)) {
+      // todo: log error.
+      return $this;
+    }
+    if ($path[0] != '/') {
+      // todo: log error.
+      return $this;
+    }
 
     $custom_links = $this->getConfig('custom');
-    foreach($custom_links as $key => $link) {
+    foreach ($custom_links as $key => $link) {
       if ($link['path'] == $path) {
         $link_key = $key;
         break;
@@ -268,11 +285,12 @@ class Simplesitemap {
    * Returns settings for a custom path added to the sitemap settings.
    *
    * @param string $path
+   *
    * @return array|false
    */
   public function getCustomLink($path) {
     $custom_links = $this->getConfig('custom');
-    foreach($custom_links as $key => $link) {
+    foreach ($custom_links as $key => $link) {
       if ($link['path'] == $path) {
         return $custom_links[$key];
       }
@@ -284,11 +302,12 @@ class Simplesitemap {
    * Removes a custom path from the sitemap settings.
    *
    * @param string $path
+   *
    * @return $this
    */
   public function removeCustomLink($path) {
     $custom_links = $this->getConfig('custom');
-    foreach($custom_links as $key => $link) {
+    foreach ($custom_links as $key => $link) {
       if ($link['path'] == $path) {
         unset($custom_links[$key]);
         $custom_links = array_values($custom_links);
@@ -308,17 +327,21 @@ class Simplesitemap {
     return $this;
   }
 
+  /**
+   *
+   */
   private function addLinkSettings($type, $settings, &$target) {
-    foreach($settings as $setting_key => $setting) {
+    foreach ($settings as $setting_key => $setting) {
       if (in_array($setting_key, self::$allowed_link_settings[$type])) {
-        switch($setting_key) {
+        switch ($setting_key) {
           case 'priority':
             if (!FormHelper::isValidPriority($setting)) {
-              // todo: register error
+              // todo: register error.
               continue;
             }
             break;
-          //todo: add index check
+
+          // todo: add index check.
         }
         $target[$setting_key] = $setting;
       }
@@ -331,7 +354,8 @@ class Simplesitemap {
    */
   public function getEntityInstanceBundleName($entity) {
     return $entity->getEntityTypeId() == 'menu_link_content'
-      ? $entity->getMenuName() : $entity->bundle(); // Menu fix.
+    // Menu fix.
+      ? $entity->getMenuName() : $entity->bundle();
   }
 
   /**
@@ -340,7 +364,8 @@ class Simplesitemap {
    */
   public function getBundleEntityTypeId($entity) {
     return $entity->getEntityTypeId() == 'menu'
-      ? 'menu_link_content' : $entity->getEntityType()->getBundleOf(); // Menu fix.
+    // Menu fix.
+      ? 'menu_link_content' : $entity->getEntityType()->getBundleOf();
   }
 
   /**
@@ -350,10 +375,10 @@ class Simplesitemap {
    * @param int $chunk_id
    *
    * @return string|false
-   *  If no sitemap id provided, either a sitemap index is returned, or the
-   *  whole sitemap, if the amount of links does not exceed the max links
-   *  setting. If a sitemap id is provided, a sitemap chunk is returned. False
-   *  if sitemap is not retrievable from the database.
+   *   If no sitemap id provided, either a sitemap index is returned, or the
+   *   whole sitemap, if the amount of links does not exceed the max links
+   *   setting. If a sitemap id is provided, a sitemap chunk is returned. False
+   *   if sitemap is not retrievable from the database.
    */
   public function getSitemap($chunk_id = NULL) {
     $chunks = $this->fetchSitemapChunks();
@@ -363,14 +388,16 @@ class Simplesitemap {
       if (count($chunks) > 1) {
         return $this->getSitemapIndex($chunks);
       }
-      else { // Return sitemap if there is only one chunk.
+      // Return sitemap if there is only one chunk.
+      else {
         if (isset($chunks[1])) {
           return $chunks[1]->sitemap_string;
         }
         return FALSE;
       }
     }
-    else { // Return specific sitemap chunk.
+    // Return specific sitemap chunk.
+    else {
       return $chunks[$chunk_id]->sitemap_string;
     }
   }
@@ -379,8 +406,8 @@ class Simplesitemap {
    * Generates the sitemap for all languages and saves it to the db.
    *
    * @param string $from
-   *  Can be 'form', 'cron', 'drush' or 'nobatch'.
-   *  This decides how the batch process is to be run.
+   *   Can be 'form', 'cron', 'drush' or 'nobatch'.
+   *   This decides how the batch process is to be run.
    */
   public function generateSitemap($from = 'form') {
     $this->sitemapGenerator
@@ -393,10 +420,10 @@ class Simplesitemap {
    * Generates and returns the sitemap index as string.
    *
    * @param array $chunks
-   *  Sitemap chunks which to generate the index from.
+   *   Sitemap chunks which to generate the index from.
    *
    * @return string
-   *  The sitemap index.
+   *   The sitemap index.
    */
   private function getSitemapIndex($chunks) {
     return $this->sitemapGenerator
@@ -408,13 +435,13 @@ class Simplesitemap {
    * Returns a specific sitemap setting.
    *
    * @param string $name
-   *  Name of the setting, like 'max_links'.
+   *   Name of the setting, like 'max_links'.
    *
    * @param mixed $default
-   *  Value to be returned if the setting does not exist in the configuration.
+   *   Value to be returned if the setting does not exist in the configuration.
    *
    * @return mixed
-   *  The current setting from db or a default value.
+   *   The current setting from db or a default value.
    */
   public function getSetting($name, $default = FALSE) {
     $settings = $this->getConfig('settings');
@@ -425,9 +452,9 @@ class Simplesitemap {
    * Saves a specific sitemap setting to db.
    *
    * @param string $name
-   *  Setting name, like 'max_links'.
+   *   Setting name, like 'max_links'.
    * @param mixed $setting
-   *  The setting to be saved.
+   *   The setting to be saved.
    *
    * @return $this
    */
@@ -442,7 +469,7 @@ class Simplesitemap {
    * Returns a 'time ago' string of last timestamp generation.
    *
    * @return string|false
-   *  Formatted timestamp of last sitemap generation, otherwise FALSE.
+   *   Formatted timestamp of last sitemap generation, otherwise FALSE.
    */
   public function getGeneratedAgo() {
     $chunks = $this->fetchSitemapChunks();
@@ -457,7 +484,7 @@ class Simplesitemap {
    * Returns objects of entity types that can be indexed by the sitemap.
    *
    * @return array
-   *  Objects of entity types that can be indexed by the sitemap.
+   *   Objects of entity types that can be indexed by the sitemap.
    */
   public function getSitemapEntityTypes() {
     $entity_types = $this->entityTypeManager->getDefinitions();
@@ -475,8 +502,10 @@ class Simplesitemap {
    * @return bool
    */
   public function entityTypeIsAtomic($entity_type_id) {
-    if ($entity_type_id == 'menu_link_content') // Menu fix.
+    // Menu fix.
+    if ($entity_type_id == 'menu_link_content') {
       return FALSE;
+    }
     $sitemap_entity_types = $this->getSitemapEntityTypes();
     if (isset($sitemap_entity_types[$entity_type_id])) {
       $entity_type = $sitemap_entity_types[$entity_type_id];
@@ -484,6 +513,8 @@ class Simplesitemap {
         return TRUE;
       }
     }
-    return FALSE; //todo: throw exception
+    // todo: throw exception.
+    return FALSE;
   }
+
 }
