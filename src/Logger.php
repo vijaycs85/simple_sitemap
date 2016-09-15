@@ -3,6 +3,8 @@
 namespace Drupal\simple_sitemap;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\Core\Session\AccountProxyInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class Logger.

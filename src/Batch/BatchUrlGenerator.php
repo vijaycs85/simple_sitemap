@@ -183,7 +183,9 @@ class BatchUrlGenerator {
 
       // todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush. Use getUrlIfValidWithoutAccessCheck()?
       if (!$this->pathValidator->isValid($custom_path['path'])) {
-        $this->logger->registerError([self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE, ['@path' => $custom_path['path']]], 'warning');
+        $this->logger->m(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE, ['@path' => $custom_path['path']])
+          ->display('warning', 'administer sitemap settings')
+          ->log('warning');
         continue;
       }
       $url_object = Url::fromUserInput($custom_path['path'], ['absolute' => TRUE]);
@@ -416,7 +418,9 @@ class BatchUrlGenerator {
         ['@url' => $GLOBALS['base_url'] . '/sitemap.xml']));
     }
     else {
-      // todo: register error.
+      $this->logger->m('The sitemap generation finished with an error.')
+        ->display('error', 'administer sitemap settings')
+        ->log('error');
     }
   }
 
