@@ -3,6 +3,10 @@
 namespace Drupal\simple_sitemap;
 
 use \XMLWriter;
+use Drupal\simple_sitemap\Batch\Batch;
+use Drupal\Core\Database\Connection;
+use Drupal\Core\Extension\ModuleHandler;
+use Drupal\Core\Language\LanguageManagerInterface;
 
 /**
  * Class SitemapGenerator.
@@ -33,7 +37,12 @@ class SitemapGenerator {
    * @param $module_handler
    * @param $language_manager
    */
-  public function __construct($batch, $database, $module_handler, $language_manager) {
+  public function __construct(
+    Batch $batch,
+    Connection $database,
+    ModuleHandler $module_handler,
+    LanguageManagerInterface $language_manager
+  ) {
     $this->batch = $batch;
     $this->db = $database;
     $this->moduleHandler = $module_handler;

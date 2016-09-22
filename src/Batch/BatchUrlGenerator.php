@@ -6,6 +6,12 @@ use Drupal\Core\Url;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\simple_sitemap\Logger;
+use Drupal\simple_sitemap\SitemapGenerator;
+use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Path\PathValidator;
+use Drupal\Core\Entity\Query\QueryFactory;
 
 /**
  * Class BatchUrlGenerator.
@@ -46,12 +52,12 @@ class BatchUrlGenerator {
    * @param $logger
    */
   public function __construct(
-    $sitemap_generator,
-    $language_manager,
-    $entity_type_manager,
-    $path_validator,
-    $entity_query,
-    $logger
+    SitemapGenerator $sitemap_generator,
+    LanguageManagerInterface $language_manager,
+    EntityTypeManagerInterface $entity_type_manager,
+    PathValidator $path_validator,
+    QueryFactory $entity_query,
+    Logger $logger
   ) {
     // Todo using only one method, maybe make method static instead?
     $this->sitemapGenerator = $sitemap_generator;

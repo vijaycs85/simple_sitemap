@@ -4,6 +4,7 @@ namespace Drupal\simple_sitemap;
 
 use Drupal\Core\Entity\ContentEntityTypeInterface;
 use Drupal\simple_sitemap\Form\FormHelper;
+use Drupal\simple_sitemap\SitemapGenerator;
 
 /**
  * Class Simplesitemap.
@@ -33,7 +34,7 @@ class Simplesitemap {
    * @param $dateFormatter
    */
   public function __construct(
-    $sitemapGenerator,
+    SitemapGenerator $sitemapGenerator,
     $configFactoryInterface,
     $database,
     $entityTypeManager,
