@@ -96,6 +96,8 @@ class SimplesitemapTest extends WebTestBase {
     $this->drupalGet('sitemap.xml');
     $this->assertEqual($this->drupalGetHeader('X-Drupal-Cache'), 'MISS');
     $this->assertText('node/' . $this->node->id());
+
+    // Verify the sitemap is taken from cache on second call and node is in the sitemap.
     $this->drupalGet('sitemap.xml');
     $this->assertEqual($this->drupalGetHeader('X-Drupal-Cache'), 'HIT');
     $this->assertText('node/' . $this->node->id());

@@ -118,11 +118,11 @@ function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
   if (isset($entity_types[$entity_type_id][$bundle])) {
     unset($entity_types[$entity_type_id][$bundle]);
     $generator->saveConfig('entity_types', $entity_types);
-    $message = t("You may want to <a href='@url'>regenerate</a> your XML sitemap now.", ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']);
+    $message = "You may want to <a href='@url'>regenerate</a> your XML sitemap now.";
     if ($generator->getSetting('cron_generate')) {
-      $message .= '</br>' . t('Otherwise the sitemap will be regenerated on the next cron run.');
+      $message .= ' Otherwise the sitemap will be regenerated on the next cron run.';
     }
-    // drupal_set_message($message); // todo: Commented out, as html code is visible.
+    drupal_set_message(t($message, ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']));
   }
 }
 

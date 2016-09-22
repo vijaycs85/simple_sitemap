@@ -20,6 +20,7 @@ class BatchUrlGenerator {
   const PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE = "The path @path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users.";
   const PROCESSING_PATH_MESSAGE = 'Processing path #@current out of @max: @path';
   const REGENERATION_FINISHED_MESSAGE = "The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.";
+  const REGENERATION_FINISHED_ERROR_MESSAGE = 'The sitemap generation finished with an error.';
 
   protected $sitemapGenerator;
   protected $languageManager;
@@ -62,22 +63,6 @@ class BatchUrlGenerator {
     $this->entityQuery = $entity_query;
     $this->logger = $logger;
     $this->anonUser = $this->entityTypeManager->getStorage('user')->load(self::ANONYMOUS_USER_ID);
-  }
-
-  /**
-   * The Drupal batch API can only call procedural functions or static methods.
-   * To circumvent exclusively procedural code, on every batch iteration this
-   * static method is called by the batch API and returns a freshly created
-   * Drupal service object of this class. All following calls can be made on
-   * the returned service the OOP way. This is is obviously trading performance
-   * for cleanness. The service is created within its own class to improve
-   * testability.
-   *
-   * @return object
-   *   Symfony service object of this class
-   */
-  public static function service() {
-    return \Drupal::service('simple_sitemap.batch_url_generator');
   }
 
   /**
@@ -146,8 +131,9 @@ class BatchUrlGenerator {
         continue;
       }
 
-      // Do not include paths that have been already indexed.
       $path = $url_object->getInternalPath();
+
+      // Do not include paths that have been already indexed.
       if ($this->batchInfo['remove_duplicates'] && $this->pathProcessed($path)) {
         continue;
       }
@@ -414,11 +400,13 @@ class BatchUrlGenerator {
         $this->sitemapGenerator->generateSitemap($results['generate'], $remove_sitemap);
       }
       Cache::invalidateTags(['simple_sitemap']);
-      drupal_set_message($this->t(self::REGENERATION_FINISHED_MESSAGE,
-        ['@url' => $GLOBALS['base_url'] . '/sitemap.xml']));
+      $this->logger->m(self::REGENERATION_FINISHED_MESSAGE,
+        ['@url' => $GLOBALS['base_url'] . '/sitemap.xml'])
+        ->display('status')
+        ->log('info');
     }
     else {
-      $this->logger->m('The sitemap generation finished with an error.')
+      $this->logger->m(self::REGENERATION_FINISHED_ERROR_MESSAGE)
         ->display('error', 'administer sitemap settings')
         ->log('error');
     }

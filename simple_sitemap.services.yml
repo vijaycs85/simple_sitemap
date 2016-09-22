@@ -50,5 +50,6 @@ services:
 
   logger.channel.simple_sitemap:
     parent: logger.channel_base
+    prublic: false
     arguments:
       - simple_sitemap

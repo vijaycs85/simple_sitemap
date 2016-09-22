@@ -54,7 +54,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    foreach ($this->getCustomLinks($form_state->getValue('custom_links')) as $i => $link_config) {
+    foreach ($this->getCustomLinksFromString($form_state->getValue('custom_links')) as $i => $link_config) {
       $placeholders = ['@line' => ++$i, '@path' => $link_config['path'], '@priority' => isset($link_config['priority']) ? $link_config['priority'] : ''];
 
       // Checking if internal path exists.
@@ -80,7 +80,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $custom_links = $this->getCustomLinks($form_state->getValue('custom_links'));
+    $custom_links = $this->getCustomLinksFromString($form_state->getValue('custom_links'));
     $this->generator->removeCustomLinks();
     foreach ($custom_links as $link_config) {
       $this->generator->addCustomLink($link_config['path'], $link_config);
@@ -97,7 +97,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
    * @param $custom_links_string
    * @return array
    */
-  private function getCustomLinks($custom_links_string) {
+  private function getCustomLinksFromString($custom_links_string) {
     // Unify newline characters and explode into array.
     $custom_links_string_lines = explode("\n", str_replace("\r\n", "\n", $custom_links_string));
     // Remove empty values and whitespaces from array.
@@ -112,5 +112,4 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
     }
     return $custom_links;
   }
-
 }

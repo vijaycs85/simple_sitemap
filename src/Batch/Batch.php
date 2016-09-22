@@ -56,7 +56,7 @@ class Batch {
         batch_set($this->batch);
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
-        drush_log(t(self::BATCH_INIT_MESSAGE), 'status');
+        drush_log($this->t(self::BATCH_INIT_MESSAGE), 'status');
         drush_backend_batch_process();
         break;
 
@@ -78,7 +78,7 @@ class Batch {
           $operation[1][] = &$context;
           call_user_func_array($operation[0], $operation[1]);
         }
-        self::finishGeneration(TRUE, $context['results'], []);
+        $this->finishGeneration(TRUE, $context['results'], []);
         break;
     }
   }
@@ -103,7 +103,7 @@ class Batch {
    * @param array &$context
    */
   public static function generateBundleUrls($entity_info, $batch_info, &$context) {
-    BatchUrlGenerator::service()
+    \Drupal::service('simple_sitemap.batch_url_generator')
       ->setContext($context)
       ->setBatchInfo($batch_info)
       ->generateBundleUrls($entity_info);
@@ -119,7 +119,7 @@ class Batch {
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
   public static function generateCustomUrls($custom_paths, $batch_info, &$context) {
-    BatchUrlGenerator::service()
+    \Drupal::service('simple_sitemap.batch_url_generator')
       ->setContext($context)
       ->setBatchInfo($batch_info)
       ->generateCustomUrls($custom_paths);
@@ -135,7 +135,7 @@ class Batch {
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
   public static function finishGeneration($success, $results, $operations) {
-    BatchUrlGenerator::service()
+    \Drupal::service('simple_sitemap.batch_url_generator')
       ->finishGeneration($success, $results, $operations);
   }
 
