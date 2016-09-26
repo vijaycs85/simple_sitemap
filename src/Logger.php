@@ -11,40 +11,81 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
  */
 class Logger {
 
+  /*
+   * Can be debug/info/notice/warning/error.
+   */
+  const LOG_SEVERITY_LEVEL_DEFAULT = 'notice';
+
+  /*
+   * Can be status/warning/error.
+   */
+  const DISPLAY_MESSAGE_TYPE_DEFAULT = 'status';
+
   use StringTranslationTrait;
 
+  /**
+   * @var \Psr\Log\LoggerInterface
+   */
   protected $logger;
+
+  /**
+   * @var \Drupal\Core\Session\AccountProxyInterface
+   */
   protected $currentUser;
+
+  /**
+   * @var string
+   */
+  protected $message = '';
+
+  /**
+   * @var array
+   */
+  protected $substitutions = [];
 
   /**
    * Logger constructor.
    *
    * @param $logger
+   * @param $current_user
    */
-  public function __construct($logger, $current_user) {
+  public function __construct(
+    LoggerInterface $logger,
+    AccountProxyInterface $current_user
+  ) {
     $this->logger = $logger;
     $this->currentUser = $current_user;
   }
 
   /**
-   * Logs error and optionally displays it to the privileged user.
-   *
    * @param $message
-   *   Can be string or an array where the first value is the message string and
-   *   the second value an array with arrays containing
-   *   placeholder => replacement values for the message.
-   * @param string $display
-   *   Message type (status/warning/error), if set, message is displayed to
-   *   privileged user in addition to being logged.
+   * @param array $substitutions
+   * @return $this
    */
-  public function registerError($message, $display = NULL) {
-    $substitutions = isset($message[1]) && is_array($message[1]) ? $message[1] : [];
-    $message = is_array($message) ? $message[0] : $message;
-    $this->logger->notice(strtr($message, $substitutions));
-    if (!empty($display)
-      && $this->currentUser->hasPermission('administer sitemap settings')) {
-      drupal_set_message($this->t($message, $substitutions), $display);
-    }
+  public function m($message, $substitutions = []) {
+    $this->message = $message;
+    $this->substitutions = $substitutions;
+    return $this;
   }
 
+  /**
+   * @param string $logSeverityLevel
+   * @return $this
+   */
+  public function log($logSeverityLevel = self::LOG_SEVERITY_LEVEL_DEFAULT) {
+    $this->logger->$logSeverityLevel(strtr($this->message, $this->substitutions));
+    return $this;
+  }
+
+  /**
+   * @param string $displayMessageType
+   * @param string $permission
+   * @return $this
+   */
+  public function display($displayMessageType = self::DISPLAY_MESSAGE_TYPE_DEFAULT, $permission = '') {
+    if (empty($permission) || $this->currentUser->hasPermission($permission)) {
+      drupal_set_message($this->t($this->message, $this->substitutions), $displayMessageType);
+    }
+    return $this;
+  }
 }

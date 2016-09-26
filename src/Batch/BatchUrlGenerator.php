@@ -99,185 +99,68 @@ class BatchUrlGenerator {
   }
 
   /**
-   * @return bool
-   */
-  protected function isBatch() {
-    return $this->batchInfo['from'] != 'nobatch';
-  }
-
-  /**
-   * @param $path
-   * @return bool
-   */
-  protected function pathProcessed($path) {
-    $path_pool = isset($this->context['results']['processed_paths']) ? $this->context['results']['processed_paths'] : [];
-    if (in_array($path, $path_pool)) {
-      return TRUE;
-    }
-    $this->context['results']['processed_paths'][] = $path;
-    return FALSE;
-  }
-
-  /**
-   * @param $max
-   */
-  protected function initializeBatch($max) {
-    if ($this->needsInitialization()) {
-      $this->context['results']['generate'] = !empty($this->context['results']['generate']) ? $this->context['results']['generate'] : [];
-      if ($this->isBatch()) {
-        $this->context['sandbox']['progress'] = 0;
-        $this->context['sandbox']['current_id'] = 0;
-        $this->context['sandbox']['max'] = $max;
-        $this->context['results']['processed_paths'] = !empty($this->context['results']['processed_paths'])
-          ? $this->context['results']['processed_paths'] : [];
-      }
-    }
-  }
-
-  /**
-   * @return bool
-   */
-  protected function needsInitialization() {
-    return empty($this->context['sandbox']);
-  }
-
-  /**
-   * @param $id
-   */
-  protected function setCurrentId($id) {
-    if ($this->isBatch()) {
-      $this->context['sandbox']['progress']++;
-      $this->context['sandbox']['current_id'] = $id;
-    }
-  }
-
-  /**
-   *
-   */
-  protected function processSegment() {
-    if ($this->isBatch()) {
-      $this->setProgressInfo();
-    }
-    if (!empty($this->batchInfo['max_links']) && count($this->context['results']['generate']) >= $this->batchInfo['max_links']) {
-      $chunks = array_chunk($this->context['results']['generate'], $this->batchInfo['max_links']);
-      foreach ($chunks as $i => $chunk_links) {
-        if (count($chunk_links) == $this->batchInfo['max_links']) {
-          $remove_sitemap = empty($this->context['results']['chunk_count']);
-          $this->sitemapGenerator->generateSitemap($chunk_links, $remove_sitemap);
-          $this->context['results']['chunk_count'] = !isset($this->context['results']['chunk_count'])
-            ? 1 : $this->context['results']['chunk_count'] + 1;
-          $this->context['results']['generate'] = array_slice($this->context['results']['generate'], count($chunk_links));
-        }
-      }
-    }
-  }
-
-  /**
-   *
-   */
-  protected function setProgressInfo() {
-    if ($this->context['sandbox']['progress'] != $this->context['sandbox']['max']) {
-      // Providing progress info to the batch API.
-      $this->context['finished'] = $this->context['sandbox']['progress'] / $this->context['sandbox']['max'];
-      // Adding processing message after finishing every batch segment.
-      end($this->context['results']['generate']);
-      $last_key = key($this->context['results']['generate']);
-      if (!empty($this->context['results']['generate'][$last_key]['path'])) {
-        $this->context['message'] = $this->t(self::PROCESSING_PATH_MESSAGE, [
-          '@current' => $this->context['sandbox']['progress'],
-          '@max' => $this->context['sandbox']['max'],
-          '@path' => HTML::escape($this->context['results']['generate'][$last_key]['path']),
-        ]);
-      }
-    }
-  }
-
-  /**
    * Batch callback function which generates urls to entity paths.
    *
    * @param array $entity_info
    */
   public function generateBundleUrls($entity_info) {
 
-    $query = $this->entityQuery->get($entity_info['entity_type_name']);
-    if (!empty($entity_info['keys']['id'])) {
-      $query->sort($entity_info['keys']['id'], 'ASC');
-    }
-    if (!empty($entity_info['keys']['bundle'])) {
-      $query->condition($entity_info['keys']['bundle'], $entity_info['bundle_name']);
-    }
-    if (!empty($entity_info['keys']['status'])) {
-      $query->condition($entity_info['keys']['status'], 1);
-    }
+    foreach ($this->getBatchIterationEntities($entity_info) as $entity_id => $entity) {
 
-    $count_query = clone $query;
-    $this->initializeBatch($count_query->count()->execute());
+      $this->setCurrentId($entity_id);
+      $priority = NULL;
 
-    // Creating a query limited to n=batch_process_limit entries.
-    if ($this->isBatch()) {
-      $query->range($this->context['sandbox']['progress'], $this->batchInfo['batch_process_limit']);
-    }
+      // Overriding entity settings if it has been overridden on entity edit page...
+      if (isset($this->batchInfo['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['index'])) {
 
-    $results = $query->execute();
-    if (!empty($results)) {
-      $entities = $this->entityTypeManager->getStorage($entity_info['entity_type_name'])->loadMultiple($results);
+        // Skipping entity if it has been excluded on entity edit page.
+        if (!$this->batchInfo['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['index']) {
+          continue;
+        }
+        // Otherwise overriding priority settings for this entity.
+        $priority = $this->batchInfo['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['priority'];
+      }
 
-      foreach ($entities as $entity_id => $entity) {
-        $this->setCurrentId($entity_id);
-        $priority = NULL;
-
-        // Overriding entity settings if it has been overridden on entity edit page...
-        if (isset($this->batchInfo['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['index'])) {
-
-          // Skipping entity if it has been excluded on entity edit page.
-          if (!$this->batchInfo['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['index']) {
+      switch ($entity_info['entity_type_name']) {
+        // Loading url object for menu links.
+        case 'menu_link_content':
+          if (!$entity->isEnabled()) {
             continue;
           }
-          // Otherwise overriding priority settings for this entity.
-          $priority = $this->batchInfo['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['priority'];
-        }
+          $url_object = $entity->getUrlObject();
+          break;
 
-        switch ($entity_info['entity_type_name']) {
-          // Loading url object for menu links.
-          case 'menu_link_content':
-            if (!$entity->isEnabled()) {
-              continue;
-            }
-            $url_object = $entity->getUrlObject();
-            break;
-
-          // Loading url object for other entities.
-          default:
-            // todo: file entity type does not have a canonical url and breaks generation, hopefully fixed in https://www.drupal.org/node/2402533
-            $url_object = $entity->toUrl();
-        }
-
-        // Do not include external paths.
-        if (!$url_object->isRouted()) {
-          continue;
-        }
-
-        // Do not include paths inaccessible to anonymous users.
-        if (!$url_object->access($this->anonUser)) {
-          continue;
-        }
-
-        // Do not include paths that have been already indexed.
-        $path = $url_object->getInternalPath();
-        if ($this->batchInfo['remove_duplicates'] && $this->pathProcessed($path)) {
-          continue;
-        }
-
-        $url_object->setOption('absolute', TRUE);
-
-        $path_data = [
-          'path' => $path,
-          'entity_info' => ['entity_type' => $entity_info['entity_type_name'], 'id' => $entity_id],
-          'lastmod' => method_exists($entity, 'getChangedTime') ? date_iso8601($entity->getChangedTime()) : NULL,
-          'priority' => isset($priority) ? $priority : (isset($entity_info['bundle_settings']['priority']) ? $entity_info['bundle_settings']['priority'] : NULL),
-        ];
-        $this->addUrlVariants($url_object, $path_data, $entity);
+        // Loading url object for other entities.
+        default:
+          // todo: file entity type does not have a canonical url and breaks generation, hopefully fixed in https://www.drupal.org/node/2402533
+          $url_object = $entity->toUrl();
       }
+
+      // Do not include external paths.
+      if (!$url_object->isRouted()) {
+        continue;
+      }
+
+      // Do not include paths inaccessible to anonymous users.
+      if (!$url_object->access($this->anonUser)) {
+        continue;
+      }
+
+      // Do not include paths that have been already indexed.
+      $path = $url_object->getInternalPath();
+      if ($this->batchInfo['remove_duplicates'] && $this->pathProcessed($path)) {
+        continue;
+      }
+
+      $url_object->setOption('absolute', TRUE);
+
+      $path_data = [
+        'path' => $path,
+        'entity_info' => ['entity_type' => $entity_info['entity_type_name'], 'id' => $entity_id],
+        'lastmod' => method_exists($entity, 'getChangedTime') ? date_iso8601($entity->getChangedTime()) : NULL,
+        'priority' => isset($priority) ? $priority : (isset($entity_info['bundle_settings']['priority']) ? $entity_info['bundle_settings']['priority'] : NULL),
+      ];
+      $this->addUrlVariants($url_object, $path_data, $entity);
     }
     $this->processSegment();
   }
@@ -289,7 +172,11 @@ class BatchUrlGenerator {
    */
   public function generateCustomUrls($custom_paths) {
 
-    $this->initializeBatch(count($custom_paths));
+    $custom_paths = $this->getBatchIterationCustomPaths($custom_paths);
+
+    if ($this->needsInitialization()) {
+      $this->initializeBatch(count($custom_paths));
+    }
 
     foreach ($custom_paths as $i => $custom_path) {
       $this->setCurrentId($i);
@@ -323,6 +210,74 @@ class BatchUrlGenerator {
       $this->addUrlVariants($url_object, $path_data, $entity);
     }
     $this->processSegment();
+  }
+
+  /**
+   * @return bool
+   */
+  protected function isBatch() {
+    return $this->batchInfo['from'] != 'nobatch';
+  }
+
+  /**
+   * @param $path
+   * @return bool
+   */
+  protected function pathProcessed($path) {
+    $path_pool = isset($this->context['results']['processed_paths']) ? $this->context['results']['processed_paths'] : [];
+    if (in_array($path, $path_pool)) {
+      return TRUE;
+    }
+    $this->context['results']['processed_paths'][] = $path;
+    return FALSE;
+  }
+
+  /**
+   * @param $entity_info
+   * @return mixed
+   */
+  private function getBatchIterationEntities($entity_info) {
+    $query = $this->entityQuery->get($entity_info['entity_type_name']);
+
+    if (!empty($entity_info['keys']['id'])) {
+      $query->sort($entity_info['keys']['id'], 'ASC');
+    }
+    if (!empty($entity_info['keys']['bundle'])) {
+      $query->condition($entity_info['keys']['bundle'], $entity_info['bundle_name']);
+    }
+    if (!empty($entity_info['keys']['status'])) {
+      $query->condition($entity_info['keys']['status'], 1);
+    }
+
+    if ($this->needsInitialization()) {
+      $count_query = clone $query;
+      $this->initializeBatch($count_query->count()->execute());
+    }
+
+    if ($this->isBatch()) {
+      $query->range($this->context['sandbox']['progress'], $this->batchInfo['batch_process_limit']);
+    }
+
+    return $this->entityTypeManager
+      ->getStorage($entity_info['entity_type_name'])
+      ->loadMultiple($query->execute());
+  }
+
+  /**
+   * @param $custom_paths
+   * @return mixed
+   */
+  private function getBatchIterationCustomPaths($custom_paths) {
+
+    if ($this->needsInitialization()) {
+      $this->initializeBatch(count($custom_paths));
+    }
+
+    if ($this->isBatch()) {
+      $custom_paths = array_slice($custom_paths, $this->context['sandbox']['progress'], $this->batchInfo['batch_process_limit']);
+    }
+
+    return $custom_paths;
   }
 
   /**
