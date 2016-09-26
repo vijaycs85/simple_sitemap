@@ -310,12 +310,7 @@ class BatchUrlGenerator {
         continue;
       }
 
-      // Load entity object if this is an entity route.
-      $route_parameters = $url_object->getRouteParameters();
-      $entity = !empty($route_parameters)
-        ? $this->entityTypeManager->getStorage(key($route_parameters))
-          ->load($route_parameters[key($route_parameters)])
-        : NULL;
+      $entity = $this->getEntityFromUrlObject($url_object);
 
       $path_data = [
         'path' => $path,
@@ -363,6 +358,91 @@ class BatchUrlGenerator {
     foreach ($alternate_urls as $langcode => $url) {
       $this->context['results']['generate'][] = $path_data + ['langcode' => $langcode, 'url' => $url, 'alternate_urls' => $alternate_urls];
     }
+  }
+
+  /**
+   * @return bool
+   */
+  protected function needsInitialization() {
+    return empty($this->context['sandbox']);
+  }
+
+  /**
+   * @param $max
+   */
+  protected function initializeBatch($max) {
+    $this->context['results']['generate'] = !empty($this->context['results']['generate']) ? $this->context['results']['generate'] : [];
+    if ($this->isBatch()) {
+      $this->context['sandbox']['progress'] = 0;
+      $this->context['sandbox']['current_id'] = 0;
+      $this->context['sandbox']['max'] = $max;
+      $this->context['results']['processed_paths'] = !empty($this->context['results']['processed_paths'])
+        ? $this->context['results']['processed_paths'] : [];
+    }
+  }
+
+  /**
+   * @param $id
+   */
+  protected function setCurrentId($id) {
+    if ($this->isBatch()) {
+      $this->context['sandbox']['progress']++;
+      $this->context['sandbox']['current_id'] = $id;
+    }
+  }
+
+  /**
+   *
+   */
+  protected function processSegment() {
+    if ($this->isBatch()) {
+      $this->setProgressInfo();
+    }
+    if (!empty($this->batchInfo['max_links']) && count($this->context['results']['generate']) >= $this->batchInfo['max_links']) {
+      $chunks = array_chunk($this->context['results']['generate'], $this->batchInfo['max_links']);
+      foreach ($chunks as $i => $chunk_links) {
+        if (count($chunk_links) == $this->batchInfo['max_links']) {
+          $remove_sitemap = empty($this->context['results']['chunk_count']);
+          $this->sitemapGenerator->generateSitemap($chunk_links, $remove_sitemap);
+          $this->context['results']['chunk_count'] = !isset($this->context['results']['chunk_count'])
+            ? 1 : $this->context['results']['chunk_count'] + 1;
+          $this->context['results']['generate'] = array_slice($this->context['results']['generate'], count($chunk_links));
+        }
+      }
+    }
+  }
+
+  /**
+   *
+   */
+  protected function setProgressInfo() {
+    if ($this->context['sandbox']['progress'] != $this->context['sandbox']['max']) {
+      // Providing progress info to the batch API.
+      $this->context['finished'] = $this->context['sandbox']['progress'] / $this->context['sandbox']['max'];
+      // Adding processing message after finishing every batch segment.
+      end($this->context['results']['generate']);
+      $last_key = key($this->context['results']['generate']);
+      if (!empty($this->context['results']['generate'][$last_key]['path'])) {
+        $this->context['message'] = $this->t(self::PROCESSING_PATH_MESSAGE, [
+          '@current' => $this->context['sandbox']['progress'],
+          '@max' => $this->context['sandbox']['max'],
+          '@path' => HTML::escape($this->context['results']['generate'][$last_key]['path']),
+        ]);
+      }
+    }
+  }
+
+  /**
+   * @param $url_object
+   * @return object|null
+   */
+  private function getEntityFromUrlObject($url_object) {
+    $route_parameters = $url_object->getRouteParameters();
+    return !empty($route_parameters) && $this->entityTypeManager
+      ->getDefinition($entity_type_id = key($route_parameters), FALSE)
+      ? $this->entityTypeManager->getStorage($entity_type_id)
+        ->load($route_parameters[$entity_type_id])
+      : NULL;
   }
 
   /**
