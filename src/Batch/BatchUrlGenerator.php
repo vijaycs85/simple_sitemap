@@ -116,7 +116,7 @@ class BatchUrlGenerator {
         // Loading url object for menu links.
         case 'menu_link_content':
           if (!$entity->isEnabled()) {
-            continue;
+            continue 2;
           }
           $url_object = $entity->getUrlObject();
           break;
