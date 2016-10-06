@@ -59,7 +59,9 @@ class Simplesitemap {
    *   The requested configuration.
    */
   public function getConfig($key) {
-    return $this->configFactory->get('simple_sitemap.settings')->get($key);
+    $config = $this->configFactory->get("simple_sitemap.$key")->get();
+    unset($config['_core']);
+    return $config;
   }
 
   /**
@@ -82,8 +84,8 @@ class Simplesitemap {
    * @return $this
    */
   public function saveConfig($key, $value) {
-    $this->configFactory->getEditable('simple_sitemap.settings')
-      ->set($key, $value)->save();
+    $this->configFactory->getEditable("simple_sitemap.$key")
+      ->setData($value)->save();
     return $this;
   }
 
