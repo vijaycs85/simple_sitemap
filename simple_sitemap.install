@@ -209,5 +209,13 @@ function simple_sitemap_update_8202() {
  * simple_sitemap.entity_types and simple_sitemap.custom.
  */
 function simple_sitemap_update_8203() {
-
+  $old_config = $config = \Drupal::config('simple_sitemap.settings');
+  foreach (['entity_types', 'custom'] as $config_name) {
+    $config = $old_config->get($config_name);
+    \Drupal::service('config.factory')->getEditable("simple_sitemap.$config_name")
+      ->setData($config)->save();
+  }
+  $settings = $old_config->get('settings');
+  \Drupal::service('config.factory')->getEditable("simple_sitemap.settings")
+    ->setData($settings)->save();
 }
