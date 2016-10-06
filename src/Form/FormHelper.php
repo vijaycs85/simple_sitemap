@@ -189,7 +189,7 @@ class FormHelper {
       '#options' => $this->getPrioritySelectValues(),
     ];
     if ($this->entityCategory == 'instance' && isset($bundle_settings['priority'])) {
-      $form_fragment[$prefix . 'simple_sitemap_priority']['#options'][(string) $bundle_settings['priority']] .= ' (' . $this->t('Default') . ')';
+      $form_fragment[$prefix . 'simple_sitemap_priority']['#options'][$this->formatPriority($bundle_settings['priority'])] .= ' (' . $this->t('Default') . ')';
     }
     return $this;
   }

@@ -7,12 +7,13 @@
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+
 /**
  * Implements hook_help.
  */
 function simple_sitemap_help($route_name, RouteMatchInterface $route_match) {
   return $route_name === 'help.page.simple_sitemap' ?
-    check_markup(file_get_contents(dirname(__FILE__) . "/README.txt")) : NULL;
+    check_markup(file_get_contents(dirname(__FILE__) . "/README.md")) : NULL;
 }
 
 /**
@@ -21,6 +22,7 @@ function simple_sitemap_help($route_name, RouteMatchInterface $route_match) {
  * Adds sitemap settings to entity types that are supported via plugins.
  */
 function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
+
   $f = \Drupal::service('simple_sitemap.form_helper')->processForm($form_state);
   if (!$f->alteringForm) {
     return;
@@ -111,6 +113,7 @@ function simple_sitemap_cron() {
  * Removes settings of the removed bundle.
  *
  * @todo Not working for menu bundles, as they are technically not bundles. Implement hook_menu_delete().
+ * @todo delete entity overrides
  */
 function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
   $generator = \Drupal::service('simple_sitemap.generator');
@@ -132,14 +135,8 @@ function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
  * Removes settings of the removed entity.
  */
 function simple_sitemap_entity_delete(EntityInterface $entity) {
-  $generator = \Drupal::service('simple_sitemap.generator');
-  $entity_types = $generator->getConfig('entity_types');
-  $entity_type_id = $entity->getEntityTypeId();
-  $bundle_name = !empty($entity->bundle()) ? $entity->bundle() : $entity_type_id;
-  // Menu fix.
-  $bundle_name = $bundle_name == 'menu_link_content'&& method_exists($entity, 'getMenuName') ? $entity->getMenuName() : $bundle_name;
-  if (isset($entity_types[$entity_type_id][$bundle_name]['entities'][$entity->id()])) {
-    unset($entity_types[$entity_type_id][$bundle_name]['entities'][$entity->id()]);
-    $generator->saveConfig('entity_types', $entity_types);
-  }
+  \Drupal::database()->delete('simple_sitemap_entity_overrides')
+    ->condition('entity_type', $entity->getEntityTypeId())
+    ->condition('entity_id', $entity->id())
+    ->execute();
 }

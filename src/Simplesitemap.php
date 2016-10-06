@@ -122,6 +122,10 @@ class Simplesitemap {
     if (isset($entity_types[$entity_type_id])) {
       unset($entity_types[$entity_type_id]);
       $this->saveConfig('entity_types', $entity_types);
+      // todo: test
+      $this->db->delete('simple_sitemap_entity_overrides')
+        ->condition('entity_type', $entity_type_id)
+        ->execute();
     }
     return $this;
   }
@@ -141,11 +145,54 @@ class Simplesitemap {
    * @return $this
    */
   public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings) {
+
     $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
     $entity_types = $this->getConfig('entity_types');
     $this->addLinkSettings('entity', $settings, $entity_types[$entity_type_id][$bundle_name]);
     $this->saveConfig('entity_types', $entity_types);
+
+    $results = $this->db->select('simple_sitemap_entity_overrides', 'o')
+      ->fields('o', ['id', 'inclusion_settings'])
+      ->condition('o.entity_type', $entity_type_id)
+      ->execute()
+      ->fetchAll();
+
+    // Delete entity overrides which are identical to new bundle setting.
+    foreach($results as $result) {
+      $delete = TRUE;
+      $instance_settings = unserialize($result->inclusion_settings);
+      foreach ($instance_settings as $key => $instance_setting) {
+        if ($instance_setting != $entity_types[$entity_type_id][$bundle_name][$key]) {
+          $delete = FALSE;
+          break;
+        }
+      }
+      if ($delete) {
+        $this->db->delete('simple_sitemap_entity_overrides')
+          ->condition('id', $result->id)
+          ->execute();
+      }
+    }
+
     return $this;
+  }
+
+  /**
+   * Gets sitemap settings for an entity bundle or a non-bundle entity type.
+   *
+   * @param string $entity_type_id
+   * @param string|null $bundle_name
+   *
+   * @return array|false
+   */
+  public function getBundleSettings($entity_type_id, $bundle_name = NULL) {
+    $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
+    $entity_types = $this->getConfig('entity_types');
+    if (isset($entity_types[$entity_type_id][$bundle_name])) {
+      $settings = $entity_types[$entity_type_id][$bundle_name];
+      return $settings;
+    }
+    return FALSE;
   }
 
   /**
@@ -173,34 +220,56 @@ class Simplesitemap {
       }
       // Save overrides for this entity if something is different.
       if ($override) {
-        $this->addLinkSettings('entity', $settings, $entity_types[$entity_type_id][$bundle_name]['entities'][$id]);
+        $this->db->merge('simple_sitemap_entity_overrides')
+          ->key([
+            'entity_type' => $entity_type_id,
+            'entity_id' => $id])
+          ->fields([
+            'entity_type' => $entity_type_id,
+            'entity_id' => $id,
+            'inclusion_settings' => serialize($settings),
+          ])
+          ->execute();
       }
       // Else unset override.
       else {
-        unset($entity_types[$entity_type_id][$bundle_name]['entities'][$id]);
+        $this->db->delete('simple_sitemap_entity_overrides')
+          ->condition('entity_type', $entity_type_id)
+          ->condition('entity_id', $id)
+          ->execute();
       }
-      $this->saveConfig('entity_types', $entity_types);
+    }
+    else {
+      //todo: log error
     }
     return $this;
   }
 
   /**
-   * Gets sitemap settings for an entity bundle or a non-bundle entity type.
+   * Gets sitemap settings for an entity instance which overrides bundle
+   * settings.
    *
    * @param string $entity_type_id
-   * @param string|null $bundle_name
+   * @param int $id
    *
-   * @return array|false
+   * @return array
    */
-  public function getBundleSettings($entity_type_id, $bundle_name = NULL) {
-    $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
-    $entity_types = $this->getConfig('entity_types');
-    if (isset($entity_types[$entity_type_id][$bundle_name])) {
-      $settings = $entity_types[$entity_type_id][$bundle_name];
-      unset($settings['entities']);
-      return $settings;
+  public function getEntityInstanceSettings($entity_type_id, $id) {
+    $results = $this->db->select('simple_sitemap_entity_overrides', 'o')
+      ->fields('o', ['inclusion_settings'])
+      ->condition('o.entity_type', $entity_type_id)
+      ->condition('o.entity_id', $id)
+      ->execute()
+      ->fetchField();
+
+    if (!empty($results)) {
+      return unserialize($results);
     }
-    return FALSE;
+    else {
+      $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($id);
+      $bundle_name = $this->getEntityInstanceBundleName($entity);
+      return $this->getBundleSettings($entity_type_id, $bundle_name);
+    }
   }
 
   /**
@@ -227,27 +296,6 @@ class Simplesitemap {
   public function entityTypeIsEnabled($entity_type_id) {
     $entity_types = $this->getConfig('entity_types');
     return isset($entity_types[$entity_type_id]);
-  }
-
-  /**
-   * Gets sitemap settings for an entity instance which overrides bundle
-   * settings.
-   *
-   * @param string $entity_type_id
-   * @param int $id
-   *
-   * @return array
-   */
-  public function getEntityInstanceSettings($entity_type_id, $id) {
-    $entity_types = $this->getConfig('entity_types');
-    $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($id);
-    $bundle_name = $this->getEntityInstanceBundleName($entity);
-    if (isset($entity_types[$entity_type_id][$bundle_name]['entities'][$id])) {
-      return $entity_types[$entity_type_id][$bundle_name]['entities'][$id];
-    }
-    else {
-      return $this->getBundleSettings($entity_type_id, $bundle_name);
-    }
   }
 
   /**
@@ -337,7 +385,7 @@ class Simplesitemap {
         switch ($setting_key) {
           case 'priority':
             if (!FormHelper::isValidPriority($setting)) {
-              // todo: register error.
+              // todo: log error.
               continue;
             }
             break;

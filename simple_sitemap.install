@@ -56,6 +56,7 @@ function simple_sitemap_schema() {
         'type' => 'int',
         'size' => 'small',
         'not null' => TRUE,
+        'unsigned' => TRUE,
       ],
       'sitemap_string' => [
         'description' => 'XML sitemap chunk string.',
@@ -68,6 +69,36 @@ function simple_sitemap_schema() {
         'type' => 'int',
         'default' => 0,
         'not null' => TRUE,
+        'unsigned' => TRUE,
+      ],
+    ],
+    'primary key' => ['id'],
+  ];
+
+  $schema['simple_sitemap_entity_overrides'] = [
+    'description' => 'Holds sitemap settings overridden by entities.',
+    'fields' => [
+      'id' => [
+        'description' => 'Override unique identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'entity_type' => [
+        'description' => 'Entity type of the overriding entity.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ],
+      'entity_id' => [
+        'description' => 'ID of the overriding entity.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'inclusion_settings' => [
+        'description' => 'Setting for the overriding entity.',
+        'type' => 'blob',
       ],
     ],
     'primary key' => ['id'],
@@ -105,4 +136,78 @@ function simple_sitemap_update_8201() {
   }
   \Drupal::service('config.factory')->getEditable('simple_sitemap.settings')
     ->set('entity_types', $entity_types)->save();
+}
+
+/**
+ * Moving entity overrides from configuration to database table.
+ */
+function simple_sitemap_update_8202() {
+  $database = \Drupal::database();
+
+  // Create database table.
+  if (!$database->schema()->tableExists('simple_sitemap_entity_overrides')) {
+    $database->schema()->createTable('simple_sitemap_entity_overrides', [
+      'description' => 'Holds sitemap settings overridden by entities.',
+      'fields' => [
+        'id' => [
+          'description' => 'Override unique identifier.',
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+        'entity_type' => [
+          'description' => 'Entity type of the overriding entity.',
+          'type' => 'varchar',
+          'length' => 32,
+          'not null' => TRUE,
+        ],
+        'entity_id' => [
+          'description' => 'ID of the overriding entity.',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+        'inclusion_settings' => [
+          'description' => 'Setting for the overriding entity.',
+          'type' => 'blob',
+        ],
+      ],
+      'primary key' => ['id'],
+    ]);
+  }
+
+  // Populate database table with config values.
+  $entity_types = \Drupal::config('simple_sitemap.settings')->get('entity_types');
+  $entity_types = is_array($entity_types) ? $entity_types : [];
+
+  foreach ($entity_types as $entity_type_name => &$entity_type) {
+    if (is_array($entity_type)) {
+      foreach($entity_type as $bundle_name => &$bundle) {
+        if (isset($bundle['entities'])) {
+          foreach($bundle['entities'] as $entity_id => $entity_settings) {
+            $database->insert('simple_sitemap_entity_overrides')
+              ->fields([
+                'entity_type' => $entity_type_name,
+                'entity_id' => $entity_id,
+                'inclusion_settings' => serialize($entity_settings),
+              ])
+              ->execute();
+          }
+          // Remove entity overrides from configuration.
+          unset($bundle['entities']);
+        }
+      }
+    }
+  }
+
+  \Drupal::service('config.factory')->getEditable('simple_sitemap.settings')
+    ->set('entity_types', $entity_types)->save();
+}
+
+/**
+ * Splitting simple_sitemap.settings configuration into simple_sitemap.settings,
+ * simple_sitemap.entity_types and simple_sitemap.custom.
+ */
+function simple_sitemap_update_8203() {
+
 }

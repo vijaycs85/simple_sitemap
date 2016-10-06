@@ -99,17 +99,11 @@ class BatchUrlGenerator {
     foreach ($this->getBatchIterationEntities($entity_info) as $entity_id => $entity) {
 
       $this->setCurrentId($entity_id);
-      $priority = NULL;
 
-      // Overriding entity settings if it has been overridden on entity edit page...
-      if (isset($this->batchInfo['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['index'])) {
+      $entity_settings = $this->generator->getEntityInstanceSettings($entity_info['entity_type_name'], $entity_id);
 
-        // Skipping entity if it has been excluded on entity edit page.
-        if (!$this->batchInfo['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['index']) {
-          continue;
-        }
-        // Otherwise overriding priority settings for this entity.
-        $priority = $this->batchInfo['entity_types'][$entity_info['entity_type_name']][$entity_info['bundle_name']]['entities'][$entity_id]['priority'];
+      if (empty($entity_settings['index'])) {
+        continue;
       }
 
       switch ($entity_info['entity_type_name']) {
@@ -150,7 +144,7 @@ class BatchUrlGenerator {
         'path' => $path,
         'entity_info' => ['entity_type' => $entity_info['entity_type_name'], 'id' => $entity_id],
         'lastmod' => method_exists($entity, 'getChangedTime') ? date_iso8601($entity->getChangedTime()) : NULL,
-        'priority' => isset($priority) ? $priority : (isset($entity_info['bundle_settings']['priority']) ? $entity_info['bundle_settings']['priority'] : NULL),
+        'priority' => $entity_settings['priority'],
       ];
       $this->addUrlVariants($url_object, $path_data, $entity);
     }
