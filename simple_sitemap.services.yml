@@ -34,6 +34,7 @@ services:
     class: Drupal\simple_sitemap\Batch\BatchUrlGenerator
     public: true
     arguments:
+      - '@simple_sitemap.generator'
       - '@simple_sitemap.sitemap_generator'
       - '@language_manager'
       - '@entity_type.manager'

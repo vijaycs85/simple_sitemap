@@ -7,6 +7,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Drupal\simple_sitemap\Simplesitemap;
 
 /**
  * Class SimplesitemapController.
@@ -28,7 +29,7 @@ class SimplesitemapController extends ControllerBase {
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
    *   The sitemap generator.
    */
-  public function __construct($generator) {
+  public function __construct(Simplesitemap $generator) {
     $this->generator = $generator;
   }
 

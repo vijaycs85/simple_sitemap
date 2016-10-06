@@ -7,6 +7,7 @@ use Drupal\Component\Utility\Html;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\simple_sitemap\Logger;
+use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\simple_sitemap\SitemapGenerator;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -28,6 +29,7 @@ class BatchUrlGenerator {
   const REGENERATION_FINISHED_MESSAGE = "The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.";
   const REGENERATION_FINISHED_ERROR_MESSAGE = 'The sitemap generation finished with an error.';
 
+  protected $generator;
   protected $sitemapGenerator;
   protected $languageManager;
   protected $languages;
@@ -44,6 +46,7 @@ class BatchUrlGenerator {
   /**
    * BatchUrlGenerator constructor.
    *
+   * @param $generator
    * @param $sitemap_generator
    * @param $language_manager
    * @param $entity_type_manager
@@ -52,14 +55,16 @@ class BatchUrlGenerator {
    * @param $logger
    */
   public function __construct(
-    SitemapGenerator $sitemap_generator,
+    Simplesitemap $generator,
+    SitemapGenerator $sitemap_generator, //todo: use $this->generator->sitemapGenerator instead?
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
     PathValidator $path_validator,
     QueryFactory $entity_query,
     Logger $logger
   ) {
-    // Todo using only one method, maybe make method static instead?
+    $this->generator = $generator;
+    // todo: using only one method, maybe make method static instead?
     $this->sitemapGenerator = $sitemap_generator;
     $this->languageManager = $language_manager;
     $this->languages = $language_manager->getLanguages();

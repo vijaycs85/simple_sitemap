@@ -3,6 +3,8 @@
 namespace Drupal\simple_sitemap\Form;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\simple_sitemap\Simplesitemap;
+use Drupal\Core\Session\AccountProxyInterface;
 
 /**
  * Class FormHelper.
@@ -45,7 +47,10 @@ class FormHelper {
    * @param $generator
    * @param $current_user
    */
-  public function __construct($generator, $current_user) {
+  public function __construct(
+    Simplesitemap $generator,
+    AccountProxyInterface $current_user
+  ) {
     $this->generator = $generator;
     $this->currentUser = $current_user;
   }

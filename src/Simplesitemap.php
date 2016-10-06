@@ -4,7 +4,9 @@ namespace Drupal\simple_sitemap;
 
 use Drupal\Core\Entity\ContentEntityTypeInterface;
 use Drupal\simple_sitemap\Form\FormHelper;
-use Drupal\simple_sitemap\SitemapGenerator;
+use Drupal\Core\Database\Connection;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Path\PathValidator;
 
 /**
  * Class Simplesitemap.
@@ -36,9 +38,9 @@ class Simplesitemap {
   public function __construct(
     SitemapGenerator $sitemapGenerator,
     $configFactoryInterface,
-    $database,
-    $entityTypeManager,
-    $pathValidator,
+    Connection $database,
+    EntityTypeManagerInterface $entityTypeManager,
+    PathValidator $pathValidator,
     $dateFormatter
   ) {
     $this->sitemapGenerator = $sitemapGenerator;
