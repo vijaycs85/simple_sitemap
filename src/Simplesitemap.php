@@ -543,7 +543,9 @@ class Simplesitemap {
     $entity_types = $this->entityTypeManager->getDefinitions();
 
     foreach ($entity_types as $entity_type_id => $entity_type) {
-      if (!$entity_type instanceof ContentEntityTypeInterface || !method_exists($entity_type, 'getBundleEntityType')) {
+      if (!$entity_type instanceof ContentEntityTypeInterface
+        || !method_exists($entity_type, 'getBundleEntityType')
+        || !$entity_type->hasLinkTemplate('canonical')) {
         unset($entity_types[$entity_type_id]);
       }
     }

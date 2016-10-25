@@ -122,7 +122,6 @@ class BatchUrlGenerator {
 
         // Loading url object for other entities.
         default:
-          // todo: file entity type does not have a canonical url and breaks generation, hopefully fixed in https://www.drupal.org/node/2402533
           $url_object = $entity->toUrl();
       }
 

@@ -219,3 +219,28 @@ function simple_sitemap_update_8203() {
   \Drupal::service('config.factory')->getEditable("simple_sitemap.settings")
     ->setData($settings)->save();
 }
+
+/**
+ * Remove entity type settings for entity types which do not have the canonical
+ * link template.
+ */
+function simple_sitemap_update_8204() {
+  $sitemap_entity_types = \Drupal::service('entity_type.manager')->getDefinitions();
+  $entity_types = \Drupal::config('simple_sitemap.entity_types')->get();
+  unset($entity_types['_core']);
+  foreach($entity_types as $entity_type_id => $entity_type) {
+    if (!isset($sitemap_entity_types[$entity_type_id])
+      || !$sitemap_entity_types[$entity_type_id]->hasLinkTemplate('canonical')) {
+
+      // Delete entity overrides.
+      \Drupal::database()->delete('simple_sitemap_entity_overrides')
+        ->condition('entity_type', $entity_type_id)
+        ->execute();
+
+      // Delete entity type settings.
+      unset($entity_types[$entity_type_id]);
+    }
+  }
+  \Drupal::service('config.factory')->getEditable("simple_sitemap.entity_types")
+    ->setData($entity_types)->save();
+}
