@@ -228,14 +228,19 @@ class SitemapGenerator {
           $writer->endElement();
         }
       }
-      // Add priority if any.
-      if (isset($link['priority'])) {
-        $writer->writeElement('priority', $link['priority']);
-      }
+
       // Add lastmod if any.
       if (isset($link['lastmod'])) {
         $writer->writeElement('lastmod', $link['lastmod']);
       }
+
+      //todo: Implement changefreq here.
+
+      // Add priority if any.
+      if (isset($link['priority'])) {
+        $writer->writeElement('priority', $link['priority']);
+      }
+
       $writer->endElement();
     }
     $writer->endElement();
