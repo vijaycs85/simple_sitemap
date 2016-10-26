@@ -54,6 +54,11 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
         '#description' => $this->t('Sitemap settings for this entity type can be set on its bundle pages and overridden on its entity pages.'),
         '#default_value' => $this->generator->entityTypeIsEnabled($entity_type_id),
       ];
+
+      if ($form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#default_value']) {
+        $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#suffix'] = "<div id='warning-$entity_type_id'>" . $this->t("<strong>Warning:</strong> This entity type's sitemap settings including per-entity overrides will be deleted after hitting <em>Save</em>.") . "</div>";
+      }
+
       $form['#attached']['drupalSettings']['simple_sitemap']['all_entities'][] = str_replace('_', '-', $entity_type_id);
       if ($this->generator->entityTypeIsAtomic($entity_type_id)) {
         $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#description'] = $this->t('Sitemap settings for this entity type can be set below and overridden on its entity pages.');
