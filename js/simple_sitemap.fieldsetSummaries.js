@@ -8,7 +8,7 @@
 
   Drupal.behaviors.simple_sitemapFieldsetSummaries = {
     attach: function(context) {
-      $(context).find('#edit-simple-sitemap').drupalSetSummary(function (context) {
+      $(context).find('#edit-simple-sitemap').drupalSetSummary(function(context) {
         var vals = [];
         if ($(context).find('#edit-simple-sitemap-index-content-1').is(':checked')) {
 
