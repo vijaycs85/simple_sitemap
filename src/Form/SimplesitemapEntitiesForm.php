@@ -43,6 +43,7 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
     $this->formHelper->processForm($form_state);
 
     foreach ($entity_type_labels as $entity_type_id => $entity_type_label) {
+      $css_entity_type_id = str_replace('_', '-', $entity_type_id);
       $form['simple_sitemap_entities']['entities'][$entity_type_id] = [
         '#type' => 'details',
         '#title' => $entity_type_label,
@@ -56,17 +57,20 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
       ];
 
       if ($form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#default_value']) {
-        $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#suffix'] = "<div id='warning-$entity_type_id'>" . $this->t("<strong>Warning:</strong> This entity type's sitemap settings including per-entity overrides will be deleted after hitting <em>Save</em>.") . "</div>";
+        $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#suffix']
+          = "<div id='warning-$css_entity_type_id'>"
+          . $this->t("<strong>Warning:</strong> This entity type's sitemap settings including per-entity overrides will be deleted after hitting <em>Save</em>.")
+          . "</div>";
       }
 
-      $form['#attached']['drupalSettings']['simple_sitemap']['all_entities'][] = str_replace('_', '-', $entity_type_id);
+      $form['#attached']['drupalSettings']['simple_sitemap']['all_entities'][] = $css_entity_type_id;
       if ($this->generator->entityTypeIsAtomic($entity_type_id)) {
         $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#description'] = $this->t('Sitemap settings for this entity type can be set below and overridden on its entity pages.');
         $this->formHelper->setEntityCategory('bundle')
           ->setEntityTypeId($entity_type_id)
           ->setBundleName($entity_type_id)
           ->displayEntitySettings($form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_settings'], TRUE);
-        $form['#attached']['drupalSettings']['simple_sitemap']['atomic_entities'][] = str_replace('_', '-', $entity_type_id);
+        $form['#attached']['drupalSettings']['simple_sitemap']['atomic_entities'][] = $css_entity_type_id;
       }
     }
     $this->formHelper->displayRegenerateNow($form['simple_sitemap_entities']['entities']);
