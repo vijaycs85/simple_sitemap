@@ -31,7 +31,7 @@ simple_sitemap.entity_types:
             type: integer
           priority:
             label: 'Priority'
-            type: float
+            type: string
 
 simple_sitemap.custom:
   type: config_object
@@ -43,4 +43,4 @@ simple_sitemap.custom:
         type: string
       priority:
         label: 'Priority'
-        type: float
+        type: string
