@@ -322,7 +322,6 @@ class FormHelper {
    * @return bool
    */
   public static function isValidPriority($priority) {
-    return !is_numeric($priority) || $priority < 0 || $priority > 1 ? FALSE : TRUE;
+    return is_numeric($priority) && $priority >= 0 && $priority <= 1;
   }
-
 }

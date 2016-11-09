@@ -78,7 +78,7 @@ class SitemapGenerator {
       'max_links' => $this->generator->getSetting('max_links', 2000),
       'skip_untranslated' => $this->generator->getSetting('skip_untranslated', FALSE),
       'remove_duplicates' => $this->generator->getSetting('remove_duplicates', TRUE),
-      'entity_types' => $this->generator->getConfig('entity_types'),
+      'entity_types' => $this->generator->getBundleSettings(),
     ]);
     // Add custom link generating operation.
     $this->batch->addOperation('generateCustomUrls', $this->getCustomUrlsData());
@@ -98,7 +98,7 @@ class SitemapGenerator {
    */
   private function getCustomUrlsData() {
     $paths = [];
-    foreach ($this->generator->getConfig('custom') as $i => $custom_path) {
+    foreach ($this->generator->getCustomLinks() as $i => $custom_path) {
       $paths[$i]['path'] = $custom_path['path'];
       $paths[$i]['priority'] = isset($custom_path['priority']) ? $custom_path['priority'] : NULL;
       // todo: implement lastmod.
@@ -116,7 +116,7 @@ class SitemapGenerator {
   private function getEntityTypeData() {
     $data_sets = [];
     $sitemap_entity_types = $this->generator->getSitemapEntityTypes();
-    $entity_types = $this->generator->getConfig('entity_types');
+    $entity_types = $this->generator->getBundleSettings();
     foreach ($entity_types as $entity_type_name => $bundles) {
       if (isset($sitemap_entity_types[$entity_type_name])) {
         $keys = $sitemap_entity_types[$entity_type_name]->getKeys();

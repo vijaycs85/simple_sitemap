@@ -24,7 +24,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     $setting_string = '';
-    foreach ($this->generator->getConfig('custom') as $custom_link) {
+    foreach ($this->generator->getCustomLinks() as $custom_link) {
       $setting_string .= isset($custom_link['priority'])
         ? $custom_link['path'] . ' ' . $this->formHelper->formatPriority($custom_link['priority'])
         : $custom_link['path'];

@@ -16,24 +16,25 @@ simple_sitemap.settings:
     batch_process_limit:
       label: 'Batch process limit'
       type: integer
-
-simple_sitemap.entity_types:
-  type: config_object
-  mapping:
-    type: sequence
-    sequence:
+    enabled_entity_types:
+      label: 'Enabled entity types'
       type: sequence
       sequence:
-        type: mapping
-        mapping:
-          index:
-            label: 'Index'
-            type: integer
-          priority:
-            label: 'Priority'
-            type: string
+        type: string
+
+simple_sitemap.bundle_settings.*.*:
+  label: 'Entity bundle settings'
+  type: config_object
+  mapping:
+    index:
+      label: 'Index'
+      type: integer
+    priority:
+      label: 'Priority'
+      type: string
 
 simple_sitemap.custom:
+  label: 'Custom links'
   type: config_object
   sequence:
     type: mapping

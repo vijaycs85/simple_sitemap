@@ -221,7 +221,7 @@ function simple_sitemap_update_8203() {
 }
 
 /**
- * Remove entity type settings for entity types which do not have the canonical
+ * Removing entity type settings for entity types which do not have the canonical
  * link template.
  */
 function simple_sitemap_update_8204() {
@@ -243,4 +243,33 @@ function simple_sitemap_update_8204() {
   }
   \Drupal::service('config.factory')->getEditable("simple_sitemap.entity_types")
     ->setData($entity_types)->save();
+}
+
+/**
+ * Splitting simple_sitemap.entity_types into individual configuration objects
+ * for each bundle.
+ */
+function simple_sitemap_update_8205() {
+  $entity_types = \Drupal::config('simple_sitemap.entity_types')->get();
+  unset($entity_types['_core']);
+  $enabled_entity_types = [];
+  foreach($entity_types as $entity_type_id => $bundles) {
+    $enabled_entity_types[] = $entity_type_id;
+    foreach($bundles as $bundle_name => $bundle_settings) {
+      \Drupal::service('config.factory')
+        ->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name")
+        ->setData($bundle_settings)->save();
+    }
+  }
+
+  // Add enabled entity type settings.
+  \Drupal::service('config.factory')
+    ->getEditable('simple_sitemap.settings')
+    ->set('enabled_entity_types', $enabled_entity_types)
+    ->save();
+
+  // Remove old configuration object.
+  \Drupal::service('config.factory')
+    ->getEditable('simple_sitemap.entity_types')
+    ->delete();
 }

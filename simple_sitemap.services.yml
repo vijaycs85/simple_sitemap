@@ -6,6 +6,7 @@ services:
       - '@simple_sitemap.sitemap_generator'
       - '@config.factory'
       - '@database'
+      - '@entity.query'
       - '@entity_type.manager'
       - '@path.validator'
       - '@date.formatter'

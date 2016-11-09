@@ -18,6 +18,7 @@ class Simplesitemap {
   private $sitemapGenerator;
   private $configFactory;
   private $db;
+  private $entityQuery;
   private $entityTypeManager;
   private $pathValidator;
   private static $allowed_link_settings = [
@@ -31,6 +32,7 @@ class Simplesitemap {
    * @param $sitemapGenerator
    * @param $configFactoryInterface
    * @param $database
+   * @param $entityQuery
    * @param $entityTypeManager
    * @param $pathValidator
    * @param $dateFormatter
@@ -39,6 +41,7 @@ class Simplesitemap {
     SitemapGenerator $sitemapGenerator,
     $configFactoryInterface,
     Connection $database,
+    $entityQuery,
     EntityTypeManagerInterface $entityTypeManager,
     PathValidator $pathValidator,
     $dateFormatter
@@ -46,28 +49,16 @@ class Simplesitemap {
     $this->sitemapGenerator = $sitemapGenerator;
     $this->configFactory = $configFactoryInterface;
     $this->db = $database;
+    $this->entityQuery = $entityQuery;
     $this->entityTypeManager = $entityTypeManager;
     $this->pathValidator = $pathValidator;
     $this->dateFormatter = $dateFormatter;
   }
 
   /**
-   * Gets a specific sitemap configuration from the configuration storage.
+   * Fetches all sitemap chunks indexed by chunk ID.
    *
-   * @param string $key
-   *   Configuration key, like 'entity_types'.
-   *
-   * @return mixed
-   *   The requested configuration.
-   */
-  public function getConfig($key) {
-    $config = $this->configFactory->get("simple_sitemap.$key")->get();
-    unset($config['_core']);
-    return $config;
-  }
-
-  /**
-   *
+   * @return string
    */
   private function fetchSitemapChunks() {
     return $this->db
@@ -76,25 +67,9 @@ class Simplesitemap {
   }
 
   /**
-   * Saves a specific sitemap configuration to db.
-   *
-   * @param string $key
-   *   Configuration key, like 'entity_types'.
-   * @param mixed $value
-   *   The configuration to be saved.
-   *
-   * @return $this
-   */
-  public function saveConfig($key, $value) {
-    $this->configFactory->getEditable("simple_sitemap.$key")
-      ->setData($value)->save();
-    return $this;
-  }
-
-  /**
    * Enables sitemap support for an entity type. Enabled entity types show
-   * sitemap settings on their bundles. If an enabled entity type does not
-   * featured bundles (e.g. 'user'), it needs to be set up with
+   * sitemap settings on their bundle setting forms. If an enabled entity type
+   * features bundles (e.g. 'node'), it needs to be set up with
    * setBundleSettings() as well.
    *
    * @param string $entity_type_id
@@ -103,10 +78,10 @@ class Simplesitemap {
    * @return $this
    */
   public function enableEntityType($entity_type_id) {
-    $entity_types = $this->getConfig('entity_types');
-    if (empty($entity_types[$entity_type_id])) {
-      $entity_types[$entity_type_id] = [];
-      $this->saveConfig('entity_types', $entity_types);
+    $enabled_entity_types = $this->getSetting('enabled_entity_types');
+    if (!in_array($entity_type_id, $enabled_entity_types)) {
+      $enabled_entity_types[] = $entity_type_id;
+      $this->saveSetting('enabled_entity_types', $enabled_entity_types);
     }
     return $this;
   }
@@ -117,20 +92,28 @@ class Simplesitemap {
    * settings from entity forms.
    *
    * @param string $entity_type_id
-   *   Entity type id like 'node'.
+   *  Entity type id like 'node'.
    *
    * @return $this
    */
   public function disableEntityType($entity_type_id) {
-    $entity_types = $this->getConfig('entity_types');
-    if (isset($entity_types[$entity_type_id])) {
-      unset($entity_types[$entity_type_id]);
-      $this->saveConfig('entity_types', $entity_types);
-      // todo: test
-      $this->db->delete('simple_sitemap_entity_overrides')
-        ->condition('entity_type', $entity_type_id)
-        ->execute();
+
+    // Updating settings.
+    $enabled_entity_types = $this->getSetting('enabled_entity_types');
+    if (($key = array_search($entity_type_id, $enabled_entity_types)) !== FALSE) {
+      unset ($enabled_entity_types[$key]);
+      array_values($enabled_entity_types);
+      $this->saveSetting('enabled_entity_types', $enabled_entity_types);
     }
+
+    // Deleting inclusion settings.
+    $config_names = $this->configFactory->listAll("simple_sitemap.bundle_settings.$entity_type_id");
+    foreach($config_names as $config_name) {
+      $this->configFactory->getEditable($config_name)->delete();
+    }
+
+    // Deleting entity overrides.
+    $this->removeEntityInstanceSettings($entity_type_id);
     return $this;
   }
 
@@ -151,52 +134,96 @@ class Simplesitemap {
   public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings) {
 
     $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
-    $entity_types = $this->getConfig('entity_types');
-    $this->addLinkSettings('entity', $settings, $entity_types[$entity_type_id][$bundle_name]);
-    $this->saveConfig('entity_types', $entity_types);
 
-    $results = $this->db->select('simple_sitemap_entity_overrides', 'o')
-      ->fields('o', ['id', 'inclusion_settings'])
-      ->condition('o.entity_type', $entity_type_id)
-      ->execute()
-      ->fetchAll();
+    foreach($settings as $setting_key => $setting) {
+      if ($setting_key == 'index') {
+        $setting = intval($setting);
+      }
+      $this->configFactory
+        ->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name")
+        ->set($setting_key, $setting)
+        ->save();
+    }
+    //todo: Use addLinkSettings()?
 
     // Delete entity overrides which are identical to new bundle setting.
-    foreach($results as $result) {
-      $delete = TRUE;
-      $instance_settings = unserialize($result->inclusion_settings);
-      foreach ($instance_settings as $key => $instance_setting) {
-        if ($instance_setting != $entity_types[$entity_type_id][$bundle_name][$key]) {
-          $delete = FALSE;
-          break;
+    $sitemap_entity_types = $this->getSitemapEntityTypes();
+    if (isset($sitemap_entity_types[$entity_type_id])) {
+      $entity_type = $sitemap_entity_types[$entity_type_id];
+      $keys = $entity_type->getKeys();
+      $keys['bundle'] = $entity_type_id == 'menu_link_content' ? 'menu_name' : $keys['bundle'];
+
+      $query = $this->entityQuery->get($entity_type_id);
+      if (!$this->entityTypeIsAtomic($entity_type_id)) {
+        $query->condition($keys['bundle'], $bundle_name);
+      }
+      $entity_ids = $query->execute();
+
+      $bundle_settings = $this->configFactory
+        ->get("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name");
+
+      $query = $this->db->select('simple_sitemap_entity_overrides', 'o')
+        ->fields('o', ['id', 'inclusion_settings'])
+        ->condition('o.entity_type', $entity_type_id);
+      if (!empty($entity_ids)) {
+        $query->condition('o.entity_id', $entity_ids, 'IN');
+      }
+      $results = $query->execute()
+        ->fetchAll();
+
+      foreach($results as $result) {
+        $delete = TRUE;
+        $instance_settings = unserialize($result->inclusion_settings);
+        foreach ($instance_settings as $setting_key => $instance_setting) {
+          if ($instance_setting != $bundle_settings->get($setting_key)) {
+            $delete = FALSE;
+            break;
+          }
+        }
+        if ($delete) {
+          $this->db->delete('simple_sitemap_entity_overrides')
+            ->condition('id', $result->id)
+            ->execute();
         }
       }
-      if ($delete) {
-        $this->db->delete('simple_sitemap_entity_overrides')
-          ->condition('id', $result->id)
-          ->execute();
-      }
     }
-
+    else {
+      //todo: log error
+    }
     return $this;
   }
 
   /**
-   * Gets sitemap settings for an entity bundle or a non-bundle entity type.
+   * Gets sitemap settings for an entity bundle, a non-bundle entity type or for
+   * all entity types and their bundles.
    *
-   * @param string $entity_type_id
+   * @param string|null $entity_type_id
+   *  If set to null, sitemap settings for all entity types and their bundles
+   *  are fetched.
    * @param string|null $bundle_name
    *
    * @return array|false
+   *  Array of sitemap settings or array of entity types with their settings.
+   *  False if entity type does not exist.
    */
-  public function getBundleSettings($entity_type_id, $bundle_name = NULL) {
-    $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
-    $entity_types = $this->getConfig('entity_types');
-    if (isset($entity_types[$entity_type_id][$bundle_name])) {
-      $settings = $entity_types[$entity_type_id][$bundle_name];
-      return $settings;
+  public function getBundleSettings($entity_type_id = NULL, $bundle_name = NULL) {
+    if (!is_null($entity_type_id)) {
+      $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
+      $settings = $this->configFactory
+        ->get("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name")
+        ->get();
+      $bundle_settings = !empty($settings) ? $settings : FALSE;
     }
-    return FALSE;
+    else {
+      $config_names = $this->configFactory->listAll("simple_sitemap.bundle_settings");
+      $bundle_settings = [];
+      foreach($config_names as $config_name) {
+        $config_name_parts = explode('.', $config_name);
+        $bundle_settings[$config_name_parts[2]][$config_name_parts[3]]
+          = $this->configFactory->get($config_name)->get();
+      }
+    }
+    return $bundle_settings;
   }
 
   /**
@@ -209,15 +236,19 @@ class Simplesitemap {
    * @return $this
    */
   public function setEntityInstanceSettings($entity_type_id, $id, $settings) {
-    $entity_types = $this->getConfig('entity_types');
+
     $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($id);
     $bundle_name = $this->getEntityInstanceBundleName($entity);
-    if (isset($entity_types[$entity_type_id][$bundle_name])) {
+    $bundle_settings = $this->configFactory
+      ->get("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name")
+      ->get();
+
+    if (!empty($bundle_settings)) {
 
       // Check if overrides are different from bundle setting before saving.
       $override = FALSE;
       foreach ($settings as $key => $setting) {
-        if ($setting != $entity_types[$entity_type_id][$bundle_name][$key]) {
+        if ($setting != $bundle_settings[$key]) {
           $override = TRUE;
           break;
         }
@@ -237,10 +268,7 @@ class Simplesitemap {
       }
       // Else unset override.
       else {
-        $this->db->delete('simple_sitemap_entity_overrides')
-          ->condition('entity_type', $entity_type_id)
-          ->condition('entity_id', $id)
-          ->execute();
+        $this->removeEntityInstanceSettings($entity_type_id, $id);
       }
     }
     else {
@@ -250,8 +278,8 @@ class Simplesitemap {
   }
 
   /**
-   * Gets sitemap settings for an entity instance which overrides bundle
-   * settings.
+   * Gets sitemap settings for an entity instance which overrides the sitemap
+   * settings of its bundle.
    *
    * @param string $entity_type_id
    * @param int $id
@@ -277,11 +305,31 @@ class Simplesitemap {
   }
 
   /**
+   * Removes sitemap settings for an entity that overrides the sitemap settings
+   * of its bundle.
+   *
+   * @param string $entity_type_id
+   * @param string|null $entity_ids
+   *
+   * @return $this
+   */
+  public function removeEntityInstanceSettings($entity_type_id, $entity_ids = NULL) {
+    $query = $this->db->delete('simple_sitemap_entity_overrides')
+      ->condition('entity_type', $entity_type_id);
+    if (!is_null($entity_ids)) {
+      $entity_ids = !is_array($entity_ids) ? [$entity_ids] : $entity_ids;
+      $query->condition('entity_id', $entity_ids, 'IN');
+    }
+    $query->execute();
+    return $this;
+  }
+
+  /**
    * Checks if an entity bundle (or a non-bundle entity type) is set to be
    * indexed in the sitemap settings.
    *
-   * @param $entity_type_id
-   * @param null $bundle_name
+   * @param string $entity_type_id
+   * @param string|null $bundle_name
    *
    * @return bool
    */
@@ -293,17 +341,16 @@ class Simplesitemap {
   /**
    * Checks if an entity type is enabled in the sitemap settings.
    *
-   * @param $entity_type_id
+   * @param string $entity_type_id
    *
    * @return bool
    */
   public function entityTypeIsEnabled($entity_type_id) {
-    $entity_types = $this->getConfig('entity_types');
-    return isset($entity_types[$entity_type_id]);
+    return in_array($entity_type_id, $this->getSetting('enabled_entity_types', []));
   }
 
   /**
-   * Adds a custom path to the sitemap settings.
+   * Stores a custom path along with its sitemap settings to configuration.
    *
    * @param string $path
    * @param array $settings
@@ -320,7 +367,7 @@ class Simplesitemap {
       return $this;
     }
 
-    $custom_links = $this->getConfig('custom');
+    $custom_links = $this->getCustomLinks();
     foreach ($custom_links as $key => $link) {
       if ($link['path'] == $path) {
         $link_key = $key;
@@ -329,54 +376,9 @@ class Simplesitemap {
     }
     $link_key = isset($link_key) ? $link_key : count($custom_links);
     $custom_links[$link_key]['path'] = $path;
-    $this->addLinkSettings('entity', $settings, $custom_links[$link_key]);
-    $this->saveConfig('custom', $custom_links);
-    return $this;
-  }
-
-  /**
-   * Returns settings for a custom path added to the sitemap settings.
-   *
-   * @param string $path
-   *
-   * @return array|false
-   */
-  public function getCustomLink($path) {
-    $custom_links = $this->getConfig('custom');
-    foreach ($custom_links as $key => $link) {
-      if ($link['path'] == $path) {
-        return $custom_links[$key];
-      }
-    }
-    return FALSE;
-  }
-
-  /**
-   * Removes a custom path from the sitemap settings.
-   *
-   * @param string $path
-   *
-   * @return $this
-   */
-  public function removeCustomLink($path) {
-    $custom_links = $this->getConfig('custom');
-    foreach ($custom_links as $key => $link) {
-      if ($link['path'] == $path) {
-        unset($custom_links[$key]);
-        $custom_links = array_values($custom_links);
-        $this->saveConfig('custom', $custom_links);
-      }
-    }
-    return $this;
-  }
-
-  /**
-   * Removes all custom paths from the sitemap settings.
-   *
-   * @return $this
-   */
-  public function removeCustomLinks() {
-    $this->saveConfig('custom', []);
+    $this->addLinkSettings('custom', $settings, $custom_links[$link_key]); //todo: dirty
+    $this->configFactory->getEditable("simple_sitemap.custom")
+      ->setData($custom_links)->save();
     return $this;
   }
 
@@ -402,8 +404,71 @@ class Simplesitemap {
   }
 
   /**
-   * @param $entity
-   * @return mixed
+   * Returns an array of custom paths and their sitemap settings.
+   *
+   * @return array
+   */
+  public function getCustomLinks() {
+    $custom_links = $this->configFactory
+      ->get('simple_sitemap.custom')
+      ->get();
+    unset($custom_links['_core']);
+    return $custom_links;
+  }
+
+  /**
+   * Returns settings for a custom path added to the sitemap settings.
+   *
+   * @param string $path
+   *
+   * @return array|false
+   */
+  public function getCustomLink($path) {
+    foreach ($this->getCustomLinks() as $key => $link) {
+      if ($link['path'] == $path) {
+        return $link;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
+   * Removes a custom path from the sitemap settings.
+   *
+   * @param string $path
+   *
+   * @return $this
+   */
+  public function removeCustomLink($path) {
+    $custom_links = $this->getCustomLinks();
+    foreach ($custom_links as $key => $link) {
+      if ($link['path'] == $path) {
+        unset($custom_links[$key]);
+        $custom_links = array_values($custom_links);
+        $this->configFactory->getEditable("simple_sitemap.custom")
+          ->setData($custom_links)->save();
+        break;
+      }
+    }
+    return $this;
+  }
+
+  /**
+   * Removes all custom paths from the sitemap settings.
+   *
+   * @return $this
+   */
+  public function removeCustomLinks() {
+    $this->configFactory->getEditable("simple_sitemap.custom")
+      ->setData([])->save();
+    return $this;
+  }
+
+  /**
+   * Gets an entity's bundle name.
+   *
+   * @param string $entity
+   * @return string
    */
   public function getEntityInstanceBundleName($entity) {
     return $entity->getEntityTypeId() == 'menu_link_content'
@@ -412,7 +477,9 @@ class Simplesitemap {
   }
 
   /**
-   * @param $entity
+   * Gets the entity type id for a bundle.
+   *
+   * @param string $entity
    * @return string
    */
   public function getBundleEntityTypeId($entity) {
@@ -485,7 +552,8 @@ class Simplesitemap {
   }
 
   /**
-   * Returns a specific sitemap setting.
+   * Returns a specific sitemap setting or a default value if setting does not
+   * exist.
    *
    * @param string $name
    *   Name of the setting, like 'max_links'.
@@ -494,15 +562,17 @@ class Simplesitemap {
    *   Value to be returned if the setting does not exist in the configuration.
    *
    * @return mixed
-   *   The current setting from db or a default value.
+   *   The current setting from configuration or a default value.
    */
   public function getSetting($name, $default = FALSE) {
-    $settings = $this->getConfig('settings');
-    return isset($settings[$name]) ? $settings[$name] : $default;
+    $setting = $this->configFactory
+      ->get('simple_sitemap.settings')
+      ->get($name);
+    return !is_null($setting) ? $setting : $default;
   }
 
   /**
-   * Saves a specific sitemap setting to db.
+   * Stores a specific sitemap setting in configuration.
    *
    * @param string $name
    *   Setting name, like 'max_links'.
@@ -512,9 +582,8 @@ class Simplesitemap {
    * @return $this
    */
   public function saveSetting($name, $setting) {
-    $settings = $this->getConfig('settings');
-    $settings[$name] = $setting;
-    $this->saveConfig('settings', $settings);
+    $this->configFactory->getEditable("simple_sitemap.settings")
+      ->set($name, $setting)->save();
     return $this;
   }
 
@@ -534,7 +603,7 @@ class Simplesitemap {
   }
 
   /**
-   * Returns objects of entity types that can be indexed by the sitemap.
+   * Returns objects of entity types that can be indexed.
    *
    * @return array
    *   Objects of entity types that can be indexed by the sitemap.
@@ -553,7 +622,9 @@ class Simplesitemap {
   }
 
   /**
-   * @param $entity_type_id
+   * Checks whether an entity type does not provide bundles.
+   *
+   * @param string $entity_type_id
    * @return bool
    */
   public function entityTypeIsAtomic($entity_type_id) {
@@ -561,6 +632,7 @@ class Simplesitemap {
     if ($entity_type_id == 'menu_link_content') {
       return FALSE;
     }
+
     $sitemap_entity_types = $this->getSitemapEntityTypes();
     if (isset($sitemap_entity_types[$entity_type_id])) {
       $entity_type = $sitemap_entity_types[$entity_type_id];

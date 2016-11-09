@@ -7,6 +7,7 @@
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\system\MenuInterface;
 
 /**
  * Implements hook_help.
@@ -34,15 +35,18 @@ function simple_sitemap_form_alter(&$form, $form_state, $form_id) {
     '#title' => t('Simple XML sitemap'),
     '#description' => $f->entityCategory == 'instance' ? t('Settings for this entity can be overridden here.') : '',
   ];
+
   // Attach some js magic to forms.
   // todo: JS not working on comment entity form, hence disabling.
   if ($f->entityTypeId != 'comment' || $f->entityCategory != 'instance') {
     $form['#attached']['library'][] = 'simple_sitemap/form';
   }
+
   // Only attach fieldset summary js to 'additional settings' vertical tabs.
   if (isset($form['additional_settings'])) {
     $form['#attached']['library'][] = 'simple_sitemap/fieldsetSummaries';
   }
+
   $f->displayEntitySettings($form['simple_sitemap'])
   // todo: do not show setting when creating new bundle.
     ->displayRegenerateNow($form['simple_sitemap']);
@@ -108,35 +112,13 @@ function simple_sitemap_cron() {
 }
 
 /**
- * Implements hook_entity_bundle_delete().
- *
- * Removes settings of the removed bundle.
- *
- * @todo Not working for menu bundles, as they are technically not bundles. Implement hook_menu_delete().
- * @todo delete entity overrides
- */
-function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
-  $generator = \Drupal::service('simple_sitemap.generator');
-  $entity_types = $generator->getConfig('entity_types');
-  if (isset($entity_types[$entity_type_id][$bundle])) {
-    unset($entity_types[$entity_type_id][$bundle]);
-    $generator->saveConfig('entity_types', $entity_types);
-    $message = "You may want to <a href='@url'>regenerate</a> your XML sitemap now.";
-    if ($generator->getSetting('cron_generate')) {
-      $message .= ' Otherwise the sitemap will be regenerated on the next cron run.';
-    }
-    drupal_set_message(t($message, ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']));
-  }
-}
-
-/**
  * Implements hook_entity_delete().
  *
  * Removes settings of the removed entity.
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
  */
 function simple_sitemap_entity_delete(EntityInterface $entity) {
-  \Drupal::database()->delete('simple_sitemap_entity_overrides')
-    ->condition('entity_type', $entity->getEntityTypeId())
-    ->condition('entity_id', $entity->id())
-    ->execute();
+  \Drupal::service('simple_sitemap.generator')
+    ->removeEntityInstanceSettings($entity->getEntityTypeId(), $entity->id());
 }
