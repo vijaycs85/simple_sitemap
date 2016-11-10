@@ -4,6 +4,8 @@ namespace Drupal\simple_sitemap\Form;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Form\ConfigFormBase;
+use Drupal\simple_sitemap\Simplesitemap;
+use Drupal\Core\Path\PathValidator;
 
 /**
  * Class SimplesitemapFormBase.
@@ -19,11 +21,15 @@ abstract class SimplesitemapFormBase extends ConfigFormBase {
   /**
    * SimplesitemapFormBase constructor.
    *
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $generator
-   * @param $form_helper
-   * @param $path_validator
+   * @param \Drupal\simple_sitemap\Simplesitemap $generator
+   * @param \Drupal\simple_sitemap\Form\FormHelper $form_helper
+   * @param \Drupal\Core\Path\PathValidator $path_validator
    */
-  public function __construct($generator, $form_helper, $path_validator) {
+  public function __construct(
+    Simplesitemap $generator,
+    FormHelper $form_helper,
+    PathValidator $path_validator
+  ) {
     $this->generator = $generator;
     $this->formHelper = $form_helper;
     $this->pathValidator = $path_validator;

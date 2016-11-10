@@ -7,6 +7,9 @@ use Drupal\simple_sitemap\Form\FormHelper;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Path\PathValidator;
+use Drupal\Core\Entity\Query\QueryFactory;
+use Drupal\Core\Config\ConfigFactory;
+use Drupal\Core\Datetime\DateFormatter;
 
 /**
  * Class Simplesitemap.
@@ -30,7 +33,7 @@ class Simplesitemap {
    * Simplesitemap constructor.
    *
    * @param $sitemapGenerator
-   * @param $configFactoryInterface
+   * @param $configFactory
    * @param $database
    * @param $entityQuery
    * @param $entityTypeManager
@@ -39,15 +42,15 @@ class Simplesitemap {
    */
   public function __construct(
     SitemapGenerator $sitemapGenerator,
-    $configFactoryInterface,
+    ConfigFactory $configFactory,
     Connection $database,
-    $entityQuery,
+    QueryFactory $entityQuery,
     EntityTypeManagerInterface $entityTypeManager,
     PathValidator $pathValidator,
-    $dateFormatter
+    DateFormatter $dateFormatter
   ) {
     $this->sitemapGenerator = $sitemapGenerator;
-    $this->configFactory = $configFactoryInterface;
+    $this->configFactory = $configFactory;
     $this->db = $database;
     $this->entityQuery = $entityQuery;
     $this->entityTypeManager = $entityTypeManager;

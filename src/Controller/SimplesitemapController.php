@@ -51,7 +51,7 @@ class SimplesitemapController extends ControllerBase {
       throw new NotFoundHttpException();
     }
 
-    // Display sitemap with correct xml header.
+    // Display sitemap with correct XML header.
     $response = new CacheableResponse($output, Response::HTTP_OK, ['content-type' => 'application/xml']);
     $meta_data = $response->getCacheableMetadata();
     $meta_data->addCacheTags(['simple_sitemap']);
