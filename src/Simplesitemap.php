@@ -102,8 +102,7 @@ class Simplesitemap {
     $enabled_entity_types = $this->getSetting('enabled_entity_types');
     if (($key = array_search($entity_type_id, $enabled_entity_types)) !== FALSE) {
       unset ($enabled_entity_types[$key]);
-      array_values($enabled_entity_types);
-      $this->saveSetting('enabled_entity_types', $enabled_entity_types);
+      $this->saveSetting('enabled_entity_types', array_values($enabled_entity_types));
     }
 
     // Deleting inclusion settings.
