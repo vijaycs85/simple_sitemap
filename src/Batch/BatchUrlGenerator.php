@@ -130,11 +130,6 @@ class BatchUrlGenerator {
         continue;
       }
 
-      // Do not include paths inaccessible to anonymous users.
-      if (!$url_object->access($this->anonUser)) {
-        continue;
-      }
-
       $path = $url_object->getInternalPath();
 
       // Do not include paths that have been already indexed.
@@ -179,10 +174,6 @@ class BatchUrlGenerator {
         continue;
       }
       $url_object = Url::fromUserInput($custom_path['path'], ['absolute' => TRUE]);
-
-      if (!$url_object->access($this->anonUser)) {
-        continue;
-      }
 
       $path = $url_object->getInternalPath();
       if ($this->batchInfo['remove_duplicates'] && $this->pathProcessed($path)) {
@@ -283,22 +274,31 @@ class BatchUrlGenerator {
     $translation_languages = !is_null($entity) && $this->batchInfo['skip_untranslated']
       ? $entity->getTranslationLanguages() : $this->languages;
 
+    // Entity is not translated.
     if (!is_null($entity) && isset($translation_languages['und'])) {
-      $alternate_urls[$this->defaultLanguageId] = $url_object
-        ->setOption('language', $this->languages[$this->defaultLanguageId])
-        ->toString();
+      if ($url_object->access($this->anonUser)) {
+        $url_object->setOption('language', $this->languages[$this->defaultLanguageId]);
+        $alternate_urls[$this->defaultLanguageId] = $url_object->toString();
+      }
     }
     else {
-      foreach ($translation_languages as $language) {
-        if (!is_null($entity) && $this->batchInfo['skip_untranslated']) {
+      // Including only translated variants of entity.
+      if (!is_null($entity) && $this->batchInfo['skip_untranslated']) {
+        foreach ($translation_languages as $language) {
           $translation = $entity->getTranslation($language->getId());
-          if (!$translation->access('view')) {
-            continue;
+          if ($translation->access('view', $this->anonUser)) {
+            $url_object->setOption('language', $language);
+            $alternate_urls[$language->getId()] = $url_object->toString();
           }
         }
-        $alternate_urls[$language->getId()] = $url_object
-          ->setOption('language', $language)
-          ->toString();
+      }
+
+      // Not an entity or including all untranslated variants.
+      elseif ($url_object->access($this->anonUser)) {
+        foreach ($translation_languages as $language) {
+          $url_object->setOption('language', $language);
+          $alternate_urls[$language->getId()] = $url_object->toString();
+        }
       }
     }
 
