@@ -122,3 +122,47 @@ function simple_sitemap_entity_delete(EntityInterface $entity) {
   \Drupal::service('simple_sitemap.generator')
     ->removeEntityInstanceSettings($entity->getEntityTypeId(), $entity->id());
 }
+
+/**
+ * Implements hook_entity_bundle_delete().
+ *
+ * Removes settings of the removed bundle.
+ */
+function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
+  simple_sitemap_delete_bundle_config($entity_type_id, $bundle);
+}
+
+/**
+ * Implements hook_menu_delete().
+ *
+ * Removes settings for the removed menu.
+ *
+ * @param \Drupal\system\MenuInterface $menu
+ */
+function simple_sitemap_menu_delete(MenuInterface $menu) {
+  simple_sitemap_delete_bundle_config('menu_link_content', $menu->id());
+}
+
+/**
+ * Helper function used by simple_sitemap_entity_bundle_delete() and
+ * simple_sitemap_menu_delete() hooks. This is needed, as menus are technically
+ * not bundles.
+ *
+ * @param string $entity_type_id
+ * @param string $bundle
+ */
+function simple_sitemap_delete_bundle_config($entity_type_id, $bundle) {
+  $generator = \Drupal::service('simple_sitemap.generator');
+  $deleted_bundle_settings = $generator->getBundleSettings($entity_type_id, $bundle);
+  if ($deleted_bundle_settings !== FALSE) {
+
+    // Delete bundle settings.
+    \Drupal::service('config.factory')->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle")->delete();
+
+    $message = "You may want to <a href='@url'>regenerate</a> your XML sitemap now.";
+    if ($generator->getSetting('cron_generate')) {
+      $message .= ' Otherwise the sitemap will be regenerated on the next cron run.';
+    }
+    drupal_set_message(t($message, ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']));
+  }
+}
