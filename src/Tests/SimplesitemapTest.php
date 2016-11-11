@@ -26,7 +26,8 @@ class SimplesitemapTest extends WebTestBase {
   protected $node2;
   protected $privilegedUser;
 
-  protected $strictConfigSchema = FALSE; //todo: Fix schema and remove variable
+  // Uncomment to disable strict schema checks.
+//  protected $strictConfigSchema = FALSE;
 
   /**
    * Implements setup().

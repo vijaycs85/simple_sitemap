@@ -273,3 +273,13 @@ function simple_sitemap_update_8205() {
     ->getEditable('simple_sitemap.entity_types')
     ->delete();
 }
+
+/**
+ * Placing custom links in a subkey of simple_sitemap.custom configuration.
+ */
+function simple_sitemap_update_8206() {
+  $custom_links = \Drupal::config('simple_sitemap.custom')->get();
+  unset($custom_links['_core']);
+  \Drupal::service('config.factory')->getEditable("simple_sitemap.custom")
+    ->setData(['links' => $custom_links])->save();
+}
