@@ -279,7 +279,11 @@ function simple_sitemap_update_8205() {
  */
 function simple_sitemap_update_8206() {
   $custom_links = \Drupal::config('simple_sitemap.custom')->get();
-  unset($custom_links['_core']);
+  foreach($custom_links as $i => $custom_link) {
+    if (!isset($custom_link['path'])) {
+      unset($custom_links[$i]);
+    }
+  }
   \Drupal::service('config.factory')->getEditable("simple_sitemap.custom")
     ->setData(['links' => $custom_links])->save();
 }
