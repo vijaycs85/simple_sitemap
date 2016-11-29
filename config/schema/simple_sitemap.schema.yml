@@ -21,6 +21,9 @@ simple_sitemap.settings:
       type: sequence
       sequence:
         type: string
+    base_url:
+      label: 'Base URL'
+      type: string
 
 simple_sitemap.bundle_settings.*.*:
   label: 'Entity bundle settings'
