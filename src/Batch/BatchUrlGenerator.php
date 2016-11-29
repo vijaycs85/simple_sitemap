@@ -168,6 +168,7 @@ class BatchUrlGenerator {
 
       // todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush. Use getUrlIfValidWithoutAccessCheck()?
       if (!$this->pathValidator->isValid($custom_path['path'])) {
+//        if (!(bool) $this->pathValidator->getUrlIfValidWithoutAccessCheck($custom_path['path'])) {
         $this->logger->m(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE, ['@path' => $custom_path['path']])
           ->display('warning', 'administer sitemap settings')
           ->log('warning');
