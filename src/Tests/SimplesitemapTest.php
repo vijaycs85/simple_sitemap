@@ -190,6 +190,31 @@ class SimplesitemapTest extends WebTestBase {
   }
 
   /**
+   * Test setting the base URL.
+   */
+  public function testSetBaseUrl() {
+    $this->generator->setBundleSettings('node', 'page', ['index' => TRUE, 'priority' => 0.5])
+      ->saveSetting('base_url', 'http://base_url_test')
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('http://base_url_test');
+  }
+
+  /**
+   * Test setting the base URL in the sitemap index.
+   */
+  public function testSetBaseUrlInSitemapIndex() {
+    $this->generator->setBundleSettings('node', 'page', ['index' => TRUE, 'priority' => 0.5])
+      ->saveSetting('max_links', 1)
+      ->saveSetting('base_url', 'http://base_url_test')
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('http://base_url_test');
+  }
+
+  /**
    * Test adding a custom link to the sitemap.
    */
   public function testAddCustomLink() {
