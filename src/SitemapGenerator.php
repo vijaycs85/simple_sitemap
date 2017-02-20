@@ -2,11 +2,12 @@
 
 namespace Drupal\simple_sitemap;
 
-use \XMLWriter;
+use XMLWriter;
 use Drupal\simple_sitemap\Batch\Batch;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Component\Datetime\Time;
 
 /**
  * Class SitemapGenerator.
@@ -28,39 +29,42 @@ class SitemapGenerator {
   private $generateFrom = 'form';
   private $isHreflangSitemap;
   private $generator;
+  private $time;
 
   /**
    * SitemapGenerator constructor.
-   *
-   * @param $batch
-   * @param $database
-   * @param $module_handler
-   * @param $language_manager
+   * @param \Drupal\simple_sitemap\Batch\Batch $batch
+   * @param \Drupal\Core\Database\Connection $database
+   * @param \Drupal\Core\Extension\ModuleHandler $module_handler
+   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
+   * @param \Drupal\Component\Datetime\Time $time
    */
   public function __construct(
     Batch $batch,
     Connection $database,
     ModuleHandler $module_handler,
-    LanguageManagerInterface $language_manager
+    LanguageManagerInterface $language_manager,
+    Time $time
   ) {
     $this->batch = $batch;
     $this->db = $database;
     $this->moduleHandler = $module_handler;
     $this->defaultLanguageId = $language_manager->getDefaultLanguage()->getId();
     $this->isHreflangSitemap = count($language_manager->getLanguages()) > 1;
+    $this->time = $time;
   }
 
   /**
-   * @param $generator
+   * @param \Drupal\simple_sitemap\Simplesitemap $generator
    * @return $this
    */
-  public function setGenerator($generator) {
+  public function setGenerator(Simplesitemap $generator) {
     $this->generator = $generator;
     return $this;
   }
 
   /**
-   * @param $from
+   * @param string $from
    * @return $this
    */
   public function setGenerateFrom($from) {
@@ -122,8 +126,10 @@ class SitemapGenerator {
     foreach ($entity_types as $entity_type_name => $bundles) {
       if (isset($sitemap_entity_types[$entity_type_name])) {
         $keys = $sitemap_entity_types[$entity_type_name]->getKeys();
+
         // Menu fix.
         $keys['bundle'] = $entity_type_name == 'menu_link_content' ? 'menu_name' : $keys['bundle'];
+
         foreach ($bundles as $bundle_name => $bundle_settings) {
           if ($bundle_settings['index']) {
             $data_sets[] = [
@@ -148,13 +154,14 @@ class SitemapGenerator {
    * @param bool $remove_sitemap
    *   Remove old sitemap from database before inserting the new one.
    */
-  public function generateSitemap($links, $remove_sitemap = FALSE) {
+  public function generateSitemap(array $links, $remove_sitemap = FALSE) {
     // Invoke alter hook.
     $this->moduleHandler->alter('simple_sitemap_links', $links);
+
     $values = [
       'id' => $remove_sitemap ? 1 : $this->db->query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField() + 1,
       'sitemap_string' => $this->generateSitemapChunk($links),
-      'sitemap_created' => REQUEST_TIME,
+      'sitemap_created' => $this->time->getRequestTime(),
     ];
     if ($remove_sitemap) {
       $this->db->truncate('simple_sitemap')->execute();
@@ -170,7 +177,7 @@ class SitemapGenerator {
    *
    * @return string sitemap index
    */
-  public function generateSitemapIndex($chunks) {
+  public function generateSitemapIndex(array $chunks) {
     $writer = new XMLWriter();
     $writer->openMemory();
     $writer->setIndent(TRUE);
@@ -204,7 +211,7 @@ class SitemapGenerator {
    * @return string
    *   Sitemap chunk
    */
-  private function generateSitemapChunk($links) {
+  private function generateSitemapChunk(array $links) {
     $writer = new XMLWriter();
     $writer->openMemory();
     $writer->setIndent(TRUE);

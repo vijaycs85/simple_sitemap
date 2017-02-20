@@ -5,7 +5,7 @@
  * Main module file containing hooks.
  */
 
-use \Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\system\MenuInterface;
@@ -86,12 +86,18 @@ function simple_sitemap_entity_form_submit($form, FormStateInterface &$form_stat
 
       case 'bundle':
         $f->bundleName = !empty($f->bundleName) ? $f->bundleName : $f->getFormEntityId();
-        $generator->setBundleSettings($f->entityTypeId, $f->bundleName, ['index' => $values['simple_sitemap_index_content'], 'priority' => $values['simple_sitemap_priority']]);
+        $generator->setBundleSettings($f->entityTypeId, $f->bundleName, [
+          'index' => $values['simple_sitemap_index_content'],
+          'priority' => $values['simple_sitemap_priority']
+        ]);
         break;
 
       case 'instance':
         $f->instanceId = !empty($f->instanceId) ? $f->instanceId : $f->getFormEntityId();
-        $generator->setEntityInstanceSettings($f->entityTypeId, $f->instanceId, ['index' => $values['simple_sitemap_index_content'], 'priority' => $values['simple_sitemap_priority']]);
+        $generator->setEntityInstanceSettings($f->entityTypeId, $f->instanceId, [
+          'index' => $values['simple_sitemap_index_content'],
+          'priority' => $values['simple_sitemap_priority']
+        ]);
         break;
     }
 

@@ -10,6 +10,7 @@ use Drupal\Core\Path\PathValidator;
 use Drupal\Core\Entity\Query\QueryFactory;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Datetime\DateFormatter;
+use Drupal\Component\Datetime\Time;
 
 /**
  * Class Simplesitemap.
@@ -24,6 +25,7 @@ class Simplesitemap {
   private $entityQuery;
   private $entityTypeManager;
   private $pathValidator;
+  private $time;
   private static $allowed_link_settings = [
     'entity' => ['index', 'priority'],
     'custom' => ['priority'],
@@ -32,13 +34,14 @@ class Simplesitemap {
   /**
    * Simplesitemap constructor.
    *
-   * @param $sitemapGenerator
-   * @param $configFactory
-   * @param $database
-   * @param $entityQuery
-   * @param $entityTypeManager
-   * @param $pathValidator
-   * @param $dateFormatter
+   * @param \Drupal\simple_sitemap\SitemapGenerator $sitemapGenerator
+   * @param \Drupal\Core\Config\ConfigFactory $configFactory
+   * @param \Drupal\Core\Database\Connection $database
+   * @param \Drupal\Core\Entity\Query\QueryFactory $entityQuery
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   * @param \Drupal\Core\Path\PathValidator $pathValidator
+   * @param \Drupal\Core\Datetime\DateFormatter $dateFormatter
+   * @param \Drupal\Component\Datetime\Time $time
    */
   public function __construct(
     SitemapGenerator $sitemapGenerator,
@@ -47,7 +50,8 @@ class Simplesitemap {
     QueryFactory $entityQuery,
     EntityTypeManagerInterface $entityTypeManager,
     PathValidator $pathValidator,
-    DateFormatter $dateFormatter
+    DateFormatter $dateFormatter,
+    Time $time
   ) {
     $this->sitemapGenerator = $sitemapGenerator;
     $this->configFactory = $configFactory;
@@ -56,6 +60,7 @@ class Simplesitemap {
     $this->entityTypeManager = $entityTypeManager;
     $this->pathValidator = $pathValidator;
     $this->dateFormatter = $dateFormatter;
+    $this->time = $time;
   }
 
   /**
@@ -503,7 +508,7 @@ class Simplesitemap {
    */
   public function getSitemap($chunk_id = NULL) {
     $chunks = $this->fetchSitemapChunks();
-    if (is_null($chunk_id) || !isset($chunks[$chunk_id])) {
+    if (null === $chunk_id || !isset($chunks[$chunk_id])) {
 
       // Return sitemap index, if there are multiple sitemap chunks.
       if (count($chunks) > 1) {
@@ -598,7 +603,7 @@ class Simplesitemap {
     $chunks = $this->fetchSitemapChunks();
     if (isset($chunks[1]->sitemap_created)) {
       return $this->dateFormatter
-        ->formatInterval(REQUEST_TIME - $chunks[1]->sitemap_created);
+        ->formatInterval($this->time->getRequestTime() - $chunks[1]->sitemap_created);
     }
     return FALSE;
   }
