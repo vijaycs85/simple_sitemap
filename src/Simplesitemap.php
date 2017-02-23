@@ -10,7 +10,6 @@ use Drupal\Core\Path\PathValidator;
 use Drupal\Core\Entity\Query\QueryFactory;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Datetime\DateFormatter;
-use Drupal\Component\Datetime\Time;
 
 /**
  * Class Simplesitemap.
@@ -25,7 +24,6 @@ class Simplesitemap {
   private $entityQuery;
   private $entityTypeManager;
   private $pathValidator;
-  private $time;
   private static $allowed_link_settings = [
     'entity' => ['index', 'priority'],
     'custom' => ['priority'],
@@ -33,7 +31,6 @@ class Simplesitemap {
 
   /**
    * Simplesitemap constructor.
-   *
    * @param \Drupal\simple_sitemap\SitemapGenerator $sitemapGenerator
    * @param \Drupal\Core\Config\ConfigFactory $configFactory
    * @param \Drupal\Core\Database\Connection $database
@@ -41,7 +38,6 @@ class Simplesitemap {
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    * @param \Drupal\Core\Path\PathValidator $pathValidator
    * @param \Drupal\Core\Datetime\DateFormatter $dateFormatter
-   * @param \Drupal\Component\Datetime\Time $time
    */
   public function __construct(
     SitemapGenerator $sitemapGenerator,
@@ -50,8 +46,7 @@ class Simplesitemap {
     QueryFactory $entityQuery,
     EntityTypeManagerInterface $entityTypeManager,
     PathValidator $pathValidator,
-    DateFormatter $dateFormatter,
-    Time $time
+    DateFormatter $dateFormatter
   ) {
     $this->sitemapGenerator = $sitemapGenerator;
     $this->configFactory = $configFactory;
@@ -60,7 +55,6 @@ class Simplesitemap {
     $this->entityTypeManager = $entityTypeManager;
     $this->pathValidator = $pathValidator;
     $this->dateFormatter = $dateFormatter;
-    $this->time = $time;
   }
 
   /**
@@ -478,7 +472,7 @@ class Simplesitemap {
    */
   public function getEntityInstanceBundleName($entity) {
     return $entity->getEntityTypeId() == 'menu_link_content'
-    // Menu fix.
+      // Menu fix.
       ? $entity->getMenuName() : $entity->bundle();
   }
 
@@ -490,7 +484,7 @@ class Simplesitemap {
    */
   public function getBundleEntityTypeId($entity) {
     return $entity->getEntityTypeId() == 'menu'
-    // Menu fix.
+      // Menu fix.
       ? 'menu_link_content' : $entity->getEntityType()->getBundleOf();
   }
 
@@ -508,7 +502,7 @@ class Simplesitemap {
    */
   public function getSitemap($chunk_id = NULL) {
     $chunks = $this->fetchSitemapChunks();
-    if (null === $chunk_id || !isset($chunks[$chunk_id])) {
+    if (is_null($chunk_id) || !isset($chunks[$chunk_id])) {
 
       // Return sitemap index, if there are multiple sitemap chunks.
       if (count($chunks) > 1) {
@@ -603,7 +597,7 @@ class Simplesitemap {
     $chunks = $this->fetchSitemapChunks();
     if (isset($chunks[1]->sitemap_created)) {
       return $this->dateFormatter
-        ->formatInterval($this->time->getRequestTime() - $chunks[1]->sitemap_created);
+        ->formatInterval(REQUEST_TIME - $chunks[1]->sitemap_created);
     }
     return FALSE;
   }
