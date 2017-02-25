@@ -92,8 +92,8 @@ function simple_sitemap_schema() {
       ],
       'entity_id' => [
         'description' => 'ID of the overriding entity.',
-        'type' => 'int',
-        'unsigned' => TRUE,
+        'type' => 'varchar',
+        'length' => 32,
         'not null' => TRUE,
       ],
       'inclusion_settings' => [
@@ -287,4 +287,20 @@ function simple_sitemap_update_8206() {
   }
   \Drupal::service('config.factory')->getEditable("simple_sitemap.custom")
     ->setData(['links' => $custom_links])->save();
+}
+
+/**
+ * Updating entity_id field of simple_sitemap_entity_overrides table to varchar(32).
+ */
+function simple_sitemap_update_8207() {
+  \Drupal::database()->schema()->changeField(
+    'simple_sitemap_entity_overrides',
+    'entity_id',
+    'entity_id', [
+      'description' => 'ID of the overriding entity.',
+      'type' => 'varchar',
+      'length' => 32,
+      'not null' => TRUE,
+    ]
+  );
 }
