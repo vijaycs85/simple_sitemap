@@ -190,7 +190,7 @@ class FormHelper {
    * @param bool $multiple
    * @return $this
    */
-  public function displayEntitySettings(array &$form_fragment, $multiple = FALSE) {
+  public function displayEntitySettings(&$form_fragment, $multiple = FALSE) {
     $prefix = $multiple ? $this->entityTypeId . '_' : '';
 
     if ($this->entityCategory == 'instance') {
