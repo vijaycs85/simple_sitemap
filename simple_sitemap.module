@@ -175,3 +175,13 @@ function simple_sitemap_delete_bundle_config($entity_type_id, $bundle) {
     drupal_set_message(t($message, ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']));
   }
 }
+
+/**
+ * Implements hook_robotstxt().
+ */
+function simple_sitemap_robotstxt() {
+  return [
+    '# XML sitemap',
+    'Sitemap: ' . $GLOBALS['base_url'] . '/sitemap.xml',
+  ];
+}
