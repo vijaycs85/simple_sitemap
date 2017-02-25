@@ -9,15 +9,29 @@ use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\Core\Path\PathValidator;
 
 /**
- * Class SimplesitemapFormBase.
- *
+ * Class SimplesitemapFormBase
  * @package Drupal\simple_sitemap\Form
  */
 abstract class SimplesitemapFormBase extends ConfigFormBase {
 
+  /**
+   * @var \Drupal\simple_sitemap\Simplesitemap
+   */
   protected $generator;
+
+  /**
+   * @var \Drupal\simple_sitemap\Form\FormHelper
+   */
   protected $formHelper;
+
+  /**
+   * @var \Drupal\simple_sitemap\EntityHelper
+   */
   protected $entityHelper;
+
+  /**
+   * @var \Drupal\Core\Path\PathValidator
+   */
   protected $pathValidator;
 
   /**

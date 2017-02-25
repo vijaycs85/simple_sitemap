@@ -11,19 +11,49 @@ use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Datetime\DateFormatter;
 
 /**
- * Class Simplesitemap.
- *
+ * Class Simplesitemap
  * @package Drupal\simple_sitemap
  */
 class Simplesitemap {
 
+  /**
+   * @var \Drupal\simple_sitemap\SitemapGenerator
+   */
   private $sitemapGenerator;
+
+  /**
+   * @var \Drupal\simple_sitemap\EntityHelper
+   */
   private $entityHelper;
+
+  /**
+   * @var \Drupal\Core\Config\ConfigFactory
+   */
   private $configFactory;
+
+  /**
+   * @var \Drupal\Core\Database\Connection
+   */
   private $db;
+
+  /**
+   * @var \Drupal\Core\Entity\Query\QueryFactory
+   */
   private $entityQuery;
+
+  /**
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
   private $entityTypeManager;
+
+  /**
+   * @var \Drupal\Core\Path\PathValidator
+   */
   private $pathValidator;
+
+  /**
+   * @var array
+   */
   private static $allowed_link_settings = [
     'entity' => ['index', 'priority'],
     'custom' => ['priority'],
@@ -205,11 +235,12 @@ class Simplesitemap {
    * @param string|null $bundle_name
    *
    * @return array|false
-   *  Array of sitemap settings or array of entity types with their settings.
+   *  Array of sitemap settings for an entity bundle, a non-bundle entity type
+   *  or for all entity types and their bundles.
    *  False if entity type does not exist.
    */
   public function getBundleSettings($entity_type_id = NULL, $bundle_name = NULL) {
-    if (!is_null($entity_type_id)) {
+    if (null !== $entity_type_id) {
       $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
       $settings = $this->configFactory
         ->get("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name")

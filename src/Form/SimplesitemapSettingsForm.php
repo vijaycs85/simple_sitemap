@@ -6,12 +6,14 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Component\Utility\UrlHelper;
 
 /**
- * Class SimplesitemapSettingsForm.
- *
+ * Class SimplesitemapSettingsForm
  * @package Drupal\simple_sitemap\Form
  */
 class SimplesitemapSettingsForm extends SimplesitemapFormBase {
 
+  /**
+   * @var array
+   */
   private $formSettings = [
     'max_links',
     'cron_generate',

@@ -15,8 +15,7 @@ use Drupal\Core\Path\PathValidator;
 use Drupal\Core\Entity\Query\QueryFactory;
 
 /**
- * Class BatchUrlGenerator.
- *
+ * Class BatchUrlGenerator
  * @package Drupal\simple_sitemap\Batch
  */
 class BatchUrlGenerator {
@@ -29,30 +28,75 @@ class BatchUrlGenerator {
   const REGENERATION_FINISHED_MESSAGE = "The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.";
   const REGENERATION_FINISHED_ERROR_MESSAGE = 'The sitemap generation finished with an error.';
 
+  /**
+   * @var \Drupal\simple_sitemap\Simplesitemap
+   */
   protected $generator;
+
+  /**
+   * @var \Drupal\simple_sitemap\SitemapGenerator
+   */
   protected $sitemapGenerator;
+
+  /**
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
   protected $languageManager;
+
+  /**
+   * @var \Drupal\Core\Language\LanguageInterface[]
+   */
   protected $languages;
+
+  /**
+   * @var string
+   */
   protected $defaultLanguageId;
+
+  /**
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
   protected $entityTypeManager;
+
+  /**
+   * @var \Drupal\Core\Path\PathValidator
+   */
   protected $pathValidator;
+
+  /**
+   * @var \Drupal\Core\Entity\Query\QueryFactory
+   */
   protected $entityQuery;
+
+  /**
+   * @var \Drupal\simple_sitemap\Logger
+   */
   protected $logger;
+
+  /**
+   * @var \Drupal\Core\Entity\EntityInterface|null
+   */
   protected $anonUser;
 
+  /**
+   * @var array
+   */
   protected $context;
+
+  /**
+   * @var array
+   */
   protected $batchInfo;
 
   /**
    * BatchUrlGenerator constructor.
-   *
-   * @param $generator
-   * @param $sitemap_generator
-   * @param $language_manager
-   * @param $entity_type_manager
-   * @param $path_validator
-   * @param $entity_query
-   * @param $logger
+   * @param \Drupal\simple_sitemap\Simplesitemap $generator
+   * @param \Drupal\simple_sitemap\SitemapGenerator $sitemap_generator
+   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   * @param \Drupal\Core\Path\PathValidator $path_validator
+   * @param \Drupal\Core\Entity\Query\QueryFactory $entity_query
+   * @param \Drupal\simple_sitemap\Logger $logger
    */
   public function __construct(
     Simplesitemap $generator,
@@ -86,10 +130,10 @@ class BatchUrlGenerator {
   }
 
   /**
-   * @param $batch_info
+   * @param array $batch_info
    * @return $this
    */
-  public function setBatchInfo($batch_info) {
+  public function setBatchInfo(array $batch_info) {
     $this->batchInfo = $batch_info;
     return $this;
   }
@@ -99,7 +143,7 @@ class BatchUrlGenerator {
    *
    * @param array $entity_info
    */
-  public function generateBundleUrls($entity_info) {
+  public function generateBundleUrls(array $entity_info) {
 
     foreach ($this->getBatchIterationEntities($entity_info) as $entity_id => $entity) {
 
@@ -155,7 +199,7 @@ class BatchUrlGenerator {
    *
    * @param array $custom_paths
    */
-  public function generateCustomUrls($custom_paths) {
+  public function generateCustomUrls(array $custom_paths) {
 
     $custom_paths = $this->getBatchIterationCustomPaths($custom_paths);
 
@@ -205,7 +249,7 @@ class BatchUrlGenerator {
   }
 
   /**
-   * @param $path
+   * @param string $path
    * @return bool
    */
   protected function pathProcessed($path) {
@@ -249,10 +293,10 @@ class BatchUrlGenerator {
   }
 
   /**
-   * @param $custom_paths
+   * @param array $custom_paths
    * @return mixed
    */
-  private function getBatchIterationCustomPaths($custom_paths) {
+  private function getBatchIterationCustomPaths(array $custom_paths) {
 
     if ($this->needsInitialization()) {
       $this->initializeBatch(count($custom_paths));

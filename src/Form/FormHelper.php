@@ -9,8 +9,7 @@ use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\Form\FormState;
 
 /**
- * Class FormHelper.
- *
+ * Class FormHelper
  * @package Drupal\simple_sitemap\Form
  */
 class FormHelper {
@@ -20,15 +19,49 @@ class FormHelper {
   const PRIORITY_HIGHEST = 10;
   const PRIORITY_DIVIDER = 10;
 
+  /**
+   * @var \Drupal\simple_sitemap\Simplesitemap
+   */
   private $generator;
+
+  /**
+   * @var \Drupal\simple_sitemap\EntityHelper
+   */
   private $entityHelper;
+
+  /**
+   * @var \Drupal\Core\Session\AccountProxyInterface
+   */
   private $currentUser;
+
+  /**
+   * @var \Drupal\Core\Form\FormState
+   */
   private $formState;
 
+  /**
+   * @var bool
+   */
   public $alteringForm = TRUE;
+
+  /**
+   * @var string|null
+   */
   public $entityCategory = NULL;
+
+  /**
+   * @var string
+   */
   public $entityTypeId;
+
+  /**
+   * @var string
+   */
   public $bundleName;
+
+  /**
+   * @var string
+   */
   public $instanceId;
 
   private static $allowedFormOperations = [
@@ -61,7 +94,7 @@ class FormHelper {
   }
 
   /**
-   * @param $form_state
+   * @param \Drupal\Core\Form\FormState $form_state
    * @return $this
    */
   public function processForm(FormState $form_state) {
@@ -74,7 +107,7 @@ class FormHelper {
   }
 
   /**
-   * @param $entity_category
+   * @param string $entity_category
    * @return $this
    */
   public function setEntityCategory($entity_category) {
@@ -83,7 +116,7 @@ class FormHelper {
   }
 
   /**
-   * @param $entity_type_id
+   * @param string $entity_type_id
    * @return $this
    */
   public function setEntityTypeId($entity_type_id) {
@@ -92,7 +125,7 @@ class FormHelper {
   }
 
   /**
-   * @param $bundle_name
+   * @param string $bundle_name
    * @return $this
    */
   public function setBundleName($bundle_name) {
@@ -101,7 +134,7 @@ class FormHelper {
   }
 
   /**
-   * @param $instance_id
+   * @param string $instance_id
    * @return $this
    */
   public function setInstanceId($instance_id) {
@@ -138,7 +171,7 @@ class FormHelper {
   }
 
   /**
-   * @param $form_fragment
+   * @param array $form_fragment
    */
   public function displayRegenerateNow(&$form_fragment) {
     $form_fragment['simple_sitemap_regenerate_now'] = [
