@@ -413,7 +413,7 @@ class Simplesitemap {
     $custom_links = $this->configFactory
       ->get('simple_sitemap.custom')
       ->get('links');
-    return $custom_links;
+    return $custom_links !== NULL ? $custom_links : [];
   }
 
   /**
