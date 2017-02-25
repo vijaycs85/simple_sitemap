@@ -3,8 +3,10 @@
 namespace Drupal\simple_sitemap\Form;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Core\Form\FormState;
 
 /**
  * Class FormHelper.
@@ -19,6 +21,7 @@ class FormHelper {
   const PRIORITY_DIVIDER = 10;
 
   private $generator;
+  private $entityHelper;
   private $currentUser;
   private $formState;
 
@@ -42,16 +45,18 @@ class FormHelper {
   ];
 
   /**
-   * Form constructor.
-   *
-   * @param $generator
-   * @param $current_user
+   * FormHelper constructor.
+   * @param \Drupal\simple_sitemap\Simplesitemap $generator
+   * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
+   * @param \Drupal\Core\Session\AccountProxyInterface $current_user
    */
   public function __construct(
     Simplesitemap $generator,
+    EntityHelper $entityHelper,
     AccountProxyInterface $current_user
   ) {
     $this->generator = $generator;
+    $this->entityHelper = $entityHelper;
     $this->currentUser = $current_user;
   }
 
@@ -59,7 +64,7 @@ class FormHelper {
    * @param $form_state
    * @return $this
    */
-  public function processForm($form_state) {
+  public function processForm(FormState $form_state) {
     $this->formState = $form_state;
     if (!is_null($this->formState)) {
       $this->getEntityDataFromFormEntity();
@@ -148,11 +153,11 @@ class FormHelper {
   }
 
   /**
-   * @param $form_fragment
+   * @param array $form_fragment
    * @param bool $multiple
    * @return $this
    */
-  public function displayEntitySettings(&$form_fragment, $multiple = FALSE) {
+  public function displayEntitySettings(array &$form_fragment, $multiple = FALSE) {
     $prefix = $multiple ? $this->entityTypeId . '_' : '';
 
     if ($this->entityCategory == 'instance') {
@@ -210,7 +215,7 @@ class FormHelper {
     $form_entity = $this->getFormEntity();
     if ($form_entity !== FALSE) {
       $entity_type_id = $form_entity->getEntityTypeId();
-      $sitemap_entity_types = $this->generator->getSitemapEntityTypes();
+      $sitemap_entity_types = $this->entityHelper->getSitemapEntityTypes();
       if (isset($sitemap_entity_types[$entity_type_id])) {
         $this->entityCategory = 'instance';
       }
@@ -228,14 +233,14 @@ class FormHelper {
 
       switch ($this->entityCategory) {
         case 'bundle':
-          $this->entityTypeId = $this->generator->getBundleEntityTypeId($form_entity);
+          $this->entityTypeId = $this->entityHelper->getBundleEntityTypeId($form_entity);
           $this->bundleName = $form_entity->id();
           $this->instanceId = NULL;
           break;
 
         case 'instance':
           $this->entityTypeId = $entity_type_id;
-          $this->bundleName = $this->generator->getEntityInstanceBundleName($form_entity);
+          $this->bundleName = $this->entityHelper->getEntityInstanceBundleName($form_entity);
           // New menu link's id is '' instead of NULL, hence checking for empty.
           $this->instanceId = !empty($form_entity->id()) ? $form_entity->id() : NULL;
           break;
@@ -281,12 +286,12 @@ class FormHelper {
    * To be used in an entity form submit.
    *
    * @param $form
-   * @param $values
+   * @param array $values
    *
    * @return bool
    *   TRUE if simple_sitemap form values have been altered by the user.
    */
-  public function valuesChanged($form, $values) {
+  public function valuesChanged($form, array $values) {
     foreach (self::$valuesToCheck as $field_name) {
       if (isset($values[$field_name]) && $values[$field_name] != $form['simple_sitemap'][$field_name]['#default_value']) {
         return TRUE;
@@ -310,7 +315,7 @@ class FormHelper {
   }
 
   /**
-   * @param $priority
+   * @param string $priority
    * @return string
    */
   public function formatPriority($priority) {
@@ -318,7 +323,7 @@ class FormHelper {
   }
 
   /**
-   * @param $priority
+   * @param string|int $priority
    * @return bool
    */
   public static function isValidPriority($priority) {

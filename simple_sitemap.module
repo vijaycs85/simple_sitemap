@@ -55,7 +55,9 @@ function simple_sitemap_form_alter(&$form, FormStateInterface $form_state, $form
   // Add submission handler.
   if (isset($form['actions']['submit']['#submit'])) {
     foreach (array_keys($form['actions']) as $action) {
-      if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+      if ($action != 'preview'
+        && isset($form['actions'][$action]['#type'])
+        && $form['actions'][$action]['#type'] === 'submit') {
         $form['actions'][$action]['#submit'][] = 'simple_sitemap_entity_form_submit';
       }
     }
