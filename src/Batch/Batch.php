@@ -14,12 +14,12 @@ class Batch {
   /**
    * @var array
    */
-  private $batch;
+  protected $batch;
 
   /**
    * @var array
    */
-  private $batchInfo;
+  protected $batchInfo;
 
   const BATCH_TITLE = 'Generating XML sitemap';
   const BATCH_INIT_MESSAGE = 'Initializing batch...';

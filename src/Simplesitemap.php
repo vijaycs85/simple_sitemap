@@ -19,42 +19,42 @@ class Simplesitemap {
   /**
    * @var \Drupal\simple_sitemap\SitemapGenerator
    */
-  private $sitemapGenerator;
+  protected $sitemapGenerator;
 
   /**
    * @var \Drupal\simple_sitemap\EntityHelper
    */
-  private $entityHelper;
+  protected $entityHelper;
 
   /**
    * @var \Drupal\Core\Config\ConfigFactory
    */
-  private $configFactory;
+  protected $configFactory;
 
   /**
    * @var \Drupal\Core\Database\Connection
    */
-  private $db;
+  protected $db;
 
   /**
    * @var \Drupal\Core\Entity\Query\QueryFactory
    */
-  private $entityQuery;
+  protected $entityQuery;
 
   /**
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  private $entityTypeManager;
+  protected $entityTypeManager;
 
   /**
    * @var \Drupal\Core\Path\PathValidator
    */
-  private $pathValidator;
+  protected $pathValidator;
 
   /**
    * @var array
    */
-  private static $allowed_link_settings = [
+  protected static $allowed_link_settings = [
     'entity' => ['index', 'priority'],
     'custom' => ['priority'],
   ];
@@ -95,7 +95,7 @@ class Simplesitemap {
    *
    * @return string
    */
-  private function fetchSitemapChunks() {
+  protected function fetchSitemapChunks() {
     return $this->db
       ->query("SELECT * FROM {simple_sitemap}")
       ->fetchAllAssoc('id');
@@ -185,6 +185,8 @@ class Simplesitemap {
     if (isset($sitemap_entity_types[$entity_type_id])) {
       $entity_type = $sitemap_entity_types[$entity_type_id];
       $keys = $entity_type->getKeys();
+
+      // Menu fix.
       $keys['bundle'] = $entity_type_id == 'menu_link_content' ? 'menu_name' : $keys['bundle'];
 
       $query = $this->entityQuery->get($entity_type_id);
@@ -240,7 +242,7 @@ class Simplesitemap {
    *  False if entity type does not exist.
    */
   public function getBundleSettings($entity_type_id = NULL, $bundle_name = NULL) {
-    if (null !== $entity_type_id) {
+    if (NULL !== $entity_type_id) {
       $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
       $settings = $this->configFactory
         ->get("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name")
@@ -352,7 +354,7 @@ class Simplesitemap {
   public function removeEntityInstanceSettings($entity_type_id, $entity_ids = NULL) {
     $query = $this->db->delete('simple_sitemap_entity_overrides')
       ->condition('entity_type', $entity_type_id);
-    if (!is_null($entity_ids)) {
+    if (NULL !== $entity_ids) {
       $entity_ids = !is_array($entity_ids) ? [$entity_ids] : $entity_ids;
       $query->condition('entity_id', $entity_ids, 'IN');
     }
@@ -421,7 +423,7 @@ class Simplesitemap {
   /**
    *
    */
-  private function addLinkSettings($type, $settings, &$target) {
+  protected function addLinkSettings($type, $settings, &$target) {
     foreach ($settings as $setting_key => $setting) {
       if (in_array($setting_key, self::$allowed_link_settings[$type])) {
         switch ($setting_key) {
@@ -513,7 +515,7 @@ class Simplesitemap {
    */
   public function getSitemap($chunk_id = NULL) {
     $chunks = $this->fetchSitemapChunks();
-    if (is_null($chunk_id) || !isset($chunks[$chunk_id])) {
+    if (NULL === $chunk_id || !isset($chunks[$chunk_id])) {
 
       // Return sitemap index, if there are multiple sitemap chunks.
       if (count($chunks) > 1) {
@@ -556,7 +558,7 @@ class Simplesitemap {
    * @return string
    *   The sitemap index.
    */
-  private function getSitemapIndex($chunks) {
+  protected function getSitemapIndex($chunks) {
     return $this->sitemapGenerator
       ->setGenerator($this)
       ->generateSitemapIndex($chunks);
@@ -579,7 +581,7 @@ class Simplesitemap {
     $setting = $this->configFactory
       ->get('simple_sitemap.settings')
       ->get($name);
-    return !is_null($setting) ? $setting : $default;
+    return NULL !== $setting ? $setting : $default;
   }
 
   /**

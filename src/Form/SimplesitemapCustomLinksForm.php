@@ -97,7 +97,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
    * @param $custom_links_string
    * @return array
    */
-  private function getCustomLinksFromString($custom_links_string) {
+  protected function getCustomLinksFromString($custom_links_string) {
     // Unify newline characters and explode into array.
     $custom_links_string_lines = explode("\n", str_replace("\r\n", "\n", $custom_links_string));
     // Remove empty values and whitespaces from array.

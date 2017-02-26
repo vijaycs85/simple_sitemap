@@ -14,7 +14,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
   /**
    * @var array
    */
-  private $formSettings = [
+  protected $formSettings = [
     'max_links',
     'cron_generate',
     'remove_duplicates',

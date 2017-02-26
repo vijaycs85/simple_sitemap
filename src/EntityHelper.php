@@ -15,7 +15,7 @@ class EntityHelper {
   /**
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  private $entityTypeManager;
+  protected $entityTypeManager;
 
   /**
    * EntityHelper constructor.

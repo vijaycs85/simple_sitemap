@@ -23,42 +23,42 @@ class SitemapGenerator {
   /**
    * @var \Drupal\simple_sitemap\Batch\Batch
    */
-  private $batch;
+  protected $batch;
 
   /**
    * @var \Drupal\simple_sitemap\EntityHelper
    */
-  private $entityHelper;
+  protected $entityHelper;
 
   /**
    * @var \Drupal\Core\Database\Connection
    */
-  private $db;
+  protected $db;
 
   /**
    * @var \Drupal\Core\Extension\ModuleHandler
    */
-  private $moduleHandler;
+  protected $moduleHandler;
 
   /**
    * @var string
    */
-  private $defaultLanguageId;
+  protected $defaultLanguageId;
 
   /**
    * @var string
    */
-  private $generateFrom = 'form';
+  protected $generateFrom = 'form';
 
   /**
    * @var bool
    */
-  private $isHreflangSitemap;
+  protected $isHreflangSitemap;
 
   /**
    * @var \Drupal\simple_sitemap\Simplesitemap
    */
-  private $generator;
+  protected $generator;
 
   /**
    * SitemapGenerator constructor.
@@ -131,7 +131,7 @@ class SitemapGenerator {
    * @return array
    *   Data to be processed.
    */
-  private function getCustomUrlsData() {
+  protected function getCustomUrlsData() {
     $paths = [];
     foreach ($this->generator->getCustomLinks() as $i => $custom_path) {
       $paths[$i]['path'] = $custom_path['path'];
@@ -148,7 +148,7 @@ class SitemapGenerator {
    *
    * @return array
    */
-  private function getEntityTypeData() {
+  protected function getEntityTypeData() {
     $data_sets = [];
     $sitemap_entity_types = $this->entityHelper->getSitemapEntityTypes();
     $entity_types = $this->generator->getBundleSettings();
@@ -240,7 +240,7 @@ class SitemapGenerator {
    * @return string
    *   Sitemap chunk
    */
-  private function generateSitemapChunk(array $links) {
+  protected function generateSitemapChunk(array $links) {
     $writer = new XMLWriter();
     $writer->openMemory();
     $writer->setIndent(TRUE);
