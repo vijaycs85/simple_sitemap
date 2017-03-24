@@ -35,15 +35,16 @@ class SitemapGenerator {
    */
   protected $db;
 
+
+  /**
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
+  protected $languageManager;
+
   /**
    * @var \Drupal\Core\Extension\ModuleHandler
    */
   protected $moduleHandler;
-
-  /**
-   * @var string
-   */
-  protected $defaultLanguageId;
 
   /**
    * @var string
@@ -79,8 +80,19 @@ class SitemapGenerator {
     $this->entityHelper = $entityHelper;
     $this->db = $database;
     $this->moduleHandler = $module_handler;
-    $this->defaultLanguageId = $language_manager->getDefaultLanguage()->getId();
-    $this->isHreflangSitemap = count($language_manager->getLanguages()) > 1;
+    $this->languageManager = $language_manager;
+    $this->setIsHreflangSitemap();
+  }
+
+  protected function setIsHreflangSitemap() {
+    $this->isHreflangSitemap = count($this->languageManager->getLanguages()) > 1;
+  }
+
+  /**
+   * @return bool
+   */
+  public function isHreflangSitemap() {
+    return $this->isHreflangSitemap;
   }
 
   /**
@@ -108,7 +120,7 @@ class SitemapGenerator {
     $this->batch->setBatchInfo([
       'from' => $this->generateFrom,
       'batch_process_limit' => !empty($this->generator->getSetting('batch_process_limit'))
-      ? $this->generator->getSetting('batch_process_limit') : NULL,
+        ? $this->generator->getSetting('batch_process_limit') : NULL,
       'max_links' => $this->generator->getSetting('max_links', 2000),
       'skip_untranslated' => $this->generator->getSetting('skip_untranslated', FALSE),
       'remove_duplicates' => $this->generator->getSetting('remove_duplicates', TRUE),
@@ -248,7 +260,8 @@ class SitemapGenerator {
     $writer->writeComment(self::GENERATED_BY);
     $writer->startElement('urlset');
     $writer->writeAttribute('xmlns', self::XMLNS);
-    if ($this->isHreflangSitemap) {
+
+    if ($this->isHreflangSitemap()) {
       $writer->writeAttribute('xmlns:xhtml', self::XMLNS_XHTML);
     }
 
@@ -261,7 +274,7 @@ class SitemapGenerator {
       // If more than one language is enabled, add all translation variant URLs
       // as alternate links to this location turning the sitemap into a hreflang
       // sitemap.
-      if ($this->isHreflangSitemap) {
+      if ($this->isHreflangSitemap()) {
         foreach ($link['alternate_urls'] as $language_id => $alternate_url) {
           $writer->startElement('xhtml:link');
           $writer->writeAttribute('rel', 'alternate');
