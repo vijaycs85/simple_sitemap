@@ -91,14 +91,146 @@ class Simplesitemap {
   }
 
   /**
-   * Fetches all sitemap chunks indexed by chunk ID.
+   * Returns a specific sitemap setting or a default value if setting does not
+   * exist.
+   *
+   * @param string $name
+   *   Name of the setting, like 'max_links'.
+   *
+   * @param mixed $default
+   *   Value to be returned if the setting does not exist in the configuration.
+   *
+   * @return mixed
+   *   The current setting from configuration or a default value.
+   */
+  public function getSetting($name, $default = FALSE) {
+    $setting = $this->configFactory
+      ->get('simple_sitemap.settings')
+      ->get($name);
+    return NULL !== $setting ? $setting : $default;
+  }
+
+  /**
+   * Stores a specific sitemap setting in configuration.
+   *
+   * @param string $name
+   *   Setting name, like 'max_links'.
+   * @param mixed $setting
+   *   The setting to be saved.
+   *
+   * @return $this
+   */
+  public function saveSetting($name, $setting) {
+    $this->configFactory->getEditable("simple_sitemap.settings")
+      ->set($name, $setting)->save();
+    return $this;
+  }
+
+  /**
+   * Returns the whole sitemap, a requested sitemap chunk,
+   * or the sitemap index file.
+   *
+   * @param int $chunk_id
+   *
+   * @return string|false
+   *   If no sitemap id provided, either a sitemap index is returned, or the
+   *   whole sitemap, if the amount of links does not exceed the max links
+   *   setting. If a sitemap id is provided, a sitemap chunk is returned. False
+   *   if sitemap is not retrievable from the database.
+   */
+  public function getSitemap($chunk_id = NULL) {
+    $chunk_info = $this->fetchSitemapChunkInfo();
+
+    if (NULL === $chunk_id || !isset($chunk_info[$chunk_id])) {
+
+      if (count($chunk_info) > 1) {
+        // Return sitemap index, if there are multiple sitemap chunks.
+        return $this->getSitemapIndex($chunk_info);
+      }
+      else {
+        // Return sitemap if there is only one chunk.
+        return count($chunk_info) === 1
+        && isset($chunk_info[SitemapGenerator::FIRST_CHUNK_INDEX])
+          ? $this->fetchSitemapChunk(SitemapGenerator::FIRST_CHUNK_INDEX)
+            ->sitemap_string
+          : FALSE;
+      }
+    }
+    else {
+      // Return specific sitemap chunk.
+      return $this->fetchSitemapChunk($chunk_id)->sitemap_string;
+    }
+  }
+
+  /**
+   * Fetches all sitemap chunk timestamps keyed by chunk ID.
+   *
+   * @return array
+   *   An array containing chunk creation timestamps keyed by chunk ID.
+   */
+  protected function fetchSitemapChunkInfo() {
+    return $this->db
+      ->query("SELECT id, sitemap_created FROM {simple_sitemap}")
+      ->fetchAllAssoc('id');
+  }
+
+  /**
+   * Fetches a single sitemap chunk by ID.
+   *
+   * @param int $id
+   *   The chunk ID.
+   *
+   * @return object
+   *   A sitemap chunk object.
+   */
+  private function fetchSitemapChunk($id) {
+    return $this->db->query('SELECT * FROM {simple_sitemap} WHERE id = :id',
+      [':id' => $id])->fetchObject();
+  }
+
+  /**
+   * Generates the sitemap for all languages and saves it to the db.
+   *
+   * @param string $from
+   *   Can be 'form', 'cron', 'drush' or 'nobatch'.
+   *   This decides how the batch process is to be run.
+   */
+  public function generateSitemap($from = 'form') {
+    $this->sitemapGenerator
+      ->setGenerator($this)
+      ->setGenerateFrom($from)
+      ->startGeneration();
+  }
+
+  /**
+   * Generates and returns the sitemap index as string.
+   *
+   * @param array $chunks
+   *   Sitemap chunks which to generate the index from.
    *
    * @return string
+   *   The sitemap index.
    */
-  protected function fetchSitemapChunks() {
-    return $this->db
-      ->query("SELECT * FROM {simple_sitemap}")
-      ->fetchAllAssoc('id');
+  protected function getSitemapIndex($chunks) {
+    return $this->sitemapGenerator
+      ->setGenerator($this)
+      ->generateSitemapIndex($chunks);
+  }
+
+  /**
+   * Returns a 'time ago' string of last timestamp generation.
+   *
+   * @return string|false
+   *   Formatted timestamp of last sitemap generation, otherwise FALSE.
+   */
+  public function getGeneratedAgo() {
+    $chunks = $this->fetchSitemapChunkInfo();
+    if (isset($chunks[SitemapGenerator::FIRST_CHUNK_INDEX]->sitemap_created)) {
+      return $this->dateFormatter
+        ->formatInterval(REQUEST_TIME - $chunks[SitemapGenerator::FIRST_CHUNK_INDEX]
+            ->sitemap_created);
+    }
+    return FALSE;
   }
 
   /**
@@ -499,119 +631,5 @@ class Simplesitemap {
     $this->configFactory->getEditable("simple_sitemap.custom")
       ->set('links', [])->save();
     return $this;
-  }
-
-  /**
-   * Returns the whole sitemap, a requested sitemap chunk,
-   * or the sitemap index file.
-   *
-   * @param int $chunk_id
-   *
-   * @return string|false
-   *   If no sitemap id provided, either a sitemap index is returned, or the
-   *   whole sitemap, if the amount of links does not exceed the max links
-   *   setting. If a sitemap id is provided, a sitemap chunk is returned. False
-   *   if sitemap is not retrievable from the database.
-   */
-  public function getSitemap($chunk_id = NULL) {
-    $chunks = $this->fetchSitemapChunks();
-    if (NULL === $chunk_id || !isset($chunks[$chunk_id])) {
-
-      // Return sitemap index, if there are multiple sitemap chunks.
-      if (count($chunks) > 1) {
-        return $this->getSitemapIndex($chunks);
-      }
-      // Return sitemap if there is only one chunk.
-      else {
-        if (isset($chunks[1])) {
-          return $chunks[1]->sitemap_string;
-        }
-        return FALSE;
-      }
-    }
-    // Return specific sitemap chunk.
-    else {
-      return $chunks[$chunk_id]->sitemap_string;
-    }
-  }
-
-  /**
-   * Generates the sitemap for all languages and saves it to the db.
-   *
-   * @param string $from
-   *   Can be 'form', 'cron', 'drush' or 'nobatch'.
-   *   This decides how the batch process is to be run.
-   */
-  public function generateSitemap($from = 'form') {
-    $this->sitemapGenerator
-      ->setGenerator($this)
-      ->setGenerateFrom($from)
-      ->startGeneration();
-  }
-
-  /**
-   * Generates and returns the sitemap index as string.
-   *
-   * @param array $chunks
-   *   Sitemap chunks which to generate the index from.
-   *
-   * @return string
-   *   The sitemap index.
-   */
-  protected function getSitemapIndex($chunks) {
-    return $this->sitemapGenerator
-      ->setGenerator($this)
-      ->generateSitemapIndex($chunks);
-  }
-
-  /**
-   * Returns a specific sitemap setting or a default value if setting does not
-   * exist.
-   *
-   * @param string $name
-   *   Name of the setting, like 'max_links'.
-   *
-   * @param mixed $default
-   *   Value to be returned if the setting does not exist in the configuration.
-   *
-   * @return mixed
-   *   The current setting from configuration or a default value.
-   */
-  public function getSetting($name, $default = FALSE) {
-    $setting = $this->configFactory
-      ->get('simple_sitemap.settings')
-      ->get($name);
-    return NULL !== $setting ? $setting : $default;
-  }
-
-  /**
-   * Stores a specific sitemap setting in configuration.
-   *
-   * @param string $name
-   *   Setting name, like 'max_links'.
-   * @param mixed $setting
-   *   The setting to be saved.
-   *
-   * @return $this
-   */
-  public function saveSetting($name, $setting) {
-    $this->configFactory->getEditable("simple_sitemap.settings")
-      ->set($name, $setting)->save();
-    return $this;
-  }
-
-  /**
-   * Returns a 'time ago' string of last timestamp generation.
-   *
-   * @return string|false
-   *   Formatted timestamp of last sitemap generation, otherwise FALSE.
-   */
-  public function getGeneratedAgo() {
-    $chunks = $this->fetchSitemapChunks();
-    if (isset($chunks[1]->sitemap_created)) {
-      return $this->dateFormatter
-        ->formatInterval(REQUEST_TIME - $chunks[1]->sitemap_created);
-    }
-    return FALSE;
   }
 }
