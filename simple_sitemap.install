@@ -21,18 +21,37 @@ function simple_sitemap_requirements($phase) {
   }
 
   switch ($phase) {
+
     case 'runtime':
-      $generated_ago = \Drupal::service('simple_sitemap.generator')->getGeneratedAgo();
+
+      $generator = \Drupal::service('simple_sitemap.generator');
+      $generated_ago = $generator->getGeneratedAgo();
+      $cron_generation = $generator->getSetting('cron_generate');
+
       if (!$generated_ago) {
         $value = t('Not available');
-        $description = t("The sitemap has not been generated yet. Run cron, or <a href='@generate'>generate</a> the sitemap manually.", ['@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']);
+        $description = t($cron_generation
+          ? "Run cron, or <a href='@generate'>generate</a> the sitemap manually."
+          : "Generation on cron run is disabled. <a href='@generate'>Generate</a> the sitemap manually.", [
+            '@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'
+          ]
+        );
         $severity = REQUIREMENT_WARNING;
       }
       else {
         $value = t('XML sitemap is available');
-        $description = t("The <a href='@sitemap'>XML sitemap</a> was generated @ago ago. <a href='@generate'>Regenerate</a>.", ['@ago' => $generated_ago, '@sitemap' => $GLOBALS['base_url'] . '/sitemap.xml', '@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']);
+        $description = t("The <a href='@sitemap'>XML sitemap</a> was generated @ago ago."
+          . ' ' . ($cron_generation
+            ? "Run cron, or <a href='@generate'>regenerate</a> the sitemap manually."
+            : "Generation on cron run is disabled. <a href='@generate'>Regenerate</a> the sitemap manually."), [
+              '@sitemap' => $GLOBALS['base_url'] . '/sitemap.xml',
+              '@ago' => $generated_ago,
+              '@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'
+            ]
+          );
         $severity = REQUIREMENT_INFO;
       }
+
       $requirements['simple_sitemap_generated'] = [
         'title' => 'Simple XML sitemap',
         'value' => $value,
