@@ -205,16 +205,16 @@ class Simplesitemap {
   /**
    * Generates and returns the sitemap index as string.
    *
-   * @param array $chunks
-   *   Sitemap chunks which to generate the index from.
+   * @param array $chunk_info
+   *   Array containing chunk creation timestamps keyed by chunk ID.
    *
    * @return string
    *   The sitemap index.
    */
-  protected function getSitemapIndex($chunks) {
+  protected function getSitemapIndex($chunk_info) {
     return $this->sitemapGenerator
       ->setGenerator($this)
-      ->generateSitemapIndex($chunks);
+      ->generateSitemapIndex($chunk_info);
   }
 
   /**

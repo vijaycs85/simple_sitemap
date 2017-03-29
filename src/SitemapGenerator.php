@@ -216,12 +216,12 @@ class SitemapGenerator {
   /**
    * Generates and returns the sitemap index for all sitemap chunks.
    *
-   * @param array $chunks
-   *   All sitemap chunks keyed by the chunk ID.
+   * @param array $chunk_info
+   *   Array containing chunk creation timestamps keyed by chunk ID.
    *
    * @return string sitemap index
    */
-  public function generateSitemapIndex(array $chunks) {
+  public function generateSitemapIndex(array $chunk_info) {
     $writer = new XMLWriter();
     $writer->openMemory();
     $writer->setIndent(TRUE);
@@ -230,7 +230,7 @@ class SitemapGenerator {
     $writer->startElement('sitemapindex');
     $writer->writeAttribute('xmlns', self::XMLNS);
 
-    foreach ($chunks as $chunk_id => $chunk_data) {
+    foreach ($chunk_info as $chunk_id => $chunk_data) {
       $writer->startElement('sitemap');
       $writer->writeElement('loc', $this->getCustomBaseUrl() . '/sitemaps/' . $chunk_id . '/' . 'sitemap.xml');
       $writer->writeElement('lastmod', date_iso8601($chunk_data->sitemap_created));
