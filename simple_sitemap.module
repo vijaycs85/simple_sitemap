@@ -11,7 +11,11 @@ use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\system\MenuInterface;
 
 /**
- * Implements hook_help.
+ *Implements hook_help.
+ *
+ * @param $route_name
+ * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
+ * @return \Drupal\Component\Render\MarkupInterface|null
  */
 function simple_sitemap_help($route_name, RouteMatchInterface $route_match) {
   return $route_name === 'help.page.simple_sitemap' ?
@@ -22,14 +26,18 @@ function simple_sitemap_help($route_name, RouteMatchInterface $route_match) {
  * Implements hook_form_alter.
  *
  * Adds sitemap settings to entity types that are supported via plugins.
+ *
+ * @param $form
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ * @param $form_id
  */
 function simple_sitemap_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 
   /**
    * @var Drupal\simple_sitemap\Form\FormHelper $f
    */
-  $f = \Drupal::service('simple_sitemap.form_helper')->processForm($form_state);
-  if (!$f->alteringForm()) {
+  $f = \Drupal::service('simple_sitemap.form_helper');
+  if (!$f->processForm($form_state)) {
     return;
   }
 
@@ -73,13 +81,19 @@ function simple_sitemap_form_alter(&$form, FormStateInterface $form_state, $form
 
 /**
  * Form submission handler called in hook_form_alter.
+ *
+ * @param $form
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
  */
 function simple_sitemap_entity_form_submit($form, FormStateInterface &$form_state) {
 
   /**
    * @var Drupal\simple_sitemap\Form\FormHelper $f
    */
-  $f = \Drupal::service('simple_sitemap.form_helper')->processForm($form_state);
+  $f = \Drupal::service('simple_sitemap.form_helper');
+  if (!$f->processForm($form_state)) {
+    return;
+  }
 
   $values = $form_state->getValues();
 
@@ -162,6 +176,9 @@ function simple_sitemap_entity_delete(EntityInterface $entity) {
  * Implements hook_entity_bundle_delete().
  *
  * Removes settings of the removed bundle.
+ *
+ * @param string $entity_type_id
+ * @param string $bundle
  */
 function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
   simple_sitemap_delete_bundle_config($entity_type_id, $bundle);

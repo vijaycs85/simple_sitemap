@@ -163,7 +163,7 @@ class SitemapGenerator {
    */
   protected function getEntityTypeData() {
     $data_sets = [];
-    $sitemap_entity_types = $this->entityHelper->getSitemapEntityTypes();
+    $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
     $entity_types = $this->generator->getBundleSettings();
     foreach ($entity_types as $entity_type_name => $bundles) {
       if (isset($sitemap_entity_types[$entity_type_name])) {

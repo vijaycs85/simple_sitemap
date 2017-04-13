@@ -2,11 +2,11 @@
 
 namespace Drupal\simple_sitemap\Form;
 
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\Core\Session\AccountProxyInterface;
-use Drupal\Core\Form\FormState;
 
 /**
  * Class FormHelper
@@ -40,14 +40,9 @@ class FormHelper {
   protected $formState;
 
   /**
-   * @var bool
-   */
-  protected $alteringForm = TRUE;
-
-  /**
    * @var string|null
    */
-  protected $entityCategory = NULL;
+  protected $entityCategory;
 
   /**
    * @var string
@@ -94,21 +89,13 @@ class FormHelper {
   }
 
   /**
-   * @param \Drupal\Core\Form\FormState $form_state
-   * @return $this
-   */
-  public function processForm(FormState $form_state) {
-    $this->formState = $form_state;
-    $this->getEntityDataFromFormEntity();
-    $this->assertAlteringForm();
-    return $this;
-  }
-
-  /**
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
    * @return bool
    */
-  public function alteringForm() {
-    return $this->alteringForm;
+  public function processForm(FormStateInterface $form_state) {
+    $this->formState = $form_state;
+    $this->getEntityDataFromFormEntity();
+    return $this->supports();
   }
 
   /**
@@ -176,31 +163,33 @@ class FormHelper {
   }
 
   /**
-   *
+   * @return bool
    */
-  protected function assertAlteringForm() {
+  protected function supports() {
 
     // Do not alter the form if user lacks certain permissions.
     if (!$this->currentUser->hasPermission('administer sitemap settings')) {
-      $this->alteringForm = FALSE;
+      return FALSE;
     }
 
     // Do not alter the form if it is irrelevant to sitemap generation.
     elseif (empty($this->getEntityCategory())) {
-      $this->alteringForm = FALSE;
+      return FALSE;
     }
 
     // Do not alter the form if entity is not enabled in sitemap settings.
     elseif (!$this->generator->entityTypeIsEnabled($this->getEntityTypeId())) {
-      $this->alteringForm = FALSE;
+      return FALSE;
     }
 
     // Do not alter the form, if sitemap is disabled for the entity type of this
     // entity instance.
     elseif ($this->getEntityCategory() == 'instance'
       && !$this->generator->bundleIsIndexed($this->getEntityTypeId(), $this->getBundleName())) {
-      $this->alteringForm = FALSE;
+      return FALSE;
     }
+
+    return TRUE;
   }
 
   /**
@@ -281,13 +270,16 @@ class FormHelper {
     $form_entity = $this->getFormEntity();
     if ($form_entity !== FALSE) {
       $entity_type_id = $form_entity->getEntityTypeId();
-      $sitemap_entity_types = $this->entityHelper->getSitemapEntityTypes();
+      $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
       if (isset($sitemap_entity_types[$entity_type_id])) {
         $this->setEntityCategory('instance');
       }
       else {
-        foreach ($sitemap_entity_types as $sitemap_entity) {
-          if ($sitemap_entity->getBundleEntityType() == $entity_type_id) {
+        /**
+         * @var \Drupal\Core\Entity\EntityType $sitemap_entity_type
+         */
+        foreach ($sitemap_entity_types as $sitemap_entity_type) {
+          if ($sitemap_entity_type->getBundleEntityType() == $entity_type_id) {
             $this->setEntityCategory('bundle');
             break;
           }
@@ -322,7 +314,7 @@ class FormHelper {
   /**
    * Gets the object entity of the form if available.
    *
-   * @return object|false
+   * @return \Drupal\Core\Entity\Entity|false
    *   Entity or FALSE if non-existent or if form operation is
    *   'delete'.
    */

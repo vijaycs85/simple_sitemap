@@ -55,7 +55,7 @@ class EntityHelper {
    * @return array
    *   Objects of entity types that can be indexed by the sitemap.
    */
-  public function getSitemapEntityTypes() {
+  public function getSupportedEntityTypes() {
     $entity_types = $this->entityTypeManager->getDefinitions();
 
     foreach ($entity_types as $entity_type_id => $entity_type) {
@@ -80,7 +80,7 @@ class EntityHelper {
       return FALSE;
     }
 
-    $sitemap_entity_types = $this->getSitemapEntityTypes();
+    $sitemap_entity_types = $this->getSupportedEntityTypes();
     if (isset($sitemap_entity_types[$entity_type_id])) {
       $entity_type = $sitemap_entity_types[$entity_type_id];
       if (empty($entity_type->getBundleEntityType())) {

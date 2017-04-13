@@ -313,7 +313,7 @@ class Simplesitemap {
     //todo: Use addLinkSettings()?
 
     // Delete entity overrides which are identical to new bundle setting.
-    $sitemap_entity_types = $this->entityHelper->getSitemapEntityTypes();
+    $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
     if (isset($sitemap_entity_types[$entity_type_id])) {
       $entity_type = $sitemap_entity_types[$entity_type_id];
       $keys = $entity_type->getKeys();

@@ -55,8 +55,12 @@ class EntityUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
 
       $path_data = [
         'path' => $path,
-        'entity_info' => ['entity_type' => $entity_info['entity_type_name'], 'id' => $entity_id],
-        'lastmod' => method_exists($entity, 'getChangedTime') ? date_iso8601($entity->getChangedTime()) : NULL,
+        'entity_info' => [
+          'entity_type' => $entity_info['entity_type_name'],
+          'id' => $entity_id
+        ],
+        'lastmod' => method_exists($entity, 'getChangedTime')
+          ? date_iso8601($entity->getChangedTime()) : NULL,
         'priority' => $entity_settings['priority'],
       ];
       $this->addUrlVariants($url_object, $path_data, $entity);
