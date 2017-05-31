@@ -20,16 +20,18 @@
 function hook_simple_sitemap_links_alter(&$links) {
 
   // Remove German URL for a certain path in the hreflang sitemap.
-  foreach ($links as &$link) {
+  foreach ($links as $key => $link) {
     if ($link['path'] == 'node/1') {
       // Remove 'loc' URL if it points to a german site.
       if ($link['langcode'] == 'de') {
-        unset($link);
+        unset($links[$key]);
       }
       // If this 'loc' URL points to a non-german site, make sure to remove
       // its german alternate URL.
       else {
-        unset($link['alternate_urls']['de']);
+        if ($link['alternate_urls']['de']) {
+          unset($links[$key]['alternate_urls']['de']);
+        }
       }
     }
   }
