@@ -51,7 +51,10 @@ class SimplesitemapController extends ControllerBase {
     }
 
     // Display sitemap with correct XML header.
-    $response = new CacheableResponse($output, Response::HTTP_OK, ['content-type' => 'application/xml']);
+    $response = new CacheableResponse($output, Response::HTTP_OK, [
+      'content-type' => 'application/xml',
+      'X-Robots-Tag' => 'noindex', // Do not index the sitemap itself.
+    ]);
     $meta_data = $response->getCacheableMetadata();
     $meta_data->addCacheTags(['simple_sitemap']);
     return $response;
