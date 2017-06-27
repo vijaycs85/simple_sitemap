@@ -7,6 +7,9 @@ simple_sitemap.settings:
     cron_generate:
       label: 'Cron generate'
       type: boolean
+    cron_generate_interval:
+      label: 'Cron generate interval'
+      type: integer
     remove_duplicates:
       label: 'Remove duplicates'
       type: boolean

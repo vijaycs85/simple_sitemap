@@ -17,6 +17,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
   protected $formSettings = [
     'max_links',
     'cron_generate',
+    'cron_generate_interval',
     'remove_duplicates',
     'skip_untranslated',
     'batch_process_limit',
@@ -58,9 +59,35 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
 
     $form['simple_sitemap_settings']['settings']['cron_generate'] = [
       '#type' => 'checkbox',
-      '#title' => $this->t('Regenerate the sitemap on every cron run'),
+      '#title' => $this->t('Regenerate the sitemap during cron runs'),
       '#description' => $this->t('Uncheck this if you intend to only regenerate the sitemap manually or via drush.'),
       '#default_value' => $this->generator->getSetting('cron_generate', TRUE),
+    ];
+
+    $form['simple_sitemap_settings']['settings']['cron_generate_interval'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Sitemap generation interval'),
+      '#description' => $this->t('The sitemap will be generated according to this interval.'),
+      '#default_value' => $this->generator->getSetting('cron_generate_interval', 0),
+      '#options' => [
+        0 => $this->t('On every cron run'),
+        1 => $this->t('Once an hour'),
+        3 => $this->t('Once every @hours hours', ['@hours' => 3]),
+        6 => $this->t('Once every @hours hours', ['@hours' => 6]),
+        12 => $this->t('Once every @hours hours', ['@hours' => 12]),
+        24 => $this->t('Once a day'),
+        48 => $this->t('Once every @days days', ['@days' => 48/24]),
+        72 => $this->t('Once every @days days', ['@days' => 72/24]),
+        96 => $this->t('Once every @days days', ['@days' => 96/24]),
+        120 => $this->t('Once every @days days', ['@days' => 120/24]),
+        144 => $this->t('Once every @days days', ['@days' => 144/24]),
+        168 => $this->t('Once a week'),
+      ],
+      '#states' => [
+        'visible' => [
+          ':input[name="cron_generate"]' => ['checked' => TRUE],
+        ],
+      ],
     ];
 
     $form['simple_sitemap_settings']['advanced'] = [
