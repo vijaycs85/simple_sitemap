@@ -173,7 +173,7 @@ class UrlGeneratorBase {
       : $this->languages;
 
     // Entity is not translated.
-    if (NULL !== $entity && isset($translation_languages['und'])) {
+    if ($entity instanceof ContentEntityBase && isset($translation_languages['und'])) {
       if ($url_object->access($this->anonUser)) {
         $url_object->setOption('language', $this->languages[$this->defaultLanguageId]);
         $alternate_urls[$this->defaultLanguageId] = $this->replaceBaseUrlWithCustom($url_object->toString());

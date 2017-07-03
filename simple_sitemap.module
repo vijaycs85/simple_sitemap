@@ -221,7 +221,7 @@ function simple_sitemap_delete_bundle_config($entity_type_id, $bundle) {
 
     $message = "You may want to <a href='@url'>regenerate</a> your XML sitemap now.";
     if ($generator->getSetting('cron_generate')) {
-      $message .= ' Otherwise the sitemap will be regenerated on the next cron run.';
+      $message .= ' Otherwise the sitemap will be regenerated during a future cron run.';
     }
     drupal_set_message(t($message, ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']));
   }
