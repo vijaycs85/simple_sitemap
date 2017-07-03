@@ -4,6 +4,7 @@ namespace Drupal\simple_sitemap\Batch;
 
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\ContentEntityBase;
+use Drupal\Core\Entity\Entity;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\simple_sitemap\Logger;
@@ -160,14 +161,14 @@ class UrlGeneratorBase {
   }
 
   /**
-   * @param \Drupal\Core\Url $url_object
+   * @param Url $url_object
    * @param array $path_data
-   * @param \Drupal\Core\Entity\ContentEntityBase $entity
+   * @param Entity $entity
    */
-  protected function addUrlVariants(Url $url_object, array $path_data, ContentEntityBase $entity = null) {
+  protected function addUrlVariants(Url $url_object, array $path_data, Entity $entity = null) {
     $alternate_urls = [];
 
-    $translation_languages = NULL !== $entity && $this->batchInfo['skip_untranslated']
+    $translation_languages = $entity instanceof ContentEntityBase && $this->batchInfo['skip_untranslated']
       ? $entity->getTranslationLanguages()
       : $this->languages;
 
@@ -179,8 +180,8 @@ class UrlGeneratorBase {
       }
     }
     else {
-      // Including only translated variants of entity.
-      if (NULL !== $entity && $this->batchInfo['skip_untranslated']) {
+      // Including only translated variants of content entity.
+      if ($entity instanceof ContentEntityBase && $this->batchInfo['skip_untranslated']) {
         foreach ($translation_languages as $language) {
           $translation = $entity->getTranslation($language->getId());
           if ($translation->access('view', $this->anonUser)) {
@@ -190,7 +191,7 @@ class UrlGeneratorBase {
         }
       }
 
-      // Not an entity or including all untranslated variants.
+      // Not a content entity or including all untranslated variants.
       elseif ($url_object->access($this->anonUser)) {
         foreach ($translation_languages as $language) {
           $url_object->setOption('language', $language);
