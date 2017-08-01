@@ -183,7 +183,7 @@ class Simplesitemap {
    * @return object
    *   A sitemap chunk object.
    */
-  private function fetchSitemapChunk($id) {
+  protected function fetchSitemapChunk($id) {
     return $this->db->query('SELECT * FROM {simple_sitemap} WHERE id = :id',
       [':id' => $id])->fetchObject();
   }
