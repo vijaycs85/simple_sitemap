@@ -73,7 +73,7 @@ class EntityUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
    * @return \Drupal\Core\Entity\EntityInterface[]
    */
   protected function getBatchIterationEntities(array $entity_info) {
-    $query = $this->entityQuery->get($entity_info['entity_type_name']);
+    $query = $this->entityTypeManager->getStorage($entity_info['entity_type_name'])->getQuery();
 
     if (!empty($entity_info['keys']['id'])) {
       $query->sort($entity_info['keys']['id'], 'ASC');

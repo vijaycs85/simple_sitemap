@@ -13,7 +13,6 @@ use Drupal\simple_sitemap\SitemapGenerator;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Path\PathValidator;
-use Drupal\Core\Entity\Query\QueryFactory;
 
 /**
  * Class BatchUrlGenerator
@@ -64,13 +63,6 @@ class UrlGeneratorBase {
   protected $pathValidator;
 
   /**
-   * @var \Drupal\Core\Entity\Query\QueryFactory
-   *
-   * @todo Move to EntityUrlGenerator
-   */
-  protected $entityQuery;
-
-  /**
    * @var \Drupal\simple_sitemap\Logger
    */
   protected $logger;
@@ -97,7 +89,6 @@ class UrlGeneratorBase {
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    * @param \Drupal\Core\Path\PathValidator $path_validator
-   * @param \Drupal\Core\Entity\Query\QueryFactory $entity_query
    * @param \Drupal\simple_sitemap\Logger $logger
    */
   public function __construct(
@@ -106,7 +97,6 @@ class UrlGeneratorBase {
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
     PathValidator $path_validator,
-    QueryFactory $entity_query,
     Logger $logger
   ) {
     $this->generator = $generator;
@@ -116,7 +106,6 @@ class UrlGeneratorBase {
     $this->defaultLanguageId = $language_manager->getDefaultLanguage()->getId();
     $this->entityTypeManager = $entity_type_manager;
     $this->pathValidator = $path_validator;
-    $this->entityQuery = $entity_query;
     $this->logger = $logger;
     $this->anonUser = $this->entityTypeManager->getStorage('user')
       ->load(self::ANONYMOUS_USER_ID);

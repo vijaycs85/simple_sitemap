@@ -7,7 +7,6 @@ services:
       - '@simple_sitemap.entity_helper'
       - '@config.factory'
       - '@database'
-      - '@entity.query'
       - '@entity_type.manager'
       - '@path.validator'
       - '@date.formatter'
@@ -49,7 +48,6 @@ services:
       - '@language_manager'
       - '@entity_type.manager'
       - '@path.validator'
-      - '@entity.query'
       - '@simple_sitemap.logger'
 
   simple_sitemap.custom_url_generator:
@@ -61,7 +59,6 @@ services:
       - '@language_manager'
       - '@entity_type.manager'
       - '@path.validator'
-      - '@entity.query'
       - '@simple_sitemap.logger'
 
   simple_sitemap.logger:

@@ -6,7 +6,6 @@ use Drupal\simple_sitemap\Form\FormHelper;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Path\PathValidator;
-use Drupal\Core\Entity\Query\QueryFactory;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Datetime\DateFormatter;
 
@@ -37,11 +36,6 @@ class Simplesitemap {
   protected $db;
 
   /**
-   * @var \Drupal\Core\Entity\Query\QueryFactory
-   */
-  protected $entityQuery;
-
-  /**
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityTypeManager;
@@ -65,7 +59,6 @@ class Simplesitemap {
    * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
    * @param \Drupal\Core\Config\ConfigFactory $configFactory
    * @param \Drupal\Core\Database\Connection $database
-   * @param \Drupal\Core\Entity\Query\QueryFactory $entityQuery
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    * @param \Drupal\Core\Path\PathValidator $pathValidator
    * @param \Drupal\Core\Datetime\DateFormatter $dateFormatter
@@ -75,7 +68,6 @@ class Simplesitemap {
     EntityHelper $entityHelper,
     ConfigFactory $configFactory,
     Connection $database,
-    QueryFactory $entityQuery,
     EntityTypeManagerInterface $entityTypeManager,
     PathValidator $pathValidator,
     DateFormatter $dateFormatter
@@ -84,7 +76,6 @@ class Simplesitemap {
     $this->entityHelper = $entityHelper;
     $this->configFactory = $configFactory;
     $this->db = $database;
-    $this->entityQuery = $entityQuery;
     $this->entityTypeManager = $entityTypeManager;
     $this->pathValidator = $pathValidator;
     $this->dateFormatter = $dateFormatter;
@@ -321,7 +312,7 @@ class Simplesitemap {
       // Menu fix.
       $keys['bundle'] = $entity_type_id == 'menu_link_content' ? 'menu_name' : $keys['bundle'];
 
-      $query = $this->entityQuery->get($entity_type_id);
+      $query = $this->entityTypeManager->getStorage($entity_type_id)->getQuery();
       if (!$this->entityHelper->entityTypeIsAtomic($entity_type_id)) {
         $query->condition($keys['bundle'], $bundle_name);
       }
