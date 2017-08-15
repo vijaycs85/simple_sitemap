@@ -321,6 +321,7 @@ class FormHelper {
   protected function getFormEntity() {
     $form_object = $this->formState->getFormObject();
     if (NULL !== $form_object
+      && method_exists($form_object, 'getOperation')
       && method_exists($form_object, 'getEntity')
       && in_array($form_object->getOperation(), self::$allowedFormOperations)) {
       return $form_object->getEntity();
