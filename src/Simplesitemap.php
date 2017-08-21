@@ -264,7 +264,7 @@ class Simplesitemap {
     }
 
     // Deleting inclusion settings.
-    $config_names = $this->configFactory->listAll("simple_sitemap.bundle_settings.$entity_type_id");
+    $config_names = $this->configFactory->listAll("simple_sitemap.bundle_settings.$entity_type_id.");
     foreach($config_names as $config_name) {
       $this->configFactory->getEditable($config_name)->delete();
     }
@@ -373,7 +373,7 @@ class Simplesitemap {
       $bundle_settings = !empty($settings) ? $settings : FALSE;
     }
     else {
-      $config_names = $this->configFactory->listAll("simple_sitemap.bundle_settings");
+      $config_names = $this->configFactory->listAll("simple_sitemap.bundle_settings.");
       $bundle_settings = [];
       foreach($config_names as $config_name) {
         $config_name_parts = explode('.', $config_name);
