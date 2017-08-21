@@ -94,6 +94,7 @@ class FormHelper {
    */
   public function processForm(FormStateInterface $form_state) {
     $this->formState = $form_state;
+    $this->cleanUpFormInfo();
     $this->getEntityDataFromFormEntity();
     return $this->supports();
   }
@@ -327,6 +328,19 @@ class FormHelper {
       return $form_object->getEntity();
     }
     return FALSE;
+  }
+
+  /**
+   * Removes gathered form information from service object.
+   *
+   * Needed because this service may contain form info from the previous
+   * operation when revived from the container.
+   */
+  protected function cleanUpFormInfo() {
+    $this->entityCategory = NULL;
+    $this->entityTypeId = NULL;
+    $this->bundleName = NULL;
+    $this->instanceId = NULL;
   }
 
   /**
