@@ -108,16 +108,19 @@ function simple_sitemap_entity_form_submit($form, FormStateInterface &$form_stat
      */
     $generator = \Drupal::service('simple_sitemap.generator');
 
+    $settings = [
+      'index' => $values['simple_sitemap_index_content'],
+      'priority' => $values['simple_sitemap_priority'],
+      'changefreq' => $values['simple_sitemap_changefreq'],
+    ];
+
     switch ($f->getEntityCategory()) {
 
       case 'bundle':
         $generator->setBundleSettings(
           $f->getEntityTypeId(),
           !empty($f->getBundleName()) ? $f->getBundleName() : $f->getFormEntityId(),
-          [
-            'index' => $values['simple_sitemap_index_content'],
-            'priority' => $values['simple_sitemap_priority']
-          ]
+          $settings
         );
         break;
 
@@ -125,10 +128,7 @@ function simple_sitemap_entity_form_submit($form, FormStateInterface &$form_stat
         $generator->setEntityInstanceSettings(
           $f->getEntityTypeId(),
           !empty($f->getInstanceId()) ? $f->getInstanceId() : $f->getFormEntityId(),
-          [
-            'index' => $values['simple_sitemap_index_content'],
-            'priority' => $values['simple_sitemap_priority']
-          ]
+          $settings
         );
         break;
     }

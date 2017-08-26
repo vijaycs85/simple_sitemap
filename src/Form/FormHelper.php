@@ -66,9 +66,20 @@ class FormHelper {
     'register',
   ];
 
+  protected static $changefreqSelectValues = [
+    'always',
+    'hourly',
+    'daily',
+    'weekly',
+    'monthly',
+    'yearly',
+    'never',
+  ];
+
   protected static $valuesToCheck = [
     'simple_sitemap_index_content',
     'simple_sitemap_priority',
+    'simple_sitemap_changefreq',
     'simple_sitemap_regenerate_now',
   ];
 
@@ -225,6 +236,7 @@ class FormHelper {
     }
     $index = isset($settings['index']) ? $settings['index'] : 0;
     $priority = isset($settings['priority']) ? $settings['priority'] : self::PRIORITY_DEFAULT;
+    $changefreq = !empty($settings['changefreq']) ? $settings['changefreq'] : '';
     $bundle_name = !empty($this->getBundleName()) ? $this->getBundleName() : $this->t('undefined');
 
     if (!$multiple) {
@@ -243,10 +255,13 @@ class FormHelper {
 
     if ($this->getEntityCategory() == 'instance') {
       $priority_description = $this->t('The priority this @bundle entity will have in the eyes of search engine bots.', ['@bundle' => $bundle_name]);
+      $changefreq_description = $this->t('The frequency with which this @bundle entity changes. Search engine bots may take this as an indication of how often to index it.', ['@bundle' => $bundle_name]);
     }
     else {
       $priority_description = $this->t('The priority entities of this type will have in the eyes of search engine bots.');
+      $changefreq_description = $this->t('The frequency with which entities of this type change. Search engine bots may take this as an indication of how often to index them.');
     }
+
     $form_fragment[$prefix . 'simple_sitemap_priority'] = [
       '#type' => 'select',
       '#title' => $this->t('Priority'),
@@ -254,9 +269,23 @@ class FormHelper {
       '#default_value' => $priority,
       '#options' => $this->getPrioritySelectValues(),
     ];
+
     if ($this->getEntityCategory() == 'instance' && isset($bundle_settings['priority'])) {
       $form_fragment[$prefix . 'simple_sitemap_priority']['#options'][$this->formatPriority($bundle_settings['priority'])] .= ' (' . $this->t('Default') . ')';
     }
+
+    $form_fragment[$prefix . 'simple_sitemap_changefreq'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Change frequency'),
+      '#description' => $changefreq_description,
+      '#default_value' => $changefreq,
+      '#options' => $this->getChangefreqSelectValues(),
+    ];
+
+    if ($this->getEntityCategory() == 'instance' && isset($bundle_settings['changefreq'])) {
+      $form_fragment[$prefix . 'simple_sitemap_changefreq']['#options'][$bundle_settings['changefreq']] .= ' (' . $this->t('Default') . ')';
+    }
+
     return $this;
   }
 
@@ -377,6 +406,7 @@ class FormHelper {
    * Gets the values needed to display the priority dropdown setting.
    *
    * @return array
+   *   Select options.
    */
   public function getPrioritySelectValues() {
     $options = [];
@@ -385,6 +415,27 @@ class FormHelper {
       $options[$value] = $value;
     }
     return $options;
+  }
+
+  /**
+   * Gets the values needed to display the changefreq dropdown setting.
+   *
+   * @return array
+   *   Select options.
+   */
+  public function getChangefreqSelectValues() {
+    $options = ['' => t('- Not specified -')];
+    foreach (self::$changefreqSelectValues as $setting) {
+      $options[$setting] = t($setting);
+    }
+    return $options;
+  }
+
+  /**
+   * @return array
+   */
+  public static function getChangefreqOptions() {
+    return self::$changefreqSelectValues;
   }
 
   /**
@@ -401,5 +452,13 @@ class FormHelper {
    */
   public static function isValidPriority($priority) {
     return is_numeric($priority) && $priority >= 0 && $priority <= 1;
+  }
+
+  /**
+   * @param string $changefreq
+   * @return bool
+   */
+  public static function isValidChangefreq($changefreq) {
+    return in_array($changefreq, self::$changefreqSelectValues);
   }
 }

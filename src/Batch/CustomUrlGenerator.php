@@ -46,6 +46,7 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
         'lastmod' => method_exists($entity, 'getChangedTime')
           ? date_iso8601($entity->getChangedTime()) : NULL,
         'priority' => isset($custom_path['priority']) ? $custom_path['priority'] : NULL,
+        'changefreq' => !empty($custom_path['changefreq']) ? $custom_path['changefreq'] : NULL,
       ];
       if (NULL !== $entity) {
         $path_data['entity_info'] = [

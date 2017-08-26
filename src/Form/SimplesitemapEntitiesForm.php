@@ -96,6 +96,7 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
             $this->generator->setBundleSettings($entity_type_id, $entity_type_id, [
               'index' => TRUE,
               'priority' => $values[$entity_type_id . '_simple_sitemap_priority'],
+              'changefreq' => $values[$entity_type_id . '_simple_sitemap_changefreq'],
             ]);
           }
         }

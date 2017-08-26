@@ -61,7 +61,8 @@ class EntityUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
         ],
         'lastmod' => method_exists($entity, 'getChangedTime')
           ? date_iso8601($entity->getChangedTime()) : NULL,
-        'priority' => $entity_settings['priority'],
+        'priority' => isset($entity_settings['priority']) ? $entity_settings['priority'] : NULL,
+        'changefreq' => !empty($entity_settings['changefreq']) ? $entity_settings['changefreq'] : NULL,
       ];
       $this->addUrlVariants($url_object, $path_data, $entity);
     }

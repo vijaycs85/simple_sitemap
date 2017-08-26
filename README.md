@@ -56,10 +56,10 @@ be configured on a per-bundle basis, e.g.
 
 When including an entity type or bundle into the sitemap, the priority setting
 can be set which will set the 'priority' parameter for all entities of that
-type. See https://en.wikipedia.org/wiki/Sitemaps to learn more about this
-parameter.
+type. Same goes for the 'changefreq' setting. See https://en.wikipedia.org/wiki/Sitemaps to learn more about these
+parameters.
 
-Inclusion and priority settings of bundles can be overridden on a per-entity
+Inclusion settings of bundles can be overridden on a per-entity
 basis. Just head over to a bundle instance edit form (e.g. node/1/edit) to
 override its sitemap settings.
 

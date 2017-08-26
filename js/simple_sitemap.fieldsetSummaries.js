@@ -13,6 +13,7 @@
         if ($(context).find('#edit-simple-sitemap-index-content-1').is(':checked')) {
           vals.push(Drupal.t('Included in sitemap'));
           vals.push(Drupal.t('Priority') + ' ' + $('#edit-simple-sitemap-priority option:selected', context).text());
+          vals.push(Drupal.t('Change frequency') + ' ' + $('#edit-simple-sitemap-changefreq option:selected', context).text());
         }
         else {
           vals.push(Drupal.t('Excluded from sitemap'));

@@ -149,6 +149,7 @@ class SitemapGenerator {
     foreach ($this->generator->getCustomLinks() as $i => $custom_path) {
       $paths[$i]['path'] = $custom_path['path'];
       $paths[$i]['priority'] = isset($custom_path['priority']) ? $custom_path['priority'] : NULL;
+      $paths[$i]['changefreq'] = isset($custom_path['changefreq']) ? $custom_path['changefreq'] : NULL;
       // todo: implement lastmod.
       $paths[$i]['lastmod'] = NULL;
     }
@@ -292,7 +293,10 @@ class SitemapGenerator {
         $writer->writeElement('lastmod', $link['lastmod']);
       }
 
-      //todo: Implement changefreq here.
+      // Add changefreq if any.
+      if (isset($link['changefreq'])) {
+        $writer->writeElement('changefreq', $link['changefreq']);
+      }
 
       // Add priority if any.
       if (isset($link['priority'])) {
