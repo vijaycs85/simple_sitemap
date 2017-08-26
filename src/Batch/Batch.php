@@ -69,8 +69,11 @@ class Batch {
       case 'drush':
         // Start drush batch process.
         batch_set($this->batch);
+
+        // See https://www.drupal.org/node/638712
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
+
         drush_log($this->t(self::BATCH_INIT_MESSAGE), 'status');
         drush_backend_batch_process();
         break;
@@ -78,8 +81,11 @@ class Batch {
       case 'backend':
         // Start backend batch process.
         batch_set($this->batch);
+
+        // See https://www.drupal.org/node/638712
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
+
         // todo: Does not take advantage of batch API and eventually runs out of memory on very large sites. Use queue API instead?
         batch_process();
         break;
