@@ -46,6 +46,11 @@ class Simplesitemap {
   protected $pathValidator;
 
   /**
+   * @var \Drupal\Core\Datetime\DateFormatter
+   */
+  protected $dateFormatter;
+
+  /**
    * @var array
    */
   protected static $allowed_link_settings = [
@@ -54,8 +59,9 @@ class Simplesitemap {
   ];
 
   protected static $link_setting_defaults = [
-    'index' => 0,
+    'index' => 1,
     'priority' => 0.5,
+    'changefreq' => '',
   ];
 
   /**
@@ -292,21 +298,24 @@ class Simplesitemap {
    *   Example: ['index' => TRUE, 'priority' => 0.5, 'changefreq' => 'never'].
    *
    * @return $this
+   *
+   * @todo: enableEntityType automatically
    */
-  public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings) {
-
+  public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings = []) {
     $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
 
+    $old_settings = $this->getBundleSettings($entity_type_id, $bundle_name);
+    $settings = !empty($old_settings) ? array_merge($old_settings, $settings) : $this->supplementDefaultSettings('entity', $settings);
+
+    $bundle_settings = $this->configFactory
+      ->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name");
     foreach($settings as $setting_key => $setting) {
-      if ($setting_key == 'index') {
+      if ($setting_key === 'index') {
         $setting = intval($setting);
       }
-      $this->configFactory
-        ->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name")
-        ->set($setting_key, $setting)
-        ->save();
+      $bundle_settings->set($setting_key, $setting);
     }
-    //todo: Use addLinkSettings()?
+    $bundle_settings->save();
 
     // Delete entity overrides which are identical to new bundle setting.
     $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
@@ -323,9 +332,6 @@ class Simplesitemap {
       }
       $entity_ids = $query->execute();
 
-      $bundle_settings = $this->configFactory
-        ->get("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name");
-
       $query = $this->db->select('simple_sitemap_entity_overrides', 'o')
         ->fields('o', ['id', 'inclusion_settings'])
         ->condition('o.entity_type', $entity_type_id);
@@ -333,20 +339,24 @@ class Simplesitemap {
         $query->condition('o.entity_id', $entity_ids, 'IN');
       }
 
+      $delete_instances = [];
       foreach($query->execute()->fetchAll() as $result) {
         $delete = TRUE;
         $instance_settings = unserialize($result->inclusion_settings);
         foreach ($instance_settings as $setting_key => $instance_setting) {
-          if ($instance_setting != $bundle_settings->get($setting_key)) {
+          if ($instance_setting != $settings[$setting_key]) {
             $delete = FALSE;
             break;
           }
         }
         if ($delete) {
-          $this->db->delete('simple_sitemap_entity_overrides')
-            ->condition('id', $result->id)
-            ->execute();
+          $delete_instances[] = $result->id;
         }
+      }
+      if (!empty($delete_instances)) {
+        $this->db->delete('simple_sitemap_entity_overrides')
+          ->condition('id', $delete_instances, 'IN')
+          ->execute();
       }
     }
     else {
@@ -375,25 +385,22 @@ class Simplesitemap {
       $bundle_settings = $this->configFactory
         ->get("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name")
         ->get();
-      return !empty($bundle_settings)
-        ? $this->supplementDefaultSettings('entity', $bundle_settings)
-        : FALSE;
+      return !empty($bundle_settings) ? $bundle_settings : FALSE;
     }
     else {
       $config_names = $this->configFactory->listAll("simple_sitemap.bundle_settings.");
       $all_settings = [];
       foreach($config_names as $config_name) {
         $config_name_parts = explode('.', $config_name);
-        $all_settings[$config_name_parts[2]][$config_name_parts[3]] = $this->supplementDefaultSettings(
-          'entity',
-          $this->configFactory->get($config_name)->get()
-        );
+        $all_settings[$config_name_parts[2]][$config_name_parts[3]] = $this->configFactory->get($config_name)->get();
       }
       return $all_settings;
     }
   }
 
   /**
+   * Supplements all missing link setting with default values.
+   *
    * @param string $type
    * @param array $settings
    * @return array
@@ -401,7 +408,7 @@ class Simplesitemap {
   protected function supplementDefaultSettings($type, $settings) {
     foreach(self::$allowed_link_settings[$type] as $allowed_link_setting) {
       if (!isset($settings[$allowed_link_setting])
-        && isset($link_setting_defaults[$allowed_link_setting])) {
+        && isset(self::$link_setting_defaults[$allowed_link_setting])) {
         $settings[$allowed_link_setting] = self::$link_setting_defaults[$allowed_link_setting];
       }
     }
@@ -418,19 +425,16 @@ class Simplesitemap {
    * @return $this
    */
   public function setEntityInstanceSettings($entity_type_id, $id, $settings) {
-
     $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($id);
-    $bundle_name = $this->entityHelper->getEntityInstanceBundleName($entity);
-    $bundle_settings = $this->configFactory
-      ->get("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name")
-      ->get();
-
+    $bundle_settings = $this->getBundleSettings(
+      $entity_type_id, $this->entityHelper->getEntityInstanceBundleName($entity)
+    );
     if (!empty($bundle_settings)) {
 
       // Check if overrides are different from bundle setting before saving.
       $override = FALSE;
       foreach ($settings as $key => $setting) {
-        if ($setting != $bundle_settings[$key]) {
+        if (!isset($bundle_settings[$key]) || $setting != $bundle_settings[$key]) {
           $override = TRUE;
           break;
         }
@@ -444,8 +448,7 @@ class Simplesitemap {
           ->fields([
             'entity_type' => $entity_type_id,
             'entity_id' => $id,
-            'inclusion_settings' => serialize($settings),
-          ])
+            'inclusion_settings' => serialize(array_merge($bundle_settings, $settings)),])
           ->execute();
       }
       // Else unset override.
@@ -477,7 +480,7 @@ class Simplesitemap {
       ->fetchField();
 
     if (!empty($results)) {
-      return $this->supplementDefaultSettings('entity', unserialize($results));
+      return unserialize($results);
     }
     else {
       $entity = $this->entityTypeManager->getStorage($entity_type_id)
@@ -544,7 +547,7 @@ class Simplesitemap {
    *
    * @todo Validate $settings and throw exceptions
    */
-  public function addCustomLink($path, $settings) {
+  public function addCustomLink($path, $settings = []) {
     if (!$this->pathValidator->isValid($path)) {
       // todo: log error.
       return $this;
@@ -554,9 +557,9 @@ class Simplesitemap {
       return $this;
     }
 
-    $custom_links = $this->getCustomLinks();
+    $custom_links = $this->getCustomLinks(FALSE);
     foreach ($custom_links as $key => $link) {
-      if ($link['path'] == $path) {
+      if ($link['path'] === $path) {
         $link_key = $key;
         break;
       }
@@ -571,12 +574,20 @@ class Simplesitemap {
   /**
    * Returns an array of custom paths and their sitemap settings.
    *
+   * @param bool $supplement_default_settings
    * @return array
    */
-  public function getCustomLinks() {
+  public function getCustomLinks($supplement_default_settings = TRUE) {
     $custom_links = $this->configFactory
       ->get('simple_sitemap.custom')
       ->get('links');
+
+    if ($supplement_default_settings) {
+      foreach ($custom_links as $i => $link_settings) {
+        $custom_links[$i] = $this->supplementDefaultSettings('custom', $link_settings);
+      }
+    }
+
     return $custom_links !== NULL ? $custom_links : [];
   }
 
@@ -590,7 +601,7 @@ class Simplesitemap {
   public function getCustomLink($path) {
     foreach ($this->getCustomLinks() as $key => $link) {
       if ($link['path'] === $path) {
-        return $this->supplementDefaultSettings('custom', $link);
+        return $link;
       }
     }
     return FALSE;
@@ -604,7 +615,7 @@ class Simplesitemap {
    * @return $this
    */
   public function removeCustomLink($path) {
-    $custom_links = $this->getCustomLinks();
+    $custom_links = $this->getCustomLinks(FALSE);
     foreach ($custom_links as $key => $link) {
       if ($link['path'] === $path) {
         unset($custom_links[$key]);

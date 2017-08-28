@@ -323,3 +323,37 @@ function simple_sitemap_update_8207() {
     ]
   );
 }
+
+/**
+ * Adding changefreq setting to all existing bundle and custom link settings.
+ */
+function simple_sitemap_update_8208() {
+
+  // Update existing bundle settings.
+  $config_factory = \Drupal::service('config.factory');
+  $entity_types = $config_factory->listAll('simple_sitemap.bundle_settings.');
+
+  foreach ($entity_types as $entity_type) {
+    $config = $config_factory->get($entity_type)->get();
+    if (!isset($config['changefreq'])) {
+      $config_factory->getEditable($entity_type)
+        ->setData($config + ['changefreq' => ''])
+        ->save();
+    }
+  }
+
+  // Update existing entity override data.
+  $results = \Drupal::database()->select('simple_sitemap_entity_overrides', 'o')
+    ->fields('o', ['id', 'inclusion_settings'])
+    ->execute()->fetchAll(\PDO::FETCH_OBJ);
+
+  foreach ($results as $row) {
+    $settings = unserialize($row->inclusion_settings);
+    if (!isset($settings['changefreq'])) {
+      \Drupal::database()->update('simple_sitemap_entity_overrides')
+        ->fields(['inclusion_settings' => serialize($settings + ['changefreq' => '']),])
+        ->condition('id', $row->id)
+        ->execute();
+    }
+  }
+}

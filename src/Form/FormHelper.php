@@ -66,7 +66,7 @@ class FormHelper {
     'register',
   ];
 
-  protected static $changefreqSelectValues = [
+  protected static $changefreqValues = [
     'always',
     'hourly',
     'daily',
@@ -425,7 +425,7 @@ class FormHelper {
    */
   public function getChangefreqSelectValues() {
     $options = ['' => t('- Not specified -')];
-    foreach (self::$changefreqSelectValues as $setting) {
+    foreach (self::$changefreqValues as $setting) {
       $options[$setting] = t($setting);
     }
     return $options;
@@ -435,7 +435,7 @@ class FormHelper {
    * @return array
    */
   public static function getChangefreqOptions() {
-    return self::$changefreqSelectValues;
+    return self::$changefreqValues;
   }
 
   /**
@@ -459,6 +459,6 @@ class FormHelper {
    * @return bool
    */
   public static function isValidChangefreq($changefreq) {
-    return in_array($changefreq, self::$changefreqSelectValues);
+    return in_array($changefreq, self::$changefreqValues);
   }
 }
