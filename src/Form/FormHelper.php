@@ -287,8 +287,8 @@ class FormHelper {
       '#type' => 'select',
       '#title' => $this->t('Include images'),
       '#description' => $this->getEntityCategory() === 'instance'
-        ? $this->t('Determines if images referenced by this @bundle entity should be included into the sitemap.', ['@bundle' => $bundle_name])
-        : $this->t('Determines if images referenced by entities of this type should be included into the sitemap.'),
+        ? $this->t('Determines if images referenced by this @bundle entity should be included in the sitemap.', ['@bundle' => $bundle_name])
+        : $this->t('Determines if images referenced by entities of this type should be included in the sitemap.'),
       '#default_value' => $include_images,
       '#options' => [0 => $this->t('No'), 1 => $this->t('Yes')],
     ];
