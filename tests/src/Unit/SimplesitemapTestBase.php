@@ -38,14 +38,16 @@ abstract class SimplesitemapTestBase extends UnitTestCase {
     $this->config = [
       'max_links' => 2000,
       'cron_generate' => TRUE,
+      'cron_generate_interval'=> 0,
       'remove_duplicates' => TRUE,
+      'skip_untranslated' => FALSE,
       'batch_process_limit' => 1500,
+      'base_url' => '',
       'enabled_entity_types' => [
         'node',
         'taxonomy_term',
         'menu_link_content',
       ],
-      'base_url' => '',
     ];
 
     // Mock the digtap service with the above settings.
