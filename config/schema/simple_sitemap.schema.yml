@@ -41,6 +41,9 @@ simple_sitemap.bundle_settings.*.*:
     changefreq:
       label: 'Change frequency'
       type: string
+    include_images:
+      label: 'Include images'
+      type: 'integer'
 
 simple_sitemap.custom:
   label: 'Custom links'

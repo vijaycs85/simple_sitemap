@@ -26,6 +26,7 @@ services:
     public: true
     arguments:
       - '@entity_type.manager'
+      - '@database'
 
   simple_sitemap.form_helper:
     class: Drupal\simple_sitemap\Form\FormHelper
@@ -49,6 +50,7 @@ services:
       - '@entity_type.manager'
       - '@path.validator'
       - '@simple_sitemap.logger'
+      - '@simple_sitemap.entity_helper'
 
   simple_sitemap.custom_url_generator:
     class: Drupal\simple_sitemap\Batch\CustomUrlGenerator
@@ -60,6 +62,7 @@ services:
       - '@entity_type.manager'
       - '@path.validator'
       - '@simple_sitemap.logger'
+      - '@simple_sitemap.entity_helper'
 
   simple_sitemap.logger:
     class: Drupal\simple_sitemap\Logger

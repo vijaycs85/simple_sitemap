@@ -63,7 +63,11 @@ class EntityUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
           ? date_iso8601($entity->getChangedTime()) : NULL,
         'priority' => isset($entity_settings['priority']) ? $entity_settings['priority'] : NULL,
         'changefreq' => !empty($entity_settings['changefreq']) ? $entity_settings['changefreq'] : NULL,
+        'images' => $entity_settings['include_images']
+          ? $this->entityHelper->getEntityImageUris($entity_info['entity_type_name'], $entity_id)
+          : []
       ];
+
       $this->addUrlVariants($url_object, $path_data, $entity);
     }
     $this->processSegment();

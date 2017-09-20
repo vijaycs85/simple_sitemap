@@ -7,6 +7,7 @@ use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\Entity;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
+use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
 use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\simple_sitemap\SitemapGenerator;
@@ -83,13 +84,19 @@ class UrlGeneratorBase {
   protected $batchInfo;
 
   /**
-   * BatchUrlGenerator constructor.
+   * @var \Drupal\simple_sitemap\EntityHelper
+   */
+  protected $entityHelper;
+
+  /**
+   * UrlGeneratorBase constructor.
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
    * @param \Drupal\simple_sitemap\SitemapGenerator $sitemap_generator
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    * @param \Drupal\Core\Path\PathValidator $path_validator
    * @param \Drupal\simple_sitemap\Logger $logger
+   * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
    */
   public function __construct(
     Simplesitemap $generator,
@@ -97,7 +104,8 @@ class UrlGeneratorBase {
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
     PathValidator $path_validator,
-    Logger $logger
+    Logger $logger,
+    EntityHelper $entityHelper
   ) {
     $this->generator = $generator;
     $this->sitemapGenerator = $sitemap_generator; // todo: using only one method, maybe make method static instead?
@@ -107,6 +115,7 @@ class UrlGeneratorBase {
     $this->entityTypeManager = $entity_type_manager;
     $this->pathValidator = $path_validator;
     $this->logger = $logger;
+    $this->entityHelper = $entityHelper;
     $this->anonUser = $this->entityTypeManager->getStorage('user')
       ->load(self::ANONYMOUS_USER_ID);
   }

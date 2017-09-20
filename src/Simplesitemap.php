@@ -2,7 +2,6 @@
 
 namespace Drupal\simple_sitemap;
 
-use Drupal\simple_sitemap\Form\FormHelper;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Path\PathValidator;
@@ -54,7 +53,7 @@ class Simplesitemap {
    * @var array
    */
   protected static $allowed_link_settings = [
-    'entity' => ['index', 'priority', 'changefreq'],
+    'entity' => ['index', 'priority', 'changefreq', 'include_images'],
     'custom' => ['priority', 'changefreq'],
   ];
 
@@ -62,6 +61,7 @@ class Simplesitemap {
     'index' => 1,
     'priority' => 0.5,
     'changefreq' => '',
+    'include_images' => 0,
   ];
 
   /**
@@ -295,7 +295,7 @@ class Simplesitemap {
    *   Name of the bundle. NULL if entity type has no bundles.
    * @param array $settings
    *   An array of sitemap settings for this bundle/entity type.
-   *   Example: ['index' => TRUE, 'priority' => 0.5, 'changefreq' => 'never'].
+   *   Example: ['index' => TRUE, 'priority' => 0.5, 'changefreq' => 'never', 'include_images' => FALSE].
    *
    * @return $this
    *

@@ -97,6 +97,7 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
               'index' => TRUE,
               'priority' => $values[$entity_type_id . '_simple_sitemap_priority'],
               'changefreq' => $values[$entity_type_id . '_simple_sitemap_changefreq'],
+              'include_images' => $values[$entity_type_id . '_simple_sitemap_include_images'],
             ]);
           }
         }

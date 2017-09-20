@@ -4,7 +4,9 @@ namespace Drupal\simple_sitemap;
 
 use Drupal\Core\Entity\ContentEntityTypeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\Entity;
+use Drupal\Core\Url;
 
 /**
  * Class EntityHelper
@@ -18,11 +20,18 @@ class EntityHelper {
   protected $entityTypeManager;
 
   /**
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected $db;
+
+  /**
    * EntityHelper constructor.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   * @param \Drupal\Core\Database\Connection $database
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager) {
+  public function __construct(EntityTypeManagerInterface $entityTypeManager, Connection $database) {
     $this->entityTypeManager = $entityTypeManager;
+    $this->db = $database;
   }
 
   /**
@@ -89,6 +98,39 @@ class EntityHelper {
     }
     // todo: throw exception.
     return FALSE;
+  }
+
+  /**
+   * @param $url_object
+   * @return object|null
+   */
+  public function getEntityFromUrlObject(Url $url_object) {
+    $route_parameters = $url_object->getRouteParameters();
+    return !empty($route_parameters) && $this->entityTypeManager
+      ->getDefinition($entity_type_id = key($route_parameters), FALSE)
+      ? $this->entityTypeManager->getStorage($entity_type_id)
+        ->load($route_parameters[$entity_type_id])
+      : NULL;
+  }
+
+  /**
+   * @param $entity_type_name
+   * @param $entity_id
+   * @return array
+   */
+  public function getEntityImageUris($entity_type_name, $entity_id) {
+    $query = $this->db->select('file_managed', 'fm');
+    $query->fields('fm', ['uri']);
+    $query->join('file_usage', 'fu', 'fu.fid = fm.fid');
+    $query->condition('fm.filemime', 'image/%', 'LIKE');
+    $query->condition('fu.type', $entity_type_name);
+    $query->condition('fu.id', $entity_id);
+
+    foreach ($query->execute() as $row) {
+      $imageUris[] = file_create_url($row->uri);
+    }
+
+    return !empty($imageUris) ? $imageUris : [];
   }
 
 }

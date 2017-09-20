@@ -80,6 +80,7 @@ class FormHelper {
     'simple_sitemap_index_content',
     'simple_sitemap_priority',
     'simple_sitemap_changefreq',
+    'simple_sitemap_include_images',
     'simple_sitemap_regenerate_now',
   ];
 
@@ -227,7 +228,7 @@ class FormHelper {
   public function displayEntitySettings(&$form_fragment, $multiple = FALSE) {
     $prefix = $multiple ? $this->getEntityTypeId() . '_' : '';
 
-    if ($this->getEntityCategory() == 'instance') {
+    if ($this->getEntityCategory() === 'instance') {
       $bundle_settings = $this->generator->getBundleSettings($this->getEntityTypeId(), $this->getBundleName());
       $settings = NULL !== $this->getInstanceId() ? $this->generator->getEntityInstanceSettings($this->getEntityTypeId(), $this->getInstanceId()) : $bundle_settings;
     }
@@ -237,6 +238,7 @@ class FormHelper {
     $index = isset($settings['index']) ? $settings['index'] : 0;
     $priority = isset($settings['priority']) ? $settings['priority'] : self::PRIORITY_DEFAULT;
     $changefreq = !empty($settings['changefreq']) ? $settings['changefreq'] : '';
+    $include_images = !empty($settings['include_images']) ? $settings['include_images'] : 0;
     $bundle_name = !empty($this->getBundleName()) ? $this->getBundleName() : $this->t('undefined');
 
     if (!$multiple) {
@@ -244,46 +246,55 @@ class FormHelper {
         '#type' => 'radios',
         '#default_value' => $index,
         '#options' => [
-          0 => $this->getEntityCategory() == 'instance' ? $this->t('Do not index this @bundle entity', ['@bundle' => $bundle_name]) : $this->t('Do not index entities of this type'),
-          1 => $this->getEntityCategory() == 'instance' ? $this->t('Index this @bundle entity', ['@bundle' => $bundle_name]) : $this->t('Index entities of this type'),
+          0 => $this->getEntityCategory() === 'instance' ? $this->t('Do not index this @bundle entity', ['@bundle' => $bundle_name]) : $this->t('Do not index entities of this type'),
+          1 => $this->getEntityCategory() === 'instance' ? $this->t('Index this @bundle entity', ['@bundle' => $bundle_name]) : $this->t('Index entities of this type'),
         ],
       ];
-      if ($this->getEntityCategory() == 'instance' && isset($bundle_settings['index'])) {
-        $form_fragment[$prefix . 'simple_sitemap_index_content']['#options'][$bundle_settings['index']] .= ' <em>(' . $this->t('Default') . ')</em>';
+      if ($this->getEntityCategory() === 'instance' && isset($bundle_settings['index'])) {
+        $form_fragment[$prefix . 'simple_sitemap_index_content']['#options'][$bundle_settings['index']] .= ' <em>(' . $this->t('default') . ')</em>';
       }
-    }
-
-    if ($this->getEntityCategory() == 'instance') {
-      $priority_description = $this->t('The priority this @bundle entity will have in the eyes of search engine bots.', ['@bundle' => $bundle_name]);
-      $changefreq_description = $this->t('The frequency with which this @bundle entity changes. Search engine bots may take this as an indication of how often to index it.', ['@bundle' => $bundle_name]);
-    }
-    else {
-      $priority_description = $this->t('The priority entities of this type will have in the eyes of search engine bots.');
-      $changefreq_description = $this->t('The frequency with which entities of this type change. Search engine bots may take this as an indication of how often to index them.');
     }
 
     $form_fragment[$prefix . 'simple_sitemap_priority'] = [
       '#type' => 'select',
       '#title' => $this->t('Priority'),
-      '#description' => $priority_description,
+      '#description' => $this->getEntityCategory() === 'instance'
+        ? $this->t('The priority this @bundle entity will have in the eyes of search engine bots.', ['@bundle' => $bundle_name])
+        : $this->t('The priority entities of this type will have in the eyes of search engine bots.'),
       '#default_value' => $priority,
       '#options' => $this->getPrioritySelectValues(),
     ];
 
-    if ($this->getEntityCategory() == 'instance' && isset($bundle_settings['priority'])) {
-      $form_fragment[$prefix . 'simple_sitemap_priority']['#options'][$this->formatPriority($bundle_settings['priority'])] .= ' (' . $this->t('Default') . ')';
+    if ($this->getEntityCategory() === 'instance' && isset($bundle_settings['priority'])) {
+      $form_fragment[$prefix . 'simple_sitemap_priority']['#options'][$this->formatPriority($bundle_settings['priority'])] .= ' (' . $this->t('default') . ')';
     }
 
     $form_fragment[$prefix . 'simple_sitemap_changefreq'] = [
       '#type' => 'select',
       '#title' => $this->t('Change frequency'),
-      '#description' => $changefreq_description,
+      '#description' => $this->getEntityCategory() === 'instance'
+      ? $this->t('The frequency with which this @bundle entity changes. Search engine bots may take this as an indication of how often to index it.', ['@bundle' => $bundle_name])
+      : $this->t('The frequency with which entities of this type change. Search engine bots may take this as an indication of how often to index them.'),
       '#default_value' => $changefreq,
       '#options' => $this->getChangefreqSelectValues(),
     ];
 
-    if ($this->getEntityCategory() == 'instance' && isset($bundle_settings['changefreq'])) {
-      $form_fragment[$prefix . 'simple_sitemap_changefreq']['#options'][$bundle_settings['changefreq']] .= ' (' . $this->t('Default') . ')';
+    if ($this->getEntityCategory() === 'instance' && isset($bundle_settings['changefreq'])) {
+      $form_fragment[$prefix . 'simple_sitemap_changefreq']['#options'][$bundle_settings['changefreq']] .= ' (' . $this->t('default') . ')';
+    }
+
+    $form_fragment[$prefix . 'simple_sitemap_include_images'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Include images'),
+      '#description' => $this->getEntityCategory() === 'instance'
+        ? $this->t('Determines if images referenced by this @bundle entity should be included into the sitemap.', ['@bundle' => $bundle_name])
+        : $this->t('Determines if images referenced by entities of this type should be included into the sitemap.'),
+      '#default_value' => $include_images,
+      '#options' => [0 => $this->t('No'), 1 => $this->t('Yes')],
+    ];
+
+    if ($this->getEntityCategory() === 'instance' && isset($bundle_settings['include_images'])) {
+      $form_fragment[$prefix . 'simple_sitemap_include_images']['#options'][$bundle_settings['include_images']] .= ' (' . $this->t('default') . ')';
     }
 
     return $this;

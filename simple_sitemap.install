@@ -7,6 +7,9 @@
 
 /**
  * Implements hook_requirements().
+ *
+ * @param $phase
+ * @return array
  */
 function simple_sitemap_requirements($phase) {
   $requirements = [];
@@ -325,7 +328,7 @@ function simple_sitemap_update_8207() {
 }
 
 /**
- * Adding changefreq setting to all existing bundle and custom link settings.
+ * Adding changefreq setting to all existing bundle and entity instance settings.
  */
 function simple_sitemap_update_8208() {
 
@@ -356,4 +359,42 @@ function simple_sitemap_update_8208() {
         ->execute();
     }
   }
+
+  return t('You may now want to configure the new changefreq setting for sitemap entities and custom links.');
+}
+
+/**
+ * Adding image inclusion setting to all existing bundle and entity instance settings.
+ */
+function simple_sitemap_update_8209() {
+
+  // Update existing bundle settings.
+  $config_factory = \Drupal::service('config.factory');
+  $entity_types = $config_factory->listAll('simple_sitemap.bundle_settings.');
+
+  foreach ($entity_types as $entity_type) {
+    $config = $config_factory->get($entity_type)->get();
+    if (!isset($config['include_images'])) {
+      $config_factory->getEditable($entity_type)
+        ->setData($config + ['include_images' => 0])
+        ->save();
+    }
+  }
+
+  // Update existing entity override data.
+  $results = \Drupal::database()->select('simple_sitemap_entity_overrides', 'o')
+    ->fields('o', ['id', 'inclusion_settings'])
+    ->execute()->fetchAll(\PDO::FETCH_OBJ);
+
+  foreach ($results as $row) {
+    $settings = unserialize($row->inclusion_settings);
+    if (!isset($settings['include_images'])) {
+      \Drupal::database()->update('simple_sitemap_entity_overrides')
+        ->fields(['inclusion_settings' => serialize($settings + ['include_images' => 0]),])
+        ->condition('id', $row->id)
+        ->execute();
+    }
+  }
+
+  return t('You may now want to configure your sitemap entities to include images.');
 }

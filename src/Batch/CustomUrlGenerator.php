@@ -39,7 +39,7 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
         continue;
       }
 
-      $entity = $this->getEntityFromUrlObject($url_object);
+      $entity = $this->entityHelper->getEntityFromUrlObject($url_object);
 
       $path_data = [
         'path' => $path,
@@ -74,18 +74,5 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
     }
 
     return $custom_paths;
-  }
-
-  /**
-   * @param $url_object
-   * @return object|null
-   */
-  protected function getEntityFromUrlObject(Url $url_object) {
-    $route_parameters = $url_object->getRouteParameters();
-    return !empty($route_parameters) && $this->entityTypeManager
-      ->getDefinition($entity_type_id = key($route_parameters), FALSE)
-      ? $this->entityTypeManager->getStorage($entity_type_id)
-        ->load($route_parameters[$entity_type_id])
-      : NULL;
   }
 }

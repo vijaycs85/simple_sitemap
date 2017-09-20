@@ -112,6 +112,7 @@ function simple_sitemap_entity_form_submit($form, FormStateInterface &$form_stat
       'index' => $values['simple_sitemap_index_content'],
       'priority' => $values['simple_sitemap_priority'],
       'changefreq' => $values['simple_sitemap_changefreq'],
+      'include_images' => $values['simple_sitemap_include_images'],
     ];
 
     switch ($f->getEntityCategory()) {
