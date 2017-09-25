@@ -37,7 +37,6 @@ class SitemapGenerator {
    */
   protected $db;
 
-
   /**
    * @var \Drupal\Core\Language\LanguageManagerInterface
    */
@@ -63,12 +62,18 @@ class SitemapGenerator {
    */
   protected $generator;
 
+  /**
+   * @var array
+   */
   protected static $attributes = [
     'xmlns' => self::XMLNS,
     'xmlns:xhtml' => self::XMLNS_XHTML,
     'xmlns:image' => self::XMLNS_IMAGE,
   ];
 
+  /**
+   * @var array
+   */
   protected static $indexAttributes = [
     'xmlns' => self::XMLNS,
   ];
@@ -336,9 +341,9 @@ class SitemapGenerator {
 
       // Add images if any.
       if (!empty($link['images'])) {
-        foreach ($link['images'] as $image_url) {
+        foreach ($link['images'] as $image) {
           $writer->startElement('image:image');
-          $writer->writeElement('image:loc', $image_url);
+          $writer->writeElement('image:loc', $image['path']);
           $writer->endElement();
         }
       }

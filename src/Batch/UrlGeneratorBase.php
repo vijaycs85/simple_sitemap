@@ -159,13 +159,25 @@ class UrlGeneratorBase {
   }
 
   /**
+   * @param array $path_data
+   * @param \Drupal\Core\Url|NULL $url_object
+   */
+  protected function addUrl(array $path_data, Url $url_object = NULL) {
+    if ($url_object !== NULL) {
+      $this->addUrlVariants($path_data, $url_object);
+    }
+    else {
+      $this->context['results']['generate'][] = $path_data;
+    }
+  }
+
+  /**
    * @param Url $url_object
    * @param array $path_data
-   * @param Entity $entity
    */
-  protected function addUrlVariants(Url $url_object, array $path_data, Entity $entity = null) {
+  protected function addUrlVariants(array $path_data, Url $url_object) {
     $alternate_urls = [];
-
+    $entity = $this->entityHelper->getEntityFromUrlObject($url_object);
     $translation_languages = $entity instanceof ContentEntityBase && $this->batchInfo['skip_untranslated']
       ? $entity->getTranslationLanguages()
       : $this->languages;
@@ -199,7 +211,8 @@ class UrlGeneratorBase {
     }
 
     foreach ($alternate_urls as $langcode => $url) {
-      $this->context['results']['generate'][] = $path_data + ['langcode' => $langcode, 'url' => $url, 'alternate_urls' => $alternate_urls];
+      $this->context['results']['generate'][] = $path_data + [
+        'langcode' => $langcode, 'url' => $url, 'alternate_urls' => $alternate_urls];
     }
   }
 

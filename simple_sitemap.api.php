@@ -50,7 +50,9 @@ function hook_simple_sitemap_arbitrary_links_alter(&$arbitrary_links) {
     'priority' => '0.5',
     'lastmod' => '2012-10-12T17:40:30+02:00',
     'changefreq' => 'weekly',
-    'images' => ['http://path-to-image.png']
+    'images' => [
+      ['path' =>'http://path-to-image.png']
+    ]
   ];
 }
 

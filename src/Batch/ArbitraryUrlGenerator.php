@@ -12,12 +12,14 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInte
    * Batch function that adds arbitrary URLs to the sitemap.
    *
    * @param mixed $arbitrary_paths
+   *
+   * @see \hook_simple_sitemap_arbitrary_links_alter()
    */
   public function generate($arbitrary_paths) {
 
     foreach ($this->getBatchIterationElements($arbitrary_paths) as $i => $path_data) {
       $this->setCurrentId($i);
-      $this->context['results']['generate'][] = $path_data;
+      $this->addUrl($path_data);
     }
     $this->processSegment();
   }

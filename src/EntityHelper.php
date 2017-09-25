@@ -118,7 +118,7 @@ class EntityHelper {
    * @param $entity_id
    * @return array
    */
-  public function getEntityImageUris($entity_type_name, $entity_id) {
+  public function getEntityImageUrls($entity_type_name, $entity_id) {
     $query = $this->db->select('file_managed', 'fm');
     $query->fields('fm', ['uri']);
     $query->join('file_usage', 'fu', 'fu.fid = fm.fid');

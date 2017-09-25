@@ -54,7 +54,7 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
           'id' => $entity->id()
         ];
       }
-      $this->addUrlVariants($url_object, $path_data, $entity);
+      $this->addUrl($path_data, $url_object);
     }
     $this->processSegment();
   }

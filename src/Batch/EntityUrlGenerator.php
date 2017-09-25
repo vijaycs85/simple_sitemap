@@ -64,13 +64,26 @@ class EntityUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
         'priority' => isset($entity_settings['priority']) ? $entity_settings['priority'] : NULL,
         'changefreq' => !empty($entity_settings['changefreq']) ? $entity_settings['changefreq'] : NULL,
         'images' => $entity_settings['include_images']
-          ? $this->entityHelper->getEntityImageUris($entity_info['entity_type_name'], $entity_id)
+          ? $this->getImages($entity_info['entity_type_name'], $entity_id)
           : []
       ];
 
-      $this->addUrlVariants($url_object, $path_data, $entity);
+      $this->addUrl($path_data, $url_object);
     }
     $this->processSegment();
+  }
+
+  /**
+   * @param $entity_type_name
+   * @param $entity_id
+   * @return array
+   */
+  protected function getImages($entity_type_name, $entity_id) {
+    $images = [];
+    foreach ($this->entityHelper->getEntityImageUrls($entity_type_name, $entity_id) as $Url) {
+      $images[]['path'] = $Url;
+    }
+    return $images;
   }
 
   /**
