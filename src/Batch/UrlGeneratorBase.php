@@ -284,4 +284,21 @@ class UrlGeneratorBase {
       ? str_replace($GLOBALS['base_url'], $this->batchInfo['base_url'], $url)
       : $url;
   }
+
+  /**
+   * @param array $elements
+   * @return array
+   */
+  protected function getBatchIterationElements(array $elements) {
+
+    if ($this->needsInitialization()) {
+      $this->initializeBatch(count($elements));
+    }
+
+    if ($this->isBatch()) {
+      $elements = array_slice($elements, $this->context['sandbox']['progress'], $this->batchInfo['batch_process_limit']);
+    }
+
+    return $elements;
+  }
 }

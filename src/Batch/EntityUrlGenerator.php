@@ -15,7 +15,7 @@ class EntityUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
    */
   public function generate($entity_info) {
 
-    foreach ($this->getBatchIterationEntities($entity_info) as $entity_id => $entity) {
+    foreach ($this->getBatchIterationElements($entity_info) as $entity_id => $entity) {
 
       $this->setCurrentId($entity_id);
 
@@ -77,7 +77,7 @@ class EntityUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
    * @param array $entity_info
    * @return \Drupal\Core\Entity\EntityInterface[]
    */
-  protected function getBatchIterationEntities(array $entity_info) {
+  protected function getBatchIterationElements(array $entity_info) {
     $query = $this->entityTypeManager->getStorage($entity_info['entity_type_name'])->getQuery();
 
     if (!empty($entity_info['keys']['id'])) {

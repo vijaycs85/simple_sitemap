@@ -19,7 +19,7 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
    */
   public function generate($custom_paths) {
 
-    foreach ($this->getBatchIterationCustomPaths($custom_paths) as $i => $custom_path) {
+    foreach ($this->getBatchIterationElements($custom_paths) as $i => $custom_path) {
 
       $this->setCurrentId($i);
 
@@ -57,22 +57,5 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
       $this->addUrlVariants($url_object, $path_data, $entity);
     }
     $this->processSegment();
-  }
-
-  /**
-   * @param array $custom_paths
-   * @return array
-   */
-  protected function getBatchIterationCustomPaths(array $custom_paths) {
-
-    if ($this->needsInitialization()) {
-      $this->initializeBatch(count($custom_paths));
-    }
-
-    if ($this->isBatch()) {
-      $custom_paths = array_slice($custom_paths, $this->context['sandbox']['progress'], $this->batchInfo['batch_process_limit']);
-    }
-
-    return $custom_paths;
   }
 }

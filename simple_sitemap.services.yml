@@ -64,6 +64,18 @@ services:
       - '@simple_sitemap.logger'
       - '@simple_sitemap.entity_helper'
 
+  simple_sitemap.arbitrary_url_generator:
+    class: Drupal\simple_sitemap\Batch\ArbitraryUrlGenerator
+    public: true
+    arguments:
+      - '@simple_sitemap.generator'
+      - '@simple_sitemap.sitemap_generator'
+      - '@language_manager'
+      - '@entity_type.manager'
+      - '@path.validator'
+      - '@simple_sitemap.logger'
+      - '@simple_sitemap.entity_helper'
+
   simple_sitemap.logger:
     class: Drupal\simple_sitemap\Logger
     public: true

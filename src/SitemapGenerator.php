@@ -63,6 +63,16 @@ class SitemapGenerator {
    */
   protected $generator;
 
+  protected static $attributes = [
+    'xmlns' => self::XMLNS,
+    'xmlns:xhtml' => self::XMLNS_XHTML,
+    'xmlns:image' => self::XMLNS_IMAGE,
+  ];
+
+  protected static $indexAttributes = [
+    'xmlns' => self::XMLNS,
+  ];
+
   /**
    * SitemapGenerator constructor.
    * @param \Drupal\simple_sitemap\Batch\Batch $batch
@@ -129,13 +139,22 @@ class SitemapGenerator {
       'entity_types' => $this->generator->getBundleSettings(),
       'base_url' => $this->generator->getSetting('base_url', ''),
     ]);
+
     // Add custom link generating operation.
-    $this->batch->addOperation('generateCustomUrls', $this->getCustomUrlsData());
+    $this->batch->addOperation('simple_sitemap.custom_url_generator', $this->getCustomUrlsData());
 
     // Add entity link generating operations.
     foreach ($this->getEntityTypeData() as $data) {
-      $this->batch->addOperation('generateBundleUrls', $data);
+      $this->batch->addOperation('simple_sitemap.entity_url_generator', $data);
     }
+
+    // Add arbitrary links generating operation.
+    $arbitrary_links = [];
+    $this->moduleHandler->alter('simple_sitemap_arbitrary_links', $arbitrary_links);
+    if (!empty($arbitrary_links)) {
+      $this->batch->addOperation('simple_sitemap.arbitrary_url_generator', $arbitrary_links);
+    }
+
     $this->batch->start();
   }
 
@@ -151,8 +170,6 @@ class SitemapGenerator {
       $paths[$i]['path'] = $custom_path['path'];
       $paths[$i]['priority'] = isset($custom_path['priority']) ? $custom_path['priority'] : NULL;
       $paths[$i]['changefreq'] = isset($custom_path['changefreq']) ? $custom_path['changefreq'] : NULL;
-      // todo: implement lastmod.
-      $paths[$i]['lastmod'] = NULL;
     }
     return $paths;
   }
@@ -190,8 +207,8 @@ class SitemapGenerator {
   }
 
   /**
-   * Wrapper method which takes links along with their options, lets other
-   * modules alter the links and then generates and saves the sitemap.
+   * Wrapper method which takes links along with their options and then
+   * generates and saves the sitemap.
    *
    * @param array $links
    *   All links with their multilingual versions and settings.
@@ -199,9 +216,6 @@ class SitemapGenerator {
    *   Remove old sitemap from database before inserting the new one.
    */
   public function generateSitemap(array $links, $remove_sitemap = FALSE) {
-    // Invoke alter hook.
-    $this->moduleHandler->alter('simple_sitemap_links', $links);
-
     $values = [
       'id' => $remove_sitemap ? self::FIRST_CHUNK_INDEX
         : $this->db->query('SELECT MAX(id) FROM {simple_sitemap}')
@@ -230,20 +244,29 @@ class SitemapGenerator {
     $writer->startDocument(self::XML_VERSION, self::ENCODING);
     $writer->writeComment(self::GENERATED_BY);
     $writer->startElement('sitemapindex');
-    $writer->writeAttribute('xmlns', self::XMLNS);
-    $writer->writeAttribute('xmlns:image', self::XMLNS_IMAGE);
 
+    // Add attributes to document.
+    $this->moduleHandler->alter('simple_sitemap_index_attributes', self::$indexAttributes);
+    foreach (self::$indexAttributes as $name => $value) {
+      $writer->writeAttribute($name, $value);
+    }
+
+    // Add sitemap locations to document.
     foreach ($chunk_info as $chunk_id => $chunk_data) {
       $writer->startElement('sitemap');
       $writer->writeElement('loc', $this->getCustomBaseUrl() . '/sitemaps/' . $chunk_id . '/' . 'sitemap.xml');
       $writer->writeElement('lastmod', date_iso8601($chunk_data->sitemap_created));
       $writer->endElement();
     }
+
     $writer->endElement();
     $writer->endDocument();
     return $writer->outputMemory();
   }
 
+  /**
+   * @return string
+   */
   public function getCustomBaseUrl() {
     $customBaseUrl = $this->generator->getSetting('base_url', '');
     return !empty($customBaseUrl) ? $customBaseUrl : $GLOBALS['base_url'];
@@ -265,13 +288,18 @@ class SitemapGenerator {
     $writer->startDocument(self::XML_VERSION, self::ENCODING);
     $writer->writeComment(self::GENERATED_BY);
     $writer->startElement('urlset');
-    $writer->writeAttribute('xmlns', self::XMLNS);
-    $writer->writeAttribute('xmlns:image', self::XMLNS_IMAGE);
 
-    if ($this->isHreflangSitemap()) {
-      $writer->writeAttribute('xmlns:xhtml', self::XMLNS_XHTML);
+    // Add attributes to document.
+    if (!$this->isHreflangSitemap()) {
+      unset(self::$attributes['xmlns:xhtml']);
+    }
+    $this->moduleHandler->alter('simple_sitemap_attributes', self::$attributes);
+    foreach (self::$attributes as $name => $value) {
+      $writer->writeAttribute($name, $value);
     }
 
+    // Add URLs to document.
+    $this->moduleHandler->alter('simple_sitemap_links', $links);
     foreach ($links as $link) {
 
       // Add each translation variant URL as location to the sitemap.
@@ -281,7 +309,7 @@ class SitemapGenerator {
       // If more than one language is enabled, add all translation variant URLs
       // as alternate links to this location turning the sitemap into a hreflang
       // sitemap.
-      if ($this->isHreflangSitemap()) {
+      if (isset($link['alternate_urls']) && $this->isHreflangSitemap()) {
         foreach ($link['alternate_urls'] as $language_id => $alternate_url) {
           $writer->startElement('xhtml:link');
           $writer->writeAttribute('rel', 'alternate');

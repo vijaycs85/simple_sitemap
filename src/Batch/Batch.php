@@ -43,7 +43,6 @@ class Batch {
       'error_message' => $this->t(self::BATCH_ERROR_MESSAGE),
       'progress_message' => $this->t(self::BATCH_PROGRESS_MESSAGE),
       'operations' => [],
-    // __CLASS__ . '::finishGeneration' not working possibly due to a drush error.
       'finished' => [__CLASS__, 'finishGeneration'],
     ];
   }
@@ -107,12 +106,12 @@ class Batch {
   /**
    * Adds an operation to the batch.
    *
-   * @param string $processing_method
+   * @param string $processing_service
    * @param array $data
    */
-  public function addOperation($processing_method, array $data) {
+  public function addOperation($processing_service, array $data) {
     $this->batch['operations'][] = [
-      __CLASS__ . '::' . $processing_method, [$data, $this->batchInfo],
+      __CLASS__ . '::generate', [$processing_service, $data, $this->batchInfo],
     ];
   }
 
@@ -125,27 +124,22 @@ class Batch {
    *
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
-  public static function generateBundleUrls(array $entity_info, array $batch_info, &$context) {
-    \Drupal::service('simple_sitemap.entity_url_generator')
-      ->setContext($context)
-      ->setBatchInfo($batch_info)
-      ->generate($entity_info);
-  }
 
   /**
-   * Batch callback function which generates urls to custom paths.
+   * Batch callback function which generates URLs.
    *
-   * @param array $custom_paths
+   * @param $processing_service
+   * @param array $data
    * @param array $batch_info
-   * @param array &$context
+   * @param $context
    *
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
-  public static function generateCustomUrls(array $custom_paths, array $batch_info, &$context) {
-    \Drupal::service('simple_sitemap.custom_url_generator')
+  public static function generate($processing_service, array $data, array $batch_info, &$context) {
+    \Drupal::service($processing_service)
       ->setContext($context)
       ->setBatchInfo($batch_info)
-      ->generate($custom_paths);
+      ->generate($data);
   }
 
   /**
