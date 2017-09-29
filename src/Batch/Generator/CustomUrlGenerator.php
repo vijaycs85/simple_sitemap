@@ -1,12 +1,14 @@
 <?php
 
-namespace Drupal\simple_sitemap\Batch;
+namespace Drupal\simple_sitemap\Batch\Generator;
 
 use Drupal\Core\Url;
 
 /**
- * Class BatchUrlGenerator
- * @package Drupal\simple_sitemap\Batch
+ * Class CustomUrlGenerator
+ * @package Drupal\simple_sitemap\Batch\Generator
+ *
+ * @todo Add image support
  */
 class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterface {
 

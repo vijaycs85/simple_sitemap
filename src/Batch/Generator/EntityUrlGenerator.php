@@ -1,10 +1,10 @@
 <?php
 
-namespace Drupal\simple_sitemap\Batch;
+namespace Drupal\simple_sitemap\Batch\Generator;
 
 /**
- * Class BatchUrlGenerator
- * @package Drupal\simple_sitemap\Batch
+ * Class EntityUrlGenerator
+ * @package Drupal\simple_sitemap\Batch\Generator
  */
 class EntityUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterface {
 
@@ -71,19 +71,6 @@ class EntityUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
       $this->addUrl($path_data, $url_object);
     }
     $this->processSegment();
-  }
-
-  /**
-   * @param $entity_type_name
-   * @param $entity_id
-   * @return array
-   */
-  protected function getImages($entity_type_name, $entity_id) {
-    $images = [];
-    foreach ($this->entityHelper->getEntityImageUrls($entity_type_name, $entity_id) as $Url) {
-      $images[]['path'] = $Url;
-    }
-    return $images;
   }
 
   /**

@@ -1,10 +1,10 @@
 <?php
 
-namespace Drupal\simple_sitemap\Batch;
+namespace Drupal\simple_sitemap\Batch\Generator;
 
 /**
  * Class ArbitraryUrlGenerator
- * @package Drupal\simple_sitemap\Batch
+ * @package Drupal\simple_sitemap\Batch\Generator
  */
 class ArbitraryUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterface {
 
@@ -16,8 +16,7 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInte
    * @see \hook_simple_sitemap_arbitrary_links_alter()
    */
   public function generate($arbitrary_paths) {
-
-    foreach ($this->getBatchIterationElements($arbitrary_paths) as $i => $path_data) {
+    foreach ($this->getBatchIterationElements(array_values($arbitrary_paths)) as $i => $path_data) {
       $this->setCurrentId($i);
       $this->addUrl($path_data);
     }

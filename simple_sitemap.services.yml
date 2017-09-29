@@ -41,7 +41,7 @@ services:
     public: false
 
   simple_sitemap.entity_url_generator:
-    class: Drupal\simple_sitemap\Batch\EntityUrlGenerator
+    class: Drupal\simple_sitemap\Batch\Generator\EntityUrlGenerator
     public: true
     arguments:
       - '@simple_sitemap.generator'
@@ -53,7 +53,7 @@ services:
       - '@simple_sitemap.entity_helper'
 
   simple_sitemap.custom_url_generator:
-    class: Drupal\simple_sitemap\Batch\CustomUrlGenerator
+    class: Drupal\simple_sitemap\Batch\Generator\CustomUrlGenerator
     public: true
     arguments:
       - '@simple_sitemap.generator'
@@ -65,7 +65,7 @@ services:
       - '@simple_sitemap.entity_helper'
 
   simple_sitemap.arbitrary_url_generator:
-    class: Drupal\simple_sitemap\Batch\ArbitraryUrlGenerator
+    class: Drupal\simple_sitemap\Batch\Generator\ArbitraryUrlGenerator
     public: true
     arguments:
       - '@simple_sitemap.generator'

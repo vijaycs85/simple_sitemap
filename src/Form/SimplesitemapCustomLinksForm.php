@@ -7,6 +7,8 @@ use Drupal\Core\Form\FormStateInterface;
 /**
  * Class SimplesitemapCustomLinksForm
  * @package Drupal\simple_sitemap\Form
+ *
+ * @todo Add image support
  */
 class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
 

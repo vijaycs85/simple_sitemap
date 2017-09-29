@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\simple_sitemap\Batch;
+namespace Drupal\simple_sitemap\Batch\Generator;
 
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\ContentEntityBase;
@@ -16,8 +16,8 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Path\PathValidator;
 
 /**
- * Class BatchUrlGenerator
- * @package Drupal\simple_sitemap\Batch
+ * Class UrlGeneratorBase
+ * @package Drupal\simple_sitemap\Batch\Generator
  */
 class UrlGeneratorBase {
 
@@ -303,7 +303,6 @@ class UrlGeneratorBase {
    * @return array
    */
   protected function getBatchIterationElements(array $elements) {
-
     if ($this->needsInitialization()) {
       $this->initializeBatch(count($elements));
     }
@@ -313,5 +312,18 @@ class UrlGeneratorBase {
     }
 
     return $elements;
+  }
+
+  /**
+   * @param $entity_type_name
+   * @param $entity_id
+   * @return array
+   */
+  protected function getImages($entity_type_name, $entity_id) {
+    $images = [];
+    foreach ($this->entityHelper->getEntityImageUrls($entity_type_name, $entity_id) as $Url) {
+      $images[]['path'] = $Url;
+    }
+    return $images;
   }
 }

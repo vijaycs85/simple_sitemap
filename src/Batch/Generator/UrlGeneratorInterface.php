@@ -1,10 +1,10 @@
 <?php
 
-namespace Drupal\simple_sitemap\Batch;
+namespace Drupal\simple_sitemap\Batch\Generator;
 
 /**
  * Interface UrlGeneratorInterface
- * @package Drupal\simple_sitemap\Batch
+ * @package Drupal\simple_sitemap\Batch\Generator
  */
 interface UrlGeneratorInterface {
 

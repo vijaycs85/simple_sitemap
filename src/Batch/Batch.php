@@ -116,16 +116,6 @@ class Batch {
   }
 
   /**
-   * Batch callback function which generates urls to entity paths.
-   *
-   * @param array $entity_info
-   * @param array $batch_info
-   * @param array &$context
-   *
-   * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
-   */
-
-  /**
    * Batch callback function which generates URLs.
    *
    * @param $processing_service
