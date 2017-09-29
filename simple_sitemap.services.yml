@@ -10,6 +10,7 @@ services:
       - '@entity_type.manager'
       - '@path.validator'
       - '@date.formatter'
+      - '@datetime.time'
 
   simple_sitemap.sitemap_generator:
     class: Drupal\simple_sitemap\SitemapGenerator
@@ -20,6 +21,7 @@ services:
       - '@database'
       - '@module_handler'
       - '@language_manager'
+      - '@datetime.time'
 
   simple_sitemap.entity_helper:
     class: Drupal\simple_sitemap\EntityHelper

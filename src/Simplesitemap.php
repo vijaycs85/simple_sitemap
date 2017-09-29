@@ -7,6 +7,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Path\PathValidator;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Datetime\DateFormatter;
+use Drupal\Component\Datetime\Time;
 
 /**
  * Class Simplesitemap
@@ -50,6 +51,11 @@ class Simplesitemap {
   protected $dateFormatter;
 
   /**
+   * @var \Drupal\Component\Datetime\Time
+   */
+  protected $time;
+
+  /**
    * @var array
    */
   protected static $allowed_link_settings = [
@@ -73,6 +79,7 @@ class Simplesitemap {
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    * @param \Drupal\Core\Path\PathValidator $pathValidator
    * @param \Drupal\Core\Datetime\DateFormatter $dateFormatter
+   * @param \Drupal\Component\Datetime\Time $time
    */
   public function __construct(
     SitemapGenerator $sitemapGenerator,
@@ -81,7 +88,8 @@ class Simplesitemap {
     Connection $database,
     EntityTypeManagerInterface $entityTypeManager,
     PathValidator $pathValidator,
-    DateFormatter $dateFormatter
+    DateFormatter $dateFormatter,
+    Time $time
   ) {
     $this->sitemapGenerator = $sitemapGenerator;
     $this->entityHelper = $entityHelper;
@@ -90,6 +98,7 @@ class Simplesitemap {
     $this->entityTypeManager = $entityTypeManager;
     $this->pathValidator = $pathValidator;
     $this->dateFormatter = $dateFormatter;
+    $this->time = $time;
   }
 
   /**
@@ -229,7 +238,7 @@ class Simplesitemap {
     $chunks = $this->fetchSitemapChunkInfo();
     if (isset($chunks[SitemapGenerator::FIRST_CHUNK_INDEX]->sitemap_created)) {
       return $this->dateFormatter
-        ->formatInterval(REQUEST_TIME - $chunks[SitemapGenerator::FIRST_CHUNK_INDEX]
+        ->formatInterval($this->time->getRequestTime() - $chunks[SitemapGenerator::FIRST_CHUNK_INDEX]
             ->sitemap_created);
     }
     return FALSE;

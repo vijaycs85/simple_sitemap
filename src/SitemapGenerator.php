@@ -7,6 +7,7 @@ use Drupal\simple_sitemap\Batch\Batch;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Component\Datetime\Time;
 
 /**
  * Class SitemapGenerator
@@ -63,6 +64,11 @@ class SitemapGenerator {
   protected $generator;
 
   /**
+   * @var \Drupal\Component\Datetime\Time
+   */
+  protected $time;
+
+  /**
    * @var array
    */
   protected static $attributes = [
@@ -85,19 +91,22 @@ class SitemapGenerator {
    * @param \Drupal\Core\Database\Connection $database
    * @param \Drupal\Core\Extension\ModuleHandler $module_handler
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
+   * @param \Drupal\Component\Datetime\Time $time
    */
   public function __construct(
     Batch $batch,
     EntityHelper $entityHelper,
     Connection $database,
     ModuleHandler $module_handler,
-    LanguageManagerInterface $language_manager
+    LanguageManagerInterface $language_manager,
+    Time $time
   ) {
     $this->batch = $batch;
     $this->entityHelper = $entityHelper;
     $this->db = $database;
     $this->moduleHandler = $module_handler;
     $this->languageManager = $language_manager;
+    $this->time = $time;
     $this->setIsHreflangSitemap();
   }
 
@@ -226,7 +235,7 @@ class SitemapGenerator {
         : $this->db->query('SELECT MAX(id) FROM {simple_sitemap}')
           ->fetchField() + 1,
       'sitemap_string' => $this->generateSitemapChunk($links),
-      'sitemap_created' => REQUEST_TIME,
+      'sitemap_created' => $this->time->getRequestTime(),
     ];
     if ($remove_sitemap) {
       $this->db->truncate('simple_sitemap')->execute();
