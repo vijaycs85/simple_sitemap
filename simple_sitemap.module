@@ -235,6 +235,6 @@ function simple_sitemap_delete_bundle_config($entity_type_id, $bundle) {
 function simple_sitemap_robotstxt() {
   return [
     '# XML sitemap',
-    'Sitemap: ' . $GLOBALS['base_url'] . '/sitemap.xml',
+    'Sitemap: ' . $GLOBALS['base_url'] . '/sitemap.xml', //todo: Use base URL setting?
   ];
 }

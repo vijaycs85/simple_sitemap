@@ -22,6 +22,9 @@ simple_sitemap.settings:
     base_url:
       label: 'Base URL'
       type: string
+    custom_links_include_images:
+      label: 'Include images of custom links'
+      type: boolean
     enabled_entity_types:
       label: 'Enabled entity types'
       type: sequence
@@ -43,7 +46,7 @@ simple_sitemap.bundle_settings.*.*:
       type: string
     include_images:
       label: 'Include images'
-      type: 'integer'
+      type: integer
 
 simple_sitemap.custom:
   label: 'Custom links'

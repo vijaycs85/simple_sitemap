@@ -7,12 +7,12 @@ use Drupal\Core\Url;
 /**
  * Class CustomUrlGenerator
  * @package Drupal\simple_sitemap\Batch\Generator
- *
- * @todo Add image support
  */
 class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterface {
 
   const PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE = "The custom path @path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users. You can review custom paths <a href='@custom_paths_url'>here</a>.";
+
+  protected $includeImages;
 
   /**
    * Batch function which generates urls to custom paths.
@@ -20,6 +20,8 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
    * @param mixed $custom_paths
    */
   public function generate($custom_paths) {
+
+    $this->includeImages = $this->generator->getSetting('custom_links_include_images', FALSE);
 
     foreach ($this->getBatchIterationElements($custom_paths) as $i => $custom_path) {
 
@@ -49,6 +51,9 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
           ? date_iso8601($entity->getChangedTime()) : NULL,
         'priority' => isset($custom_path['priority']) ? $custom_path['priority'] : NULL,
         'changefreq' => !empty($custom_path['changefreq']) ? $custom_path['changefreq'] : NULL,
+        'images' => $this->includeImages && method_exists($entity, 'getEntityTypeId')
+          ? $this->getImages($entity->getEntityTypeId(), $entity->id())
+          : []
       ];
       if (NULL !== $entity) {
         $path_data['entity_info'] = [
