@@ -33,7 +33,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
       '#type' => 'textarea',
       '#title' => $this->t('Relative Drupal paths'),
       '#default_value' => $this->customLinksToString($this->generator->getCustomLinks(FALSE)),
-      '#description' => $this->t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with a '/'.<br/>Optionally link priority <em>(0.0 - 1.0)</em> can be added by appending it after a space.<br/> Optionally link change frequency <em>(always / hourly / daily / weekly / monthly / yearly / never)</em> can be added by appending it after a space.<br/><br/><strong>Examples:</strong><br/><em>/ 1.0 daily</em> -> home page with the highest priority and daily change frequency<br/><em>/contact</em> -> contact page with the default priority and no change frequency information."),
+      '#description' => $this->t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with a '/'.<br/>Optionally link priority <em>(0.0 - 1.0)</em> can be added by appending it after a space.<br/> Optionally link change frequency <em>(always / hourly / daily / weekly / monthly / yearly / never)</em> can be added by appending it after a space.<br/><br/><strong>Examples:</strong><br/><em>/ 1.0 daily</em> -> home page with the highest priority and daily change frequency<br/><em>/contact</em> -> contact page with the default priority and no change frequency information"),
     ];
 
     $form['simple_sitemap_custom']['include_images'] = [
