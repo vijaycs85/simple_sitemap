@@ -322,7 +322,7 @@ class UrlGeneratorBase {
   protected function getImages($entity_type_name, $entity_id) {
     $images = [];
     foreach ($this->entityHelper->getEntityImageUrls($entity_type_name, $entity_id) as $Url) {
-      $images[]['path'] = $Url;
+      $images[]['path'] = $this->replaceBaseUrlWithCustom($Url);
     }
     return $images;
   }
