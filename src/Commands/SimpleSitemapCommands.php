@@ -25,7 +25,7 @@ class SimpleSitemapCommands extends DrushCommands {
   }
 
   /**
-   * Regenerate XML sitemaps for all languages according to the module settings.
+   * Regenerate the XML sitemap according to the module settings.
    *
    * @command simple-sitemap:generate
    * @aliases ss:generate, ssg

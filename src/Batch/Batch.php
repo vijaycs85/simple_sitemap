@@ -30,7 +30,7 @@ class Batch {
   const BATCH_INIT_MESSAGE = 'Initializing batch...';
   const BATCH_ERROR_MESSAGE = 'An error has occurred. This may result in an incomplete XML sitemap.';
   const BATCH_PROGRESS_MESSAGE = 'Processing @current out of @total link types.';
-  const REGENERATION_FINISHED_MESSAGE = "The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated for all languages.";
+  const REGENERATION_FINISHED_MESSAGE = "The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated.";
   const REGENERATION_FINISHED_ERROR_MESSAGE = 'The sitemap generation finished with an error.';
 
   /**

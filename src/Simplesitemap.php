@@ -200,7 +200,7 @@ class Simplesitemap {
   }
 
   /**
-   * Generates the sitemap for all languages and saves it to the db.
+   * Generates the XML sitemap and saves it to the db.
    *
    * @param string $from
    *   Can be 'form', 'cron', 'drush' or 'nobatch'.
