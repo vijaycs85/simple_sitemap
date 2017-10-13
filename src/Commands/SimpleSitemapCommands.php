@@ -28,7 +28,8 @@ class SimpleSitemapCommands extends DrushCommands {
    * Regenerate the XML sitemap according to the module settings.
    *
    * @command simple-sitemap:generate
-   * @aliases ss:generate, ssg
+   * @validate-module-enabled simple_sitemap
+   * @aliases ss:generate, ssg, simple_sitemap:generate, simple_sitemap-generate
    */
   public function generate() {
     $this->generator->generateSitemap('drush');
