@@ -30,6 +30,11 @@ simple_sitemap.settings:
       type: sequence
       sequence:
         type: string
+    excluded_languages:
+      label: 'Excluded languages'
+      type: sequence
+      sequence:
+        type: string
 
 simple_sitemap.bundle_settings.*.*:
   label: 'Entity bundle settings'

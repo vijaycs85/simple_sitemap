@@ -193,10 +193,12 @@ class UrlGeneratorBase {
       // Including only translated variants of content entity.
       if ($entity instanceof ContentEntityBase && $this->batchInfo['skip_untranslated']) {
         foreach ($translation_languages as $language) {
-          $translation = $entity->getTranslation($language->getId());
-          if ($translation->access('view', $this->anonUser)) {
-            $url_object->setOption('language', $language);
-            $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object->toString());
+          if (!isset($this->batchInfo['excluded_languages'][$language->getId()]) || $language->isDefault()) {
+            $translation = $entity->getTranslation($language->getId());
+            if ($translation->access('view', $this->anonUser)) {
+              $url_object->setOption('language', $language);
+              $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object->toString());
+            }
           }
         }
       }
@@ -204,8 +206,10 @@ class UrlGeneratorBase {
       // Not a content entity or including all untranslated variants.
       elseif ($url_object->access($this->anonUser)) {
         foreach ($translation_languages as $language) {
-          $url_object->setOption('language', $language);
-          $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object->toString());
+          if (!isset($this->batchInfo['excluded_languages'][$language->getId()]) || $language->isDefault()) {
+            $url_object->setOption('language', $language);
+            $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object->toString());
+          }
         }
       }
     }

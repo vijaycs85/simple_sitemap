@@ -152,6 +152,7 @@ class SitemapGenerator {
       'remove_duplicates' => $this->generator->getSetting('remove_duplicates', TRUE),
       'entity_types' => $this->generator->getBundleSettings(),
       'base_url' => $this->generator->getSetting('base_url', ''),
+      'excluded_languages' => $this->generator->getSetting('excluded_languages', []),
     ]);
 
     // Add custom link generating operation.
