@@ -6,10 +6,10 @@ use Drupal\simple_sitemap\Simplesitemap;
 use Drush\Commands\DrushCommands;
 
 /**
- * Class SimpleSitemapCommands
+ * Class SimplesitemapCommands
  * @package Drupal\simple_sitemap\Commands
  */
-class SimpleSitemapCommands extends DrushCommands {
+class SimplesitemapCommands extends DrushCommands {
 
   /**
    * @var \Drupal\simple_sitemap\Simplesitemap
@@ -17,7 +17,7 @@ class SimpleSitemapCommands extends DrushCommands {
   protected $generator;
 
   /**
-   * SimpleSitemapCommands constructor.
+   * SimplesitemapCommands constructor.
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
    */
   public function __construct(Simplesitemap $generator) {
