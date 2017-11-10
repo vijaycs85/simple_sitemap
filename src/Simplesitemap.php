@@ -58,12 +58,15 @@ class Simplesitemap {
   /**
    * @var array
    */
-  protected static $allowed_link_settings = [
+  protected static $allowedLinkSettings = [
     'entity' => ['index', 'priority', 'changefreq', 'include_images'],
     'custom' => ['priority', 'changefreq'],
   ];
 
-  protected static $link_setting_defaults = [
+  /**
+   * @var array
+   */
+  protected static $linkSettingDefaults = [
     'index' => 1,
     'priority' => 0.5,
     'changefreq' => '',
@@ -208,8 +211,17 @@ class Simplesitemap {
    */
   public function generateSitemap($from = 'form') {
     $this->sitemapGenerator
-      ->setGenerator($this)
-      ->setGenerateFrom($from)
+      ->setBundleSettings($this->getBundleSettings())
+      ->setCustomLinks($this->getCustomLinks())
+      ->setSettings([
+        'base_url' => $this->getSetting('base_url', ''),
+        'batch_process_limit' => $this->getSetting('batch_process_limit', NULL),
+        'max_links' => $this->getSetting('max_links', 2000),
+        'skip_untranslated' => $this->getSetting('skip_untranslated', FALSE),
+        'remove_duplicates' => $this->getSetting('remove_duplicates', TRUE),
+        'excluded_languages' => $this->getSetting('excluded_languages', []),
+        'from' => $from,
+      ])
       ->startGeneration();
   }
 
@@ -224,7 +236,7 @@ class Simplesitemap {
    */
   protected function getSitemapIndex($chunk_info) {
     return $this->sitemapGenerator
-      ->setGenerator($this)
+      ->setSettings(['base_url' => $this->getSetting('base_url', '')])
       ->generateSitemapIndex($chunk_info);
   }
 
@@ -415,10 +427,10 @@ class Simplesitemap {
    * @return array
    */
   protected function supplementDefaultSettings($type, $settings) {
-    foreach(self::$allowed_link_settings[$type] as $allowed_link_setting) {
+    foreach(self::$allowedLinkSettings[$type] as $allowed_link_setting) {
       if (!isset($settings[$allowed_link_setting])
-        && isset(self::$link_setting_defaults[$allowed_link_setting])) {
-        $settings[$allowed_link_setting] = self::$link_setting_defaults[$allowed_link_setting];
+        && isset(self::$linkSettingDefaults[$allowed_link_setting])) {
+        $settings[$allowed_link_setting] = self::$linkSettingDefaults[$allowed_link_setting];
       }
     }
     return $settings;

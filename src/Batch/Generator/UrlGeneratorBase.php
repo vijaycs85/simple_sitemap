@@ -13,7 +13,6 @@ use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\simple_sitemap\SitemapGenerator;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Path\PathValidator;
 
 /**
  * Class UrlGeneratorBase
@@ -57,13 +56,6 @@ class UrlGeneratorBase {
   protected $entityTypeManager;
 
   /**
-   * @var \Drupal\Core\Path\PathValidator
-   *
-   * @todo Move to CustomUrlGenerator
-   */
-  protected $pathValidator;
-
-  /**
    * @var \Drupal\simple_sitemap\Logger
    */
   protected $logger;
@@ -94,26 +86,23 @@ class UrlGeneratorBase {
    * @param \Drupal\simple_sitemap\SitemapGenerator $sitemap_generator
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
-   * @param \Drupal\Core\Path\PathValidator $path_validator
    * @param \Drupal\simple_sitemap\Logger $logger
    * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
    */
   public function __construct(
     Simplesitemap $generator,
-    SitemapGenerator $sitemap_generator, //todo: use $this->generator->sitemapGenerator instead?
+    SitemapGenerator $sitemap_generator,
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
-    PathValidator $path_validator,
     Logger $logger,
     EntityHelper $entityHelper
   ) {
     $this->generator = $generator;
-    $this->sitemapGenerator = $sitemap_generator; // todo: using only one method, maybe make method static instead?
+    $this->sitemapGenerator = $sitemap_generator;
     $this->languageManager = $language_manager;
     $this->languages = $language_manager->getLanguages();
     $this->defaultLanguageId = $language_manager->getDefaultLanguage()->getId();
     $this->entityTypeManager = $entity_type_manager;
-    $this->pathValidator = $path_validator;
     $this->logger = $logger;
     $this->entityHelper = $entityHelper;
     $this->anonUser = $this->entityTypeManager->getStorage('user')

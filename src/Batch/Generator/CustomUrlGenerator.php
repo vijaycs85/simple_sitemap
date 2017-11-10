@@ -2,7 +2,18 @@
 
 namespace Drupal\simple_sitemap\Batch\Generator;
 
+use Drupal\Component\Utility\Html;
+use Drupal\Core\Entity\ContentEntityBase;
+use Drupal\Core\Entity\Entity;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
+use Drupal\simple_sitemap\EntityHelper;
+use Drupal\simple_sitemap\Logger;
+use Drupal\simple_sitemap\Simplesitemap;
+use Drupal\simple_sitemap\SitemapGenerator;
+use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Path\PathValidator;
 
 /**
  * Class CustomUrlGenerator
@@ -12,10 +23,46 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
 
   const PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE = "The custom path @path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users. You can review custom paths <a href='@custom_paths_url'>here</a>.";
 
+
+  /**
+   * @var \Drupal\Core\Path\PathValidator
+   */
+  protected $pathValidator;
+
   /**
    * @var bool
    */
   protected $includeImages;
+
+  /**
+   * CustomUrlGenerator constructor.
+   * @param \Drupal\simple_sitemap\Simplesitemap $generator
+   * @param \Drupal\simple_sitemap\SitemapGenerator $sitemap_generator
+   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   * @param \Drupal\simple_sitemap\Logger $logger
+   * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
+   * @param \Drupal\Core\Path\PathValidator $path_validator
+   */
+  public function __construct(
+    Simplesitemap $generator,
+    SitemapGenerator $sitemap_generator,
+    LanguageManagerInterface $language_manager,
+    EntityTypeManagerInterface $entity_type_manager,
+    Logger $logger,
+    EntityHelper $entityHelper,
+    PathValidator $path_validator
+  ) {
+    $this->pathValidator = $path_validator;
+    parent::__construct(
+      $generator,
+      $sitemap_generator,
+      $language_manager,
+      $entity_type_manager,
+      $logger,
+      $entityHelper
+    );
+  }
 
   /**
    * Batch function which generates urls to custom paths.

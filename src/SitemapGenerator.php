@@ -49,24 +49,29 @@ class SitemapGenerator {
   protected $moduleHandler;
 
   /**
-   * @var string
-   */
-  protected $generateFrom = 'form';
-
-  /**
    * @var bool
    */
   protected $isHreflangSitemap;
 
   /**
-   * @var \Drupal\simple_sitemap\Simplesitemap
-   */
-  protected $generator;
-
-  /**
    * @var \Drupal\Component\Datetime\Time
    */
   protected $time;
+
+  /**
+   * @var array
+   */
+  protected $bundleSettings;
+
+  /**
+   * @var array
+   */
+  protected $customLinks;
+
+  /**
+   * @var array
+   */
+  protected $settings;
 
   /**
    * @var array
@@ -122,20 +127,29 @@ class SitemapGenerator {
   }
 
   /**
-   * @param \Drupal\simple_sitemap\Simplesitemap $generator
+   * @param array $bundle_settings
    * @return $this
    */
-  public function setGenerator(Simplesitemap $generator) {
-    $this->generator = $generator;
+  public function setBundleSettings(array $bundle_settings) {
+    $this->bundleSettings = $bundle_settings;
     return $this;
   }
 
   /**
-   * @param string $from
+   * @param array $custom_links
    * @return $this
    */
-  public function setGenerateFrom($from) {
-    $this->generateFrom = $from;
+  public function setCustomLinks(array $custom_links) {
+    $this->customLinks = $custom_links;
+    return $this;
+  }
+
+  /**
+   * @param array $settings
+   * @return $this
+   */
+  public function setSettings(array $settings) {
+    $this->settings = $settings;
     return $this;
   }
 
@@ -143,17 +157,7 @@ class SitemapGenerator {
    * Adds all operations to the batch and starts it.
    */
   public function startGeneration() {
-    $this->batch->setBatchInfo([
-      'from' => $this->generateFrom,
-      'batch_process_limit' => !empty($this->generator->getSetting('batch_process_limit'))
-        ? $this->generator->getSetting('batch_process_limit') : NULL,
-      'max_links' => $this->generator->getSetting('max_links', 2000),
-      'skip_untranslated' => $this->generator->getSetting('skip_untranslated', FALSE),
-      'remove_duplicates' => $this->generator->getSetting('remove_duplicates', TRUE),
-      'entity_types' => $this->generator->getBundleSettings(),
-      'base_url' => $this->generator->getSetting('base_url', ''),
-      'excluded_languages' => $this->generator->getSetting('excluded_languages', []),
-    ]);
+    $this->batch->setBatchInfo($this->settings + ['entity_types' => $this->bundleSettings]);
 
     // Add custom link generating operation.
     $this->batch->addOperation('simple_sitemap.custom_url_generator', $this->getCustomUrlsData());
@@ -181,7 +185,7 @@ class SitemapGenerator {
    */
   protected function getCustomUrlsData() {
     $paths = [];
-    foreach ($this->generator->getCustomLinks() as $i => $custom_path) {
+    foreach ($this->customLinks as $i => $custom_path) {
       $paths[$i]['path'] = $custom_path['path'];
       $paths[$i]['priority'] = isset($custom_path['priority']) ? $custom_path['priority'] : NULL;
       $paths[$i]['changefreq'] = isset($custom_path['changefreq']) ? $custom_path['changefreq'] : NULL;
@@ -198,8 +202,7 @@ class SitemapGenerator {
   protected function getEntityTypeData() {
     $data_sets = [];
     $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
-    $entity_types = $this->generator->getBundleSettings();
-    foreach ($entity_types as $entity_type_name => $bundles) {
+    foreach ($this->bundleSettings as $entity_type_name => $bundles) {
       if (isset($sitemap_entity_types[$entity_type_name])) {
         $keys = $sitemap_entity_types[$entity_type_name]->getKeys();
 
@@ -283,7 +286,7 @@ class SitemapGenerator {
    * @return string
    */
   public function getCustomBaseUrl() {
-    $customBaseUrl = $this->generator->getSetting('base_url', '');
+    $customBaseUrl = $this->settings['base_url'];
     return !empty($customBaseUrl) ? $customBaseUrl : $GLOBALS['base_url'];
   }
 

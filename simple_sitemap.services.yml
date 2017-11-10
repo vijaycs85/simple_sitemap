@@ -50,7 +50,6 @@ services:
       - '@simple_sitemap.sitemap_generator'
       - '@language_manager'
       - '@entity_type.manager'
-      - '@path.validator'
       - '@simple_sitemap.logger'
       - '@simple_sitemap.entity_helper'
 
@@ -62,9 +61,9 @@ services:
       - '@simple_sitemap.sitemap_generator'
       - '@language_manager'
       - '@entity_type.manager'
-      - '@path.validator'
       - '@simple_sitemap.logger'
       - '@simple_sitemap.entity_helper'
+      - '@path.validator'
 
   simple_sitemap.arbitrary_url_generator:
     class: Drupal\simple_sitemap\Batch\Generator\ArbitraryUrlGenerator
@@ -74,7 +73,6 @@ services:
       - '@simple_sitemap.sitemap_generator'
       - '@language_manager'
       - '@entity_type.manager'
-      - '@path.validator'
       - '@simple_sitemap.logger'
       - '@simple_sitemap.entity_helper'
 
