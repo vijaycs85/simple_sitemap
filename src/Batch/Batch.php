@@ -144,7 +144,7 @@ class Batch {
       $remove_sitemap = empty($results['chunk_count']);
       if (!empty($results['generate']) || $remove_sitemap) {
         \Drupal::service('simple_sitemap.sitemap_generator')
-          ->generateSitemap($results['generate'], $remove_sitemap);
+          ->generateSitemap(!empty($results['generate']) ? $results['generate'] : [], $remove_sitemap);
       }
       Cache::invalidateTags(['simple_sitemap']);
       \Drupal::service('simple_sitemap.logger')->m(self::REGENERATION_FINISHED_MESSAGE,
