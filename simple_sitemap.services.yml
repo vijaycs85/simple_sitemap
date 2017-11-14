@@ -11,12 +11,13 @@ services:
       - '@path.validator'
       - '@date.formatter'
       - '@datetime.time'
+      - '@simple_sitemap.batch'
+      - '@module_handler'
 
   simple_sitemap.sitemap_generator:
     class: Drupal\simple_sitemap\SitemapGenerator
     public: true
     arguments:
-      - '@simple_sitemap.batch'
       - '@simple_sitemap.entity_helper'
       - '@database'
       - '@module_handler'
@@ -75,6 +76,7 @@ services:
       - '@entity_type.manager'
       - '@simple_sitemap.logger'
       - '@simple_sitemap.entity_helper'
+      - '@module_handler'
 
   simple_sitemap.logger:
     class: Drupal\simple_sitemap\Logger

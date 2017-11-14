@@ -4,7 +4,6 @@ namespace Drupal\simple_sitemap\Batch\Generator;
 
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\ContentEntityBase;
-use Drupal\Core\Entity\Entity;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\simple_sitemap\EntityHelper;

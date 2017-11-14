@@ -9,68 +9,96 @@ namespace Drupal\simple_sitemap\Batch\Generator;
 class EntityUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterface {
 
   /**
-   * Batch callback function which generates urls to entity paths.
-   *
-   * @param mixed $entity_info
+   * @return array
    */
-  public function generate($entity_info) {
+  protected function getData() {
+    $data_sets = [];
+    $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
+    foreach ($this->generator->getBundleSettings() as $entity_type_name => $bundles) {
+      if (isset($sitemap_entity_types[$entity_type_name])) {
+        $keys = $sitemap_entity_types[$entity_type_name]->getKeys();
 
-    foreach ($this->getBatchIterationElements($entity_info) as $entity_id => $entity) {
+        // Menu fix.
+        $keys['bundle'] = $entity_type_name == 'menu_link_content' ? 'menu_name' : $keys['bundle'];
 
-      $this->setCurrentId($entity_id);
-
-      $entity_settings = $this->generator->getEntityInstanceSettings($entity_info['entity_type_name'], $entity_id);
-
-      if (empty($entity_settings['index'])) {
-        continue;
-      }
-
-      switch ($entity_info['entity_type_name']) {
-        // Loading url object for menu links.
-        case 'menu_link_content':
-          if (!$entity->isEnabled()) {
-            continue 2;
+        foreach ($bundles as $bundle_name => $bundle_settings) {
+          if ($bundle_settings['index']) {
+            $data_sets[] = [
+              'bundle_settings' => $bundle_settings,
+              'bundle_name' => $bundle_name,
+              'entity_type_name' => $entity_type_name,
+              'keys' => $keys,
+            ];
           }
-          $url_object = $entity->getUrlObject();
-          break;
-
-        // Loading url object for other entities.
-        default:
-          $url_object = $entity->toUrl();
+        }
       }
-
-      // Do not include external paths.
-      if (!$url_object->isRouted()) {
-        continue;
-      }
-
-      $path = $url_object->getInternalPath();
-
-      // Do not include paths that have been already indexed.
-      if ($this->batchInfo['remove_duplicates'] && $this->pathProcessed($path)) {
-        continue;
-      }
-
-      $url_object->setOption('absolute', TRUE);
-
-      $path_data = [
-        'path' => $path,
-        'entity_info' => [
-          'entity_type' => $entity_info['entity_type_name'],
-          'id' => $entity_id
-        ],
-        'lastmod' => method_exists($entity, 'getChangedTime')
-          ? date_iso8601($entity->getChangedTime()) : NULL,
-        'priority' => isset($entity_settings['priority']) ? $entity_settings['priority'] : NULL,
-        'changefreq' => !empty($entity_settings['changefreq']) ? $entity_settings['changefreq'] : NULL,
-        'images' => !empty($entity_settings['include_images'])
-          ? $this->getImages($entity_info['entity_type_name'], $entity_id)
-          : []
-      ];
-
-      $this->addUrl($path_data, $url_object);
     }
-    $this->processSegment();
+    return $data_sets;
+  }
+
+  /**
+   * Batch callback function which generates urls to entity paths.
+   */
+  public function generate() {
+
+    foreach ($this->getData() as $entity_info) {
+      foreach ($this->getBatchIterationElements($entity_info) as $entity_id => $entity) {
+
+        $this->setCurrentId($entity_id);
+
+        $entity_settings = $this->generator->getEntityInstanceSettings($entity_info['entity_type_name'], $entity_id);
+
+        if (empty($entity_settings['index'])) {
+          continue;
+        }
+
+        switch ($entity_info['entity_type_name']) {
+          // Loading url object for menu links.
+          case 'menu_link_content':
+            if (!$entity->isEnabled()) {
+              continue 2;
+            }
+            $url_object = $entity->getUrlObject();
+            break;
+
+          // Loading url object for other entities.
+          default:
+            $url_object = $entity->toUrl();
+        }
+
+        // Do not include external paths.
+        if (!$url_object->isRouted()) {
+          continue;
+        }
+
+        $path = $url_object->getInternalPath();
+
+        // Do not include paths that have been already indexed.
+        if ($this->batchInfo['remove_duplicates'] && $this->pathProcessed($path)) {
+          continue;
+        }
+
+        $url_object->setOption('absolute', TRUE);
+
+        $path_data = [
+          'path' => $path,
+          'entity_info' => [
+            'entity_type' => $entity_info['entity_type_name'],
+            'id' => $entity_id
+          ],
+          'lastmod' => method_exists($entity, 'getChangedTime')
+            ? date_iso8601($entity->getChangedTime()) : NULL,
+          'priority' => isset($entity_settings['priority']) ? $entity_settings['priority'] : NULL,
+          'changefreq' => !empty($entity_settings['changefreq']) ? $entity_settings['changefreq'] : NULL,
+          'images' => !empty($entity_settings['include_images'])
+            ? $this->getImages($entity_info['entity_type_name'], $entity_id)
+            : []
+        ];
+
+        $this->addUrl($path_data, $url_object);
+      }
+      $this->processSegment();
+    }
   }
 
   /**

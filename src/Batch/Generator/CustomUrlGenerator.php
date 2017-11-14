@@ -2,10 +2,6 @@
 
 namespace Drupal\simple_sitemap\Batch\Generator;
 
-use Drupal\Component\Utility\Html;
-use Drupal\Core\Entity\ContentEntityBase;
-use Drupal\Core\Entity\Entity;
-use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
@@ -53,7 +49,6 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
     EntityHelper $entityHelper,
     PathValidator $path_validator
   ) {
-    $this->pathValidator = $path_validator;
     parent::__construct(
       $generator,
       $sitemap_generator,
@@ -62,18 +57,25 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
       $logger,
       $entityHelper
     );
+    $this->pathValidator = $path_validator;
+
+  }
+
+  /**
+   * @return array
+   */
+  protected function getData() {
+    return $this->generator->getCustomLinks();
   }
 
   /**
    * Batch function which generates urls to custom paths.
-   *
-   * @param mixed $custom_paths
    */
-  public function generate($custom_paths) {
+  public function generate() {
 
     $this->includeImages = $this->generator->getSetting('custom_links_include_images', FALSE);
 
-    foreach ($this->getBatchIterationElements($custom_paths) as $i => $custom_path) {
+    foreach ($this->getBatchIterationElements($this->getData()) as $i => $custom_path) {
 
       $this->setCurrentId($i);
 

@@ -8,6 +8,8 @@ use Drupal\Core\Path\PathValidator;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Datetime\DateFormatter;
 use Drupal\Component\Datetime\Time;
+use Drupal\simple_sitemap\Batch\Batch;
+use Drupal\Core\Extension\ModuleHandler;
 
 /**
  * Class Simplesitemap
@@ -56,6 +58,16 @@ class Simplesitemap {
   protected $time;
 
   /**
+   * @var \Drupal\simple_sitemap\Batch\Batch
+   */
+  protected $batch;
+
+  /**
+   * @var \Drupal\Core\Extension\ModuleHandler
+   */
+  protected $moduleHandler;
+
+  /**
    * @var array
    */
   protected static $allowedLinkSettings = [
@@ -73,6 +85,12 @@ class Simplesitemap {
     'include_images' => 0,
   ];
 
+  protected static $generatorServices = [
+    'simple_sitemap.custom_url_generator',
+    'simple_sitemap.entity_url_generator',
+    'simple_sitemap.arbitrary_url_generator',
+  ];
+
   /**
    * Simplesitemap constructor.
    * @param \Drupal\simple_sitemap\SitemapGenerator $sitemapGenerator
@@ -83,6 +101,8 @@ class Simplesitemap {
    * @param \Drupal\Core\Path\PathValidator $pathValidator
    * @param \Drupal\Core\Datetime\DateFormatter $dateFormatter
    * @param \Drupal\Component\Datetime\Time $time
+   * @param \Drupal\simple_sitemap\Batch\Batch $batch
+   * @param \Drupal\Core\Extension\ModuleHandler $module_handler
    */
   public function __construct(
     SitemapGenerator $sitemapGenerator,
@@ -92,7 +112,9 @@ class Simplesitemap {
     EntityTypeManagerInterface $entityTypeManager,
     PathValidator $pathValidator,
     DateFormatter $dateFormatter,
-    Time $time
+    Time $time,
+    Batch $batch,
+    ModuleHandler $module_handler
   ) {
     $this->sitemapGenerator = $sitemapGenerator;
     $this->entityHelper = $entityHelper;
@@ -102,6 +124,8 @@ class Simplesitemap {
     $this->pathValidator = $pathValidator;
     $this->dateFormatter = $dateFormatter;
     $this->time = $time;
+    $this->batch = $batch;
+    $this->moduleHandler = $module_handler;
   }
 
   /**
@@ -210,19 +234,24 @@ class Simplesitemap {
    *   This decides how the batch process is to be run.
    */
   public function generateSitemap($from = 'form') {
-    $this->sitemapGenerator
-      ->setBundleSettings($this->getBundleSettings())
-      ->setCustomLinks($this->getCustomLinks())
-      ->setSettings([
-        'base_url' => $this->getSetting('base_url', ''),
-        'batch_process_limit' => $this->getSetting('batch_process_limit', NULL),
-        'max_links' => $this->getSetting('max_links', 2000),
-        'skip_untranslated' => $this->getSetting('skip_untranslated', FALSE),
-        'remove_duplicates' => $this->getSetting('remove_duplicates', TRUE),
-        'excluded_languages' => $this->getSetting('excluded_languages', []),
-        'from' => $from,
-      ])
-      ->startGeneration();
+
+    $this->batch->setBatchInfo([
+      'base_url' => $this->getSetting('base_url', ''),
+      'batch_process_limit' => $this->getSetting('batch_process_limit', NULL),
+      'max_links' => $this->getSetting('max_links', 2000),
+      'skip_untranslated' => $this->getSetting('skip_untranslated', FALSE),
+      'remove_duplicates' => $this->getSetting('remove_duplicates', TRUE),
+      'excluded_languages' => $this->getSetting('excluded_languages', []),
+      'from' => $from,
+    ]);
+
+    $this->moduleHandler->alter('simple_sitemap_generator_services', self::$generatorServices);
+
+    foreach (self::$generatorServices as $service) {
+      $this->batch->addOperation($service);
+    }
+
+    $this->batch->start();
   }
 
   /**
@@ -233,6 +262,8 @@ class Simplesitemap {
    *
    * @return string
    *   The sitemap index.
+   *
+   * @todo Need to make sure response is cached.
    */
   protected function getSitemapIndex($chunk_info) {
     return $this->sitemapGenerator

@@ -107,11 +107,10 @@ class Batch {
    * Adds an operation to the batch.
    *
    * @param string $processing_service
-   * @param array $data
    */
-  public function addOperation($processing_service, array $data) {
+  public function addOperation($processing_service) {
     $this->batch['operations'][] = [
-      __CLASS__ . '::generate', [$processing_service, $data, $this->batchInfo],
+      __CLASS__ . '::generate', [$processing_service, $this->batchInfo],
     ];
   }
 
@@ -119,17 +118,16 @@ class Batch {
    * Batch callback function which generates URLs.
    *
    * @param $processing_service
-   * @param array $data
    * @param array $batch_info
    * @param $context
    *
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
-  public static function generate($processing_service, array $data, array $batch_info, &$context) {
+  public static function generate($processing_service, array $batch_info, &$context) {
     \Drupal::service($processing_service)
       ->setContext($context)
       ->setBatchInfo($batch_info)
-      ->generate($data);
+      ->generate();
   }
 
   /**
