@@ -72,7 +72,7 @@ class UrlGeneratorBase {
   /**
    * @var array
    */
-  protected $batchInfo;
+  protected $batchSettings;
 
   /**
    * @var \Drupal\simple_sitemap\EntityHelper
@@ -118,11 +118,11 @@ class UrlGeneratorBase {
   }
 
   /**
-   * @param array $batch_info
+   * @param array $batch_settings
    * @return $this
    */
-  public function setBatchInfo(array $batch_info) {
-    $this->batchInfo = $batch_info;
+  public function setBatchSettings(array $batch_settings) {
+    $this->batchSettings = $batch_settings;
     return $this;
   }
 
@@ -130,7 +130,7 @@ class UrlGeneratorBase {
    * @return bool
    */
   protected function isBatch() {
-    return $this->batchInfo['from'] != 'nobatch';
+    return $this->batchSettings['from'] != 'nobatch';
   }
 
   /**
@@ -138,7 +138,9 @@ class UrlGeneratorBase {
    * @return bool
    */
   protected function pathProcessed($path) {
-    $path_pool = isset($this->context['results']['processed_paths']) ? $this->context['results']['processed_paths'] : [];
+    $path_pool = isset($this->context['results']['processed_paths'])
+      ? $this->context['results']['processed_paths']
+      : [];
     if (in_array($path, $path_pool)) {
       return TRUE;
     }
@@ -166,7 +168,7 @@ class UrlGeneratorBase {
   protected function addUrlVariants(array $path_data, Url $url_object) {
     $alternate_urls = [];
     $entity = $this->entityHelper->getEntityFromUrlObject($url_object);
-    $translation_languages = $entity instanceof ContentEntityBase && $this->batchInfo['skip_untranslated']
+    $translation_languages = $entity instanceof ContentEntityBase && $this->batchSettings['skip_untranslated']
       ? $entity->getTranslationLanguages()
       : $this->languages;
 
@@ -179,9 +181,9 @@ class UrlGeneratorBase {
     }
     else {
       // Including only translated variants of content entity.
-      if ($entity instanceof ContentEntityBase && $this->batchInfo['skip_untranslated']) {
+      if ($entity instanceof ContentEntityBase && $this->batchSettings['skip_untranslated']) {
         foreach ($translation_languages as $language) {
-          if (!isset($this->batchInfo['excluded_languages'][$language->getId()]) || $language->isDefault()) {
+          if (!isset($this->batchSettings['excluded_languages'][$language->getId()]) || $language->isDefault()) {
             $translation = $entity->getTranslation($language->getId());
             if ($translation->access('view', $this->anonUser)) {
               $url_object->setOption('language', $language);
@@ -194,7 +196,7 @@ class UrlGeneratorBase {
       // Not a content entity or including all untranslated variants.
       elseif ($url_object->access($this->anonUser)) {
         foreach ($translation_languages as $language) {
-          if (!isset($this->batchInfo['excluded_languages'][$language->getId()]) || $language->isDefault()) {
+          if (!isset($this->batchSettings['excluded_languages'][$language->getId()]) || $language->isDefault()) {
             $url_object->setOption('language', $language);
             $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object->toString());
           }
@@ -225,7 +227,8 @@ class UrlGeneratorBase {
       $this->context['sandbox']['current_id'] = 0;
       $this->context['sandbox']['max'] = $max;
       $this->context['results']['processed_paths'] = !empty($this->context['results']['processed_paths'])
-        ? $this->context['results']['processed_paths'] : [];
+        ? $this->context['results']['processed_paths']
+        : [];
     }
   }
 
@@ -246,14 +249,15 @@ class UrlGeneratorBase {
     if ($this->isBatch()) {
       $this->setProgressInfo();
     }
-    if (!empty($this->batchInfo['max_links']) && count($this->context['results']['generate']) >= $this->batchInfo['max_links']) {
-      $chunks = array_chunk($this->context['results']['generate'], $this->batchInfo['max_links']);
+    if (!empty($this->batchSettings['max_links']) && count($this->context['results']['generate']) >= $this->batchSettings['max_links']) {
+      $chunks = array_chunk($this->context['results']['generate'], $this->batchSettings['max_links']);
       foreach ($chunks as $i => $chunk_links) {
-        if (count($chunk_links) == $this->batchInfo['max_links']) {
+        if (count($chunk_links) == $this->batchSettings['max_links']) {
           $remove_sitemap = empty($this->context['results']['chunk_count']);
           $this->sitemapGenerator->generateSitemap($chunk_links, $remove_sitemap);
           $this->context['results']['chunk_count'] = !isset($this->context['results']['chunk_count'])
-            ? 1 : $this->context['results']['chunk_count'] + 1;
+            ? 1
+            : $this->context['results']['chunk_count'] + 1;
           $this->context['results']['generate'] = array_slice($this->context['results']['generate'], count($chunk_links));
         }
       }
@@ -285,8 +289,8 @@ class UrlGeneratorBase {
    * @return string
    */
   protected function replaceBaseUrlWithCustom($url) {
-    return !empty($this->batchInfo['base_url'])
-      ? str_replace($GLOBALS['base_url'], $this->batchInfo['base_url'], $url)
+    return !empty($this->batchSettings['base_url'])
+      ? str_replace($GLOBALS['base_url'], $this->batchSettings['base_url'], $url)
       : $url;
   }
 
@@ -299,11 +303,9 @@ class UrlGeneratorBase {
       $this->initializeBatch(count($elements));
     }
 
-    if ($this->isBatch()) {
-      $elements = array_slice($elements, $this->context['sandbox']['progress'], $this->batchInfo['batch_process_limit']);
-    }
-
-    return $elements;
+    return $this->isBatch()
+      ? array_slice($elements, $this->context['sandbox']['progress'], $this->batchSettings['batch_process_limit'])
+      : $elements;
   }
 
   /**

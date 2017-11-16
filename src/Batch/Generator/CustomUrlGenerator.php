@@ -91,7 +91,7 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
       $url_object = Url::fromUserInput($custom_path['path'], ['absolute' => TRUE]);
 
       $path = $url_object->getInternalPath();
-      if ($this->batchInfo['remove_duplicates'] && $this->pathProcessed($path)) {
+      if ($this->batchSettings['remove_duplicates'] && $this->pathProcessed($path)) {
         continue;
       }
 
@@ -107,12 +107,7 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
           ? $this->getImages($entity->getEntityTypeId(), $entity->id())
           : []
       ];
-      if (NULL !== $entity) {
-        $path_data['entity_info'] = [
-          'entity_type' => $entity->getEntityTypeId(),
-          'id' => $entity->id()
-        ];
-      }
+
       $this->addUrl($path_data, $url_object);
     }
     $this->processSegment();

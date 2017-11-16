@@ -230,12 +230,12 @@ class Simplesitemap {
    * Generates the XML sitemap and saves it to the db.
    *
    * @param string $from
-   *   Can be 'form', 'cron', 'drush' or 'nobatch'.
+   *   Can be 'form', 'backend', 'drush' or 'nobatch'.
    *   This decides how the batch process is to be run.
    */
   public function generateSitemap($from = 'form') {
 
-    $this->batch->setBatchInfo([
+    $this->batch->setBatchSettings([
       'base_url' => $this->getSetting('base_url', ''),
       'batch_process_limit' => $this->getSetting('batch_process_limit', NULL),
       'max_links' => $this->getSetting('max_links', 2000),

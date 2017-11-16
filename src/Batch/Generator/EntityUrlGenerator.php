@@ -74,7 +74,7 @@ class EntityUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
         $path = $url_object->getInternalPath();
 
         // Do not include paths that have been already indexed.
-        if ($this->batchInfo['remove_duplicates'] && $this->pathProcessed($path)) {
+        if ($this->batchSettings['remove_duplicates'] && $this->pathProcessed($path)) {
           continue;
         }
 
@@ -124,7 +124,7 @@ class EntityUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
     }
 
     if ($this->isBatch()) {
-      $query->range($this->context['sandbox']['progress'], $this->batchInfo['batch_process_limit']);
+      $query->range($this->context['sandbox']['progress'], $this->batchSettings['batch_process_limit']);
     }
 
     return $this->entityTypeManager

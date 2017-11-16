@@ -24,7 +24,7 @@ class Batch {
   /**
    * @var array
    */
-  protected $batchInfo;
+  protected $batchSettings;
 
   const BATCH_TITLE = 'Generating XML sitemap';
   const BATCH_INIT_MESSAGE = 'Initializing batch...';
@@ -48,17 +48,17 @@ class Batch {
   }
 
   /**
-   * @param array $batch_info
+   * @param array $batch_settings
    */
-  public function setBatchInfo(array $batch_info) {
-    $this->batchInfo = $batch_info;
+  public function setBatchSettings(array $batch_settings) {
+    $this->batchSettings = $batch_settings;
   }
 
   /**
    * Starts the batch process depending on where it was requested from.
    */
   public function start() {
-    switch ($this->batchInfo['from']) {
+    switch ($this->batchSettings['from']) {
 
       case 'form':
         // Start batch process.
@@ -110,7 +110,7 @@ class Batch {
    */
   public function addOperation($processing_service) {
     $this->batch['operations'][] = [
-      __CLASS__ . '::generate', [$processing_service, $this->batchInfo],
+      __CLASS__ . '::generate', [$processing_service, $this->batchSettings],
     ];
   }
 
@@ -118,15 +118,15 @@ class Batch {
    * Batch callback function which generates URLs.
    *
    * @param $processing_service
-   * @param array $batch_info
+   * @param array $batch_settings
    * @param $context
    *
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
-  public static function generate($processing_service, array $batch_info, &$context) {
+  public static function generate($processing_service, array $batch_settings, &$context) {
     \Drupal::service($processing_service)
       ->setContext($context)
-      ->setBatchInfo($batch_info)
+      ->setBatchSettings($batch_settings)
       ->generate();
   }
 
