@@ -1,8 +1,9 @@
 <?php
 
-namespace Drupal\simple_sitemap\Batch\Generator;
+namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 
 use Drupal\Core\Url;
+use Drupal\simple_sitemap\Annotation\UrlGenerator;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
 use Drupal\simple_sitemap\Simplesitemap;
@@ -10,12 +11,17 @@ use Drupal\simple_sitemap\SitemapGenerator;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Path\PathValidator;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Class CustomUrlGenerator
- * @package Drupal\simple_sitemap\Batch\Generator
+ * @package Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator
+ *
+ * @UrlGenerator(
+ *   id = "custom"
+ * )
  */
-class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterface {
+class CustomUrlGenerator extends UrlGeneratorBase {
 
   const PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE = "The custom path @path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users. You can review custom paths <a href='@custom_paths_url'>here</a>.";
 
@@ -32,6 +38,9 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
 
   /**
    * CustomUrlGenerator constructor.
+   * @param array $configuration
+   * @param string $plugin_id
+   * @param mixed $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
    * @param \Drupal\simple_sitemap\SitemapGenerator $sitemap_generator
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
@@ -41,6 +50,9 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
    * @param \Drupal\Core\Path\PathValidator $path_validator
    */
   public function __construct(
+    array $configuration,
+    $plugin_id,
+    $plugin_definition,
     Simplesitemap $generator,
     SitemapGenerator $sitemap_generator,
     LanguageManagerInterface $language_manager,
@@ -50,6 +62,9 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
     PathValidator $path_validator
   ) {
     parent::__construct(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
       $generator,
       $sitemap_generator,
       $language_manager,
@@ -58,7 +73,25 @@ class CustomUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterfa
       $entityHelper
     );
     $this->pathValidator = $path_validator;
+  }
 
+  public static function create(
+    ContainerInterface $container,
+    array $configuration,
+    $plugin_id,
+    $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('simple_sitemap.generator'),
+      $container->get('simple_sitemap.sitemap_generator'),
+      $container->get('language_manager'),
+      $container->get('entity_type.manager'),
+      $container->get('simple_sitemap.logger'),
+      $container->get('simple_sitemap.entity_helper'),
+      $container->get('path.validator')
+    );
   }
 
   /**

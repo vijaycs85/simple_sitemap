@@ -1,7 +1,11 @@
 <?php
 
-namespace Drupal\simple_sitemap\Batch\Generator;
+namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 
+use Drupal\Core\Plugin\PluginBase;
+use Drupal\Component\Plugin\PluginInspectionInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -15,9 +19,9 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 
 /**
  * Class UrlGeneratorBase
- * @package Drupal\simple_sitemap\Batch\Generator
+ * @package Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator
  */
-class UrlGeneratorBase {
+abstract class UrlGeneratorBase extends PluginBase implements PluginInspectionInterface, ContainerFactoryPluginInterface, UrlGeneratorInterface {
 
   use StringTranslationTrait;
 
@@ -81,6 +85,9 @@ class UrlGeneratorBase {
 
   /**
    * UrlGeneratorBase constructor.
+   * @param array $configuration
+   * @param string $plugin_id
+   * @param mixed $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
    * @param \Drupal\simple_sitemap\SitemapGenerator $sitemap_generator
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
@@ -89,6 +96,9 @@ class UrlGeneratorBase {
    * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
    */
   public function __construct(
+    array $configuration,
+    $plugin_id,
+    $plugin_definition,
     Simplesitemap $generator,
     SitemapGenerator $sitemap_generator,
     LanguageManagerInterface $language_manager,
@@ -96,6 +106,7 @@ class UrlGeneratorBase {
     Logger $logger,
     EntityHelper $entityHelper
   ) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->generator = $generator;
     $this->sitemapGenerator = $sitemap_generator;
     $this->languageManager = $language_manager;
@@ -106,6 +117,24 @@ class UrlGeneratorBase {
     $this->entityHelper = $entityHelper;
     $this->anonUser = $this->entityTypeManager->getStorage('user')
       ->load(self::ANONYMOUS_USER_ID);
+  }
+
+  public static function create(
+    ContainerInterface $container,
+    array $configuration,
+    $plugin_id,
+    $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('simple_sitemap.generator'),
+      $container->get('simple_sitemap.sitemap_generator'),
+      $container->get('language_manager'),
+      $container->get('entity_type.manager'),
+      $container->get('simple_sitemap.logger'),
+      $container->get('simple_sitemap.entity_helper')
+    );
   }
 
   /**

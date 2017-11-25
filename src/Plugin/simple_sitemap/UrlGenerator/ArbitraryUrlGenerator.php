@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\simple_sitemap\Batch\Generator;
+namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
@@ -9,17 +9,25 @@ use Drupal\simple_sitemap\SitemapGenerator;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandler;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Class ArbitraryUrlGenerator
- * @package Drupal\simple_sitemap\Batch\Generator
+ * @package Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator
+ *
+ * @UrlGenerator(
+ *   id = "arbitrary"
+ * )
  */
-class ArbitraryUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterface {
+class ArbitraryUrlGenerator extends UrlGeneratorBase {
 
   protected $moduleHandler;
 
   /**
    * ArbitraryUrlGenerator constructor.
+   * @param array $configuration
+   * @param string $plugin_id
+   * @param mixed $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
    * @param \Drupal\simple_sitemap\SitemapGenerator $sitemap_generator
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
@@ -29,6 +37,9 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInte
    * @param \Drupal\Core\Extension\ModuleHandler $module_handler
    */
   public function __construct(
+    array $configuration,
+    $plugin_id,
+    $plugin_definition,
     Simplesitemap $generator,
     SitemapGenerator $sitemap_generator,
     LanguageManagerInterface $language_manager,
@@ -38,6 +49,9 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInte
     ModuleHandler $module_handler
   ) {
     parent::__construct(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
       $generator,
       $sitemap_generator,
       $language_manager,
@@ -47,6 +61,26 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInte
     );
     $this->moduleHandler = $module_handler;
   }
+
+  public static function create(
+    ContainerInterface $container,
+    array $configuration,
+    $plugin_id,
+    $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('simple_sitemap.generator'),
+      $container->get('simple_sitemap.sitemap_generator'),
+      $container->get('language_manager'),
+      $container->get('entity_type.manager'),
+      $container->get('simple_sitemap.logger'),
+      $container->get('simple_sitemap.entity_helper'),
+      $container->get('module_handler')
+    );
+  }
+
 
   /**
    * @return array

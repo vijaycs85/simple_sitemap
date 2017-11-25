@@ -8,8 +8,7 @@ use Drupal\Core\Path\PathValidator;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Datetime\DateFormatter;
 use Drupal\Component\Datetime\Time;
-use Drupal\simple_sitemap\Batch\Batch;
-use Drupal\Core\Extension\ModuleHandler;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager;
 
 /**
  * Class Simplesitemap
@@ -58,7 +57,7 @@ class Simplesitemap {
   protected $time;
 
   /**
-   * @var \Drupal\simple_sitemap\Batch\Batch
+   * @var \Drupal\simple_sitemap\Batch
    */
   protected $batch;
 
@@ -66,6 +65,11 @@ class Simplesitemap {
    * @var \Drupal\Core\Extension\ModuleHandler
    */
   protected $moduleHandler;
+
+  /**
+   * @var \Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager
+   */
+  protected $urlGeneratorManager;
 
   /**
    * @var array
@@ -101,8 +105,8 @@ class Simplesitemap {
    * @param \Drupal\Core\Path\PathValidator $pathValidator
    * @param \Drupal\Core\Datetime\DateFormatter $dateFormatter
    * @param \Drupal\Component\Datetime\Time $time
-   * @param \Drupal\simple_sitemap\Batch\Batch $batch
-   * @param \Drupal\Core\Extension\ModuleHandler $module_handler
+   * @param \Drupal\simple_sitemap\Batch $batch
+   * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager $urlGeneratorManager
    */
   public function __construct(
     SitemapGenerator $sitemapGenerator,
@@ -114,7 +118,7 @@ class Simplesitemap {
     DateFormatter $dateFormatter,
     Time $time,
     Batch $batch,
-    ModuleHandler $module_handler
+    UrlGeneratorManager $urlGeneratorManager
   ) {
     $this->sitemapGenerator = $sitemapGenerator;
     $this->entityHelper = $entityHelper;
@@ -125,7 +129,7 @@ class Simplesitemap {
     $this->dateFormatter = $dateFormatter;
     $this->time = $time;
     $this->batch = $batch;
-    $this->moduleHandler = $module_handler;
+    $this->urlGeneratorManager = $urlGeneratorManager;
   }
 
   /**
@@ -245,10 +249,8 @@ class Simplesitemap {
       'from' => $from,
     ]);
 
-    $this->moduleHandler->alter('simple_sitemap_generator_services', self::$generatorServices);
-
-    foreach (self::$generatorServices as $service) {
-      $this->batch->addOperation($service);
+    foreach ($this->urlGeneratorManager->getDefinitions() as $plugin) {
+      $this->batch->addOperation($plugin['id']);
     }
 
     $this->batch->start();

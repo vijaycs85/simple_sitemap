@@ -110,6 +110,9 @@ Altering sitemap attributes and sitemap index attributes is possible through the
 use of hook_simple_sitemap_attributes_alter(&$attributes){} and
 hook_simple_sitemap_index_attributes_alter(&$index_attributes){}.
 
+Adding new URL generator plugins and altering existing ones is possible through
+the use of hook_simple_sitemap_url_generators_alter(&$generators){}.
+
 There are API methods for altering stored inclusion settings, status queries and
 programmatic sitemap generation. These include:
 

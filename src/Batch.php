@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\simple_sitemap\Batch;
+namespace Drupal\simple_sitemap;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Cache\Cache;
@@ -30,7 +30,7 @@ class Batch {
   const BATCH_INIT_MESSAGE = 'Initializing batch...';
   const BATCH_ERROR_MESSAGE = 'An error has occurred. This may result in an incomplete XML sitemap.';
   const BATCH_PROGRESS_MESSAGE = 'Processing @current out of @total link types.';
-  const REGENERATION_FINISHED_MESSAGE = "The <a href='@url' target='_blank'>XML sitemap</a> has been regenerated.";
+  const REGENERATION_FINISHED_MESSAGE = 'The <a href="@url" target="_blank">XML sitemap</a> has been regenerated.';
   const REGENERATION_FINISHED_ERROR_MESSAGE = 'The sitemap generation finished with an error.';
 
   /**
@@ -106,25 +106,26 @@ class Batch {
   /**
    * Adds an operation to the batch.
    *
-   * @param string $processing_service
+   * @param string $plugin_id
    */
-  public function addOperation($processing_service) {
+  public function addOperation($plugin_id) {
     $this->batch['operations'][] = [
-      __CLASS__ . '::generate', [$processing_service, $this->batchSettings],
+      __CLASS__ . '::generate', [$plugin_id, $this->batchSettings],
     ];
   }
 
   /**
    * Batch callback function which generates URLs.
    *
-   * @param $processing_service
+   * @param $plugin_id
    * @param array $batch_settings
    * @param $context
    *
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
-  public static function generate($processing_service, array $batch_settings, &$context) {
-    \Drupal::service($processing_service)
+  public static function generate($plugin_id, array $batch_settings, &$context) {
+    \Drupal::service('plugin.manager.simple_sitemap.url_generator')
+      ->createInstance($plugin_id)
       ->setContext($context)
       ->setBatchSettings($batch_settings)
       ->generate();

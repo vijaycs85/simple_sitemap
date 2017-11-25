@@ -1,12 +1,16 @@
 <?php
 
-namespace Drupal\simple_sitemap\Batch\Generator;
+namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 
 /**
  * Class EntityUrlGenerator
- * @package Drupal\simple_sitemap\Batch\Generator
+ * @package Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator
+ *
+ * @UrlGenerator(
+ *   id = "entity"
+ * )
  */
-class EntityUrlGenerator extends UrlGeneratorBase implements UrlGeneratorInterface {
+class EntityUrlGenerator extends UrlGeneratorBase {
 
   /**
    * @return array
