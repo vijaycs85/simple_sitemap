@@ -85,7 +85,7 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase {
   /**
    * @inheritdoc
    */
-  protected function getData() {
+  protected function getDataSets() {
     $arbitrary_links = [];
     $this->moduleHandler->alter('simple_sitemap_arbitrary_links', $arbitrary_links);
     return array_values($arbitrary_links);
@@ -94,7 +94,7 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase {
   /**
    * @inheritdoc
    */
-  protected function getPathData($path_data) {
-    return $path_data;
+  protected function processDataSet($data_set) {
+    return $data_set;
   }
 }

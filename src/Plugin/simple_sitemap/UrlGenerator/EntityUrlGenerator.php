@@ -15,7 +15,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
   /**
    * @inheritdoc
    */
-  protected function getData() {
+  protected function getDataSets() {
     $data_sets = [];
     $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
     foreach ($this->generator->getBundleSettings() as $entity_type_name => $bundles) {
@@ -45,11 +45,11 @@ class EntityUrlGenerator extends UrlGeneratorBase {
    */
   public function generate() {
 
-    foreach ($this->getData() as $entity_info) {
+    foreach ($this->getDataSets() as $entity_info) {
       foreach ($this->getBatchIterationElements($entity_info) as $entity_id => $entity) {
 
         $this->setCurrentId($entity_id);
-        $path_data = $this->getPathData($entity);
+        $path_data = $this->processDataSet($entity);
         if (!$path_data) {
           continue;
         }
@@ -62,7 +62,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
   /**
    * @inheritdoc
    */
-  protected function getPathData($entity) {
+  protected function processDataSet($entity) {
 
     $entity_id = $entity->id();
     $entity_type_name = $entity->getEntityTypeId();

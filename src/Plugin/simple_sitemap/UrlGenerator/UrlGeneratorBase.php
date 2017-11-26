@@ -339,23 +339,23 @@ abstract class UrlGeneratorBase extends PluginBase implements PluginInspectionIn
   }
 
   /**
-   * @return mixed
-   */
-  abstract protected function getData();
-
-  /**
-   * @param $path_data
    * @return array
    */
-  abstract protected function getPathData($path_data);
+  abstract protected function getDataSets();
+
+  /**
+   * @param $data_set
+   * @return array
+   */
+  abstract protected function processDataSet($data_set);
 
   /**
    * Called by batch.
    */
   public function generate() {
-    foreach ($this->getBatchIterationElements($this->getData()) as $id => $data) {
+    foreach ($this->getBatchIterationElements($this->getDataSets()) as $id => $data_set) {
       $this->setCurrentId($id);
-      $path_data = $this->getPathData($data);
+      $path_data = $this->processDataSet($data_set);
       if (!$path_data) {
         continue;
       }
