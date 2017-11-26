@@ -8,7 +8,6 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\ContentEntityBase;
-use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
@@ -22,8 +21,6 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
  * @package Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator
  */
 abstract class UrlGeneratorBase extends PluginBase implements PluginInspectionInterface, ContainerFactoryPluginInterface, UrlGeneratorInterface {
-
-  use StringTranslationTrait;
 
   const ANONYMOUS_USER_ID = 0;
   const PROCESSING_PATH_MESSAGE = 'Processing path #@current out of @max: @path';
