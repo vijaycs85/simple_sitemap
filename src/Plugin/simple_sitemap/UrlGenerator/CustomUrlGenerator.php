@@ -118,11 +118,13 @@ class CustomUrlGenerator extends UrlGeneratorBase {
         return FALSE;
       }
 
-      if ($this->batchSettings['remove_duplicates'] && $this->pathProcessed($data_set['path'])) {
+      $url_object = Url::fromUserInput($data_set['path'], ['absolute' => TRUE]);
+      $path = $url_object->getInternalPath();
+
+      if ($this->batchSettings['remove_duplicates'] && $this->pathProcessed($path)) {
         return FALSE;
       }
 
-      $url_object = Url::fromUserInput($data_set['path'], ['absolute' => TRUE]);
       $entity = $this->entityHelper->getEntityFromUrlObject($url_object);
 
       $path_data = [
@@ -135,7 +137,7 @@ class CustomUrlGenerator extends UrlGeneratorBase {
           ? $this->getImages($entity->getEntityTypeId(), $entity->id())
           : [],
         'meta' => [
-          'path' => $data_set['path'],
+          'path' => $path,
         ]
       ];
 
