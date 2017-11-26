@@ -249,7 +249,13 @@ class Simplesitemap {
       'from' => $from,
     ]);
 
-    foreach ($this->urlGeneratorManager->getDefinitions() as $plugin) {
+    $plugins = $this->urlGeneratorManager->getDefinitions();
+
+    usort($plugins, function($a, $b) {
+      return $a['weight'] - $b['weight'];
+    });
+
+    foreach ($plugins as $plugin) {
       $this->batch->addOperation($plugin['id']);
     }
 

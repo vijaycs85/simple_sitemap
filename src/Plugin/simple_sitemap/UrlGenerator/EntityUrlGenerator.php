@@ -7,7 +7,8 @@ namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
  * @package Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator
  *
  * @UrlGenerator(
- *   id = "entity"
+ *   id = "entity",
+ *   weight = 10
  * )
  */
 class EntityUrlGenerator extends UrlGeneratorBase {

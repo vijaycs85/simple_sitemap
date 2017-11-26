@@ -22,4 +22,9 @@ class UrlGenerator extends Plugin {
    * @var string
    */
   public $id;
+
+  /**
+   * @var integer
+   */
+  public $weight;
 }

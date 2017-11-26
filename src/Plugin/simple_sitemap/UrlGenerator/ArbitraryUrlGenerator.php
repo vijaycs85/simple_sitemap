@@ -16,7 +16,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * @package Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator
  *
  * @UrlGenerator(
- *   id = "arbitrary"
+ *   id = "arbitrary",
+ *   weight = 20
  * )
  */
 class ArbitraryUrlGenerator extends UrlGeneratorBase {
