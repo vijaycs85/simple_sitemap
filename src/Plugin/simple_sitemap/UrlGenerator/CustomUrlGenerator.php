@@ -95,54 +95,58 @@ class CustomUrlGenerator extends UrlGeneratorBase {
   }
 
   /**
-   * @return array
+   * @inheritdoc
    */
   protected function getData() {
-    return $this->generator->getCustomLinks();
+    $this->includeImages = $this->generator->getSetting('custom_links_include_images', FALSE);
+
+    return array_values($this->generator->getCustomLinks());
   }
 
   /**
-   * Batch function which generates urls to custom paths.
+   * @inheritdoc
    */
-  public function generate() {
-
-    $this->includeImages = $this->generator->getSetting('custom_links_include_images', FALSE);
-
-    foreach ($this->getBatchIterationElements($this->getData()) as $i => $custom_path) {
-
-      $this->setCurrentId($i);
+  protected function getPathData($data) {
 
       // todo: Change to different function, as this also checks if current user has access. The user however varies depending if process was started from the web interface or via cron/drush. Use getUrlIfValidWithoutAccessCheck()?
-      if (!$this->pathValidator->isValid($custom_path['path'])) {
-//        if (!(bool) $this->pathValidator->getUrlIfValidWithoutAccessCheck($custom_path['path'])) {
+      if (!$this->pathValidator->isValid($data['path'])) {
+//        if (!(bool) $this->pathValidator->getUrlIfValidWithoutAccessCheck($data['path'])) {
         $this->logger->m(self::PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE,
-          ['@path' => $custom_path['path'], '@custom_paths_url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap/custom'])
+          ['@path' => $data['path'], '@custom_paths_url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap/custom'])
           ->display('warning', 'administer sitemap settings')
           ->log('warning');
-        continue;
-      }
-      $url_object = Url::fromUserInput($custom_path['path'], ['absolute' => TRUE]);
-
-      $path = $url_object->getInternalPath();
-      if ($this->batchSettings['remove_duplicates'] && $this->pathProcessed($path)) {
-        continue;
+        return FALSE;
       }
 
+      if ($this->batchSettings['remove_duplicates'] && $this->pathProcessed($data['path'])) {
+        return FALSE;
+      }
+
+      $url_object = Url::fromUserInput($data['path'], ['absolute' => TRUE]);
       $entity = $this->entityHelper->getEntityFromUrlObject($url_object);
 
       $path_data = [
-        'path' => $path,
+        'url' => $url_object,
         'lastmod' => method_exists($entity, 'getChangedTime')
           ? date_iso8601($entity->getChangedTime()) : NULL,
-        'priority' => isset($custom_path['priority']) ? $custom_path['priority'] : NULL,
-        'changefreq' => !empty($custom_path['changefreq']) ? $custom_path['changefreq'] : NULL,
+        'priority' => isset($data['priority']) ? $data['priority'] : NULL,
+        'changefreq' => !empty($data['changefreq']) ? $data['changefreq'] : NULL,
         'images' => $this->includeImages && method_exists($entity, 'getEntityTypeId')
           ? $this->getImages($entity->getEntityTypeId(), $entity->id())
-          : []
+          : [],
+        'meta' => [
+          'path' => $data['path'],
+        ]
       ];
 
-      $this->addUrl($path_data, $url_object);
-    }
-    $this->processSegment();
+      // Additional info useful in hooks.
+      if (NULL !== $entity) {
+        $path_data['meta']['entity_info'] = [
+          'entity_type' => $entity->getEntityTypeId(),
+          'id' => $entity->id(),
+        ];
+      }
+
+      return $path_data;
   }
 }

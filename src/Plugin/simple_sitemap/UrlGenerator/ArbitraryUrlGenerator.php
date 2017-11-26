@@ -83,22 +83,18 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase {
 
 
   /**
-   * @return array
+   * @inheritdoc
    */
   protected function getData() {
     $arbitrary_links = [];
     $this->moduleHandler->alter('simple_sitemap_arbitrary_links', $arbitrary_links);
-    return $arbitrary_links;
+    return array_values($arbitrary_links);
   }
 
   /**
-   * Batch function that adds arbitrary URLs to the sitemap.
+   * @inheritdoc
    */
-  public function generate() {
-    foreach ($this->getBatchIterationElements(array_values($this->getData())) as $i => $path_data) {
-      $this->setCurrentId($i);
-      $this->addUrl($path_data);
-    }
-    $this->processSegment();
+  protected function getPathData($path_data) {
+    return $path_data;
   }
 }

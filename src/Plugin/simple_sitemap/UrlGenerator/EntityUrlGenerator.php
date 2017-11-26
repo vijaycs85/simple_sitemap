@@ -13,7 +13,7 @@ namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 class EntityUrlGenerator extends UrlGeneratorBase {
 
   /**
-   * @return array
+   * @inheritdoc
    */
   protected function getData() {
     $data_sets = [];
@@ -41,7 +41,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
   }
 
   /**
-   * Batch callback function which generates urls to entity paths.
+   * @inheritdoc
    */
   public function generate() {
 
@@ -49,65 +49,81 @@ class EntityUrlGenerator extends UrlGeneratorBase {
       foreach ($this->getBatchIterationElements($entity_info) as $entity_id => $entity) {
 
         $this->setCurrentId($entity_id);
-
-        $entity_settings = $this->generator->getEntityInstanceSettings($entity_info['entity_type_name'], $entity_id);
-
-        if (empty($entity_settings['index'])) {
+        $path_data = $this->getPathData($entity);
+        if (!$path_data) {
           continue;
         }
-
-        switch ($entity_info['entity_type_name']) {
-          // Loading url object for menu links.
-          case 'menu_link_content':
-            if (!$entity->isEnabled()) {
-              continue 2;
-            }
-            $url_object = $entity->getUrlObject();
-            break;
-
-          // Loading url object for other entities.
-          default:
-            $url_object = $entity->toUrl();
-        }
-
-        // Do not include external paths.
-        if (!$url_object->isRouted()) {
-          continue;
-        }
-
-        $path = $url_object->getInternalPath();
-
-        // Do not include paths that have been already indexed.
-        if ($this->batchSettings['remove_duplicates'] && $this->pathProcessed($path)) {
-          continue;
-        }
-
-        $url_object->setOption('absolute', TRUE);
-
-        $path_data = [
-          'path' => $path,
-          'entity_info' => [
-            'entity_type' => $entity_info['entity_type_name'],
-            'id' => $entity_id
-          ],
-          'lastmod' => method_exists($entity, 'getChangedTime')
-            ? date_iso8601($entity->getChangedTime()) : NULL,
-          'priority' => isset($entity_settings['priority']) ? $entity_settings['priority'] : NULL,
-          'changefreq' => !empty($entity_settings['changefreq']) ? $entity_settings['changefreq'] : NULL,
-          'images' => !empty($entity_settings['include_images'])
-            ? $this->getImages($entity_info['entity_type_name'], $entity_id)
-            : []
-        ];
-
-        $this->addUrl($path_data, $url_object);
+        $this->addUrl($path_data);
       }
       $this->processSegment();
     }
   }
 
   /**
-   * @param array $entity_info
-   * @return \Drupal\Core\Entity\EntityInterface[]
+   * @inheritdoc
+   */
+  protected function getPathData($entity) {
+
+    $entity_id = $entity->id();
+    $entity_type_name = $entity->getEntityTypeId();
+
+    $entity_settings = $this->generator->getEntityInstanceSettings($entity_type_name, $entity_id);
+
+    if (empty($entity_settings['index'])) {
+      return FALSE;
+    }
+
+    switch ($entity_type_name) {
+      // Loading url object for menu links.
+      case 'menu_link_content':
+        if (!$entity->isEnabled()) {
+          return FALSE;
+        }
+        $url_object = $entity->getUrlObject();
+        break;
+
+      // Loading url object for other entities.
+      default:
+        $url_object = $entity->toUrl();
+    }
+
+    // Do not include external paths.
+    if (!$url_object->isRouted()) {
+      return FALSE;
+    }
+
+    $path = $url_object->getInternalPath();
+
+    // Do not include paths that have been already indexed.
+    if ($this->batchSettings['remove_duplicates'] && $this->pathProcessed($path)) {
+      return FALSE;
+    }
+
+    $url_object->setOption('absolute', TRUE);
+
+    return [
+      'url' => $url_object,
+      'lastmod' => method_exists($entity, 'getChangedTime')
+        ? date_iso8601($entity->getChangedTime()) : NULL,
+      'priority' => isset($entity_settings['priority']) ? $entity_settings['priority'] : NULL,
+      'changefreq' => !empty($entity_settings['changefreq']) ? $entity_settings['changefreq'] : NULL,
+      'images' => !empty($entity_settings['include_images'])
+        ? $this->getImages($entity_type_name, $entity_id)
+        : [],
+
+      // Additional info useful in hooks.
+      'meta' => [
+        'path' => $path,
+        'entity_info' => [
+          'entity_type' => $entity_type_name,
+          'id' => $entity_id,
+        ],
+      ]
+    ];
+  }
+
+  /**
+   * @inheritdoc
    */
   protected function getBatchIterationElements(array $entity_info) {
     $query = $this->entityTypeManager->getStorage($entity_info['entity_type_name'])->getQuery();

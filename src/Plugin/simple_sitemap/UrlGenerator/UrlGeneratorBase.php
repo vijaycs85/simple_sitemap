@@ -179,10 +179,11 @@ abstract class UrlGeneratorBase extends PluginBase implements PluginInspectionIn
 
   /**
    * @param array $path_data
-   * @param \Drupal\Core\Url|NULL $url_object
    */
-  protected function addUrl(array $path_data, Url $url_object = NULL) {
-    if ($url_object !== NULL) {
+  protected function addUrl(array $path_data) {
+    if ($path_data['url'] instanceof Url) {
+      $url_object = $path_data['url'];
+      unset($path_data['url']);
       $this->addUrlVariants($path_data, $url_object);
     }
     else {
@@ -335,6 +336,32 @@ abstract class UrlGeneratorBase extends PluginBase implements PluginInspectionIn
     return $this->isBatch()
       ? array_slice($elements, $this->context['sandbox']['progress'], $this->batchSettings['batch_process_limit'])
       : $elements;
+  }
+
+  /**
+   * @return mixed
+   */
+  abstract protected function getData();
+
+  /**
+   * @param $path_data
+   * @return array
+   */
+  abstract protected function getPathData($path_data);
+
+  /**
+   * Called by batch.
+   */
+  public function generate() {
+    foreach ($this->getBatchIterationElements($this->getData()) as $id => $data) {
+      $this->setCurrentId($id);
+      $path_data = $this->getPathData($data);
+      if (!$path_data) {
+        continue;
+      }
+      $this->addUrl($path_data);
+    }
+    $this->processSegment();
   }
 
   /**

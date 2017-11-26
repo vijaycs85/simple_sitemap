@@ -98,7 +98,7 @@ class Batch {
           $operation[1][] = &$context;
           call_user_func_array($operation[0], $operation[1]);
         }
-        $this->finishGeneration(TRUE, $context['results'], []);
+        $this->finishGeneration(TRUE, !empty($context['results']) ? $context['results'] : [], []);
         break;
     }
   }
