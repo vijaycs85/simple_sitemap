@@ -8,7 +8,8 @@ namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
  *
  * @UrlGenerator(
  *   id = "entity",
- *   weight = 10
+ *   weight = 10,
+ *   instantiateForEachDataSet = true
  * )
  */
 class EntityUrlGenerator extends UrlGeneratorBase {
@@ -16,7 +17,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
   /**
    * @inheritdoc
    */
-  protected function getDataSets() {
+  public function getDataSets() {
     $data_sets = [];
     $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
     foreach ($this->generator->getBundleSettings() as $entity_type_name => $bundles) {
@@ -39,25 +40,6 @@ class EntityUrlGenerator extends UrlGeneratorBase {
       }
     }
     return $data_sets;
-  }
-
-  /**
-   * @inheritdoc
-   */
-  public function generate() {
-
-    foreach ($this->getDataSets() as $entity_info) {
-      foreach ($this->getBatchIterationElements($entity_info) as $entity_id => $entity) {
-
-        $this->setCurrentId($entity_id);
-        $path_data = $this->processDataSet($entity);
-        if (!$path_data) {
-          continue;
-        }
-        $this->addUrl($path_data);
-      }
-      $this->processSegment();
-    }
   }
 
   /**

@@ -338,7 +338,7 @@ abstract class UrlGeneratorBase extends PluginBase implements PluginInspectionIn
   /**
    * @return array
    */
-  abstract protected function getDataSets();
+  abstract public function getDataSets();
 
   /**
    * @param $data_set
@@ -348,9 +348,12 @@ abstract class UrlGeneratorBase extends PluginBase implements PluginInspectionIn
 
   /**
    * Called by batch.
+   *
+   * @param array|null $data_sets
    */
-  public function generate() {
-    foreach ($this->getBatchIterationElements($this->getDataSets()) as $id => $data_set) {
+  public function generate($data_sets = NULL) {
+    $data_sets = NULL !== $data_sets ? $data_sets : $this->getDataSets();
+    foreach ($this->getBatchIterationElements($data_sets) as $id => $data_set) {
       $this->setCurrentId($id);
       $path_data = $this->processDataSet($data_set);
       if (!$path_data) {

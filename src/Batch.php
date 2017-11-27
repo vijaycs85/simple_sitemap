@@ -106,11 +106,12 @@ class Batch {
   /**
    * Adds an operation to the batch.
    *
-   * @param string $plugin_id
+   * @param $plugin_id
+   * @param array|null $data_sets
    */
-  public function addOperation($plugin_id) {
+  public function addOperation($plugin_id, $data_sets = NULL) {
     $this->batch['operations'][] = [
-      __CLASS__ . '::generate', [$plugin_id, $this->batchSettings],
+      __CLASS__ . '::generate', [$plugin_id, $data_sets, $this->batchSettings],
     ];
   }
 
@@ -118,17 +119,18 @@ class Batch {
    * Batch callback function which generates URLs.
    *
    * @param $plugin_id
+   * @param array|null $data_sets
    * @param array $batch_settings
    * @param $context
    *
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
-  public static function generate($plugin_id, array $batch_settings, &$context) {
+  public static function generate($plugin_id, $data_sets, array $batch_settings, &$context) {
     \Drupal::service('plugin.manager.simple_sitemap.url_generator')
       ->createInstance($plugin_id)
       ->setContext($context)
       ->setBatchSettings($batch_settings)
-      ->generate();
+      ->generate($data_sets);
   }
 
   /**

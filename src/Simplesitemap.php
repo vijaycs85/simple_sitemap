@@ -256,7 +256,14 @@ class Simplesitemap {
     });
 
     foreach ($plugins as $plugin) {
-      $this->batch->addOperation($plugin['id']);
+      if ($plugin['instantiateForEachDataSet']) {
+        foreach ($this->urlGeneratorManager->createInstance($plugin['id'])->getDataSets() as $data_sets) {
+          $this->batch->addOperation($plugin['id'], $data_sets);
+        }
+      }
+      else {
+        $this->batch->addOperation($plugin['id']);
+      }
     }
 
     $this->batch->start();

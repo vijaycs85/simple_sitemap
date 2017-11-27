@@ -27,4 +27,9 @@ class UrlGenerator extends Plugin {
    * @var integer
    */
   public $weight;
+
+  /**
+   * @var boolean
+   */
+  public $instantiateForEachDataSet;
 }

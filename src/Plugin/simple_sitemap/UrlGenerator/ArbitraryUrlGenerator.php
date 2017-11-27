@@ -17,7 +17,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @UrlGenerator(
  *   id = "arbitrary",
- *   weight = 20
+ *   weight = 20,
+ *   instantiateForEachDataSet = false
  * )
  */
 class ArbitraryUrlGenerator extends UrlGeneratorBase {
@@ -86,7 +87,7 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase {
   /**
    * @inheritdoc
    */
-  protected function getDataSets() {
+  public function getDataSets() {
     $arbitrary_links = [];
     $this->moduleHandler->alter('simple_sitemap_arbitrary_links', $arbitrary_links);
     return array_values($arbitrary_links);

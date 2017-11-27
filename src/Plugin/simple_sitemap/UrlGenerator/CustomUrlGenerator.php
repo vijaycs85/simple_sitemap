@@ -19,7 +19,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @UrlGenerator(
  *   id = "custom",
- *   weight = 0
+ *   weight = 0,
+ *   instantiateForEachDataSet = false
  * )
  */
 class CustomUrlGenerator extends UrlGeneratorBase {
@@ -98,7 +99,7 @@ class CustomUrlGenerator extends UrlGeneratorBase {
   /**
    * @inheritdoc
    */
-  protected function getDataSets() {
+  public function getDataSets() {
     $this->includeImages = $this->generator->getSetting('custom_links_include_images', FALSE);
 
     return array_values($this->generator->getCustomLinks());
