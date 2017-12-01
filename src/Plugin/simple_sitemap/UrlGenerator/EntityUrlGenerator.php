@@ -84,10 +84,14 @@ class EntityUrlGenerator extends UrlGeneratorBase {
 
     $url_object->setOption('absolute', TRUE);
 
+    $lastmod = method_exists($entity, 'getChangedTime') ? date_iso8601($entity->getChangedTime()) : NULL;
+
+    // Menu fix.
+    $lastmod = $entity_type_name !== 'menu_link_content' ? $lastmod : NULL;
+
     return [
       'url' => $url_object,
-      'lastmod' => method_exists($entity, 'getChangedTime')
-        ? date_iso8601($entity->getChangedTime()) : NULL,
+      'lastmod' => $lastmod,
       'priority' => isset($entity_settings['priority']) ? $entity_settings['priority'] : NULL,
       'changefreq' => !empty($entity_settings['changefreq']) ? $entity_settings['changefreq'] : NULL,
       'images' => !empty($entity_settings['include_images'])

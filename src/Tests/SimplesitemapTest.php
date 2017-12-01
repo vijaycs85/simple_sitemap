@@ -3,8 +3,6 @@
 namespace Drupal\simple_sitemap\Tests;
 
 /**
- * Class SimplesitemapTest
- *
  * Tests Simple XML sitemap functional integration.
  *
  * @package Drupal\simple_sitemap\Tests
@@ -158,6 +156,36 @@ class SimplesitemapTest extends SimplesitemapTestBase {
   }
 
   /**
+   * Test the lastmod parameter in different scenarios.
+   */
+  public function testLastmod() {
+
+    // Entity links should have 'lastmod'.
+    $this->generator->setBundleSettings('node', 'page')
+      ->removeCustomLinks()
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertRaw('lastmod');
+
+    // Entity custom links should have 'lastmod'.
+    $this->generator->setBundleSettings('node', 'page', ['index' => FALSE])
+      ->addCustomLink('/node/' . $this->node->id())
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertRaw('lastmod');
+
+    // Non-entity custom links should not have 'lastmod'.
+    $this->generator->removeCustomLinks()
+      ->addCustomLink('/')
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertNoRaw('lastmod');
+  }
+
+  /**
    * Tests the duplicate setting.
    *
    * @todo On second generation too many links in XML output here?
@@ -256,16 +284,24 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->assertText('never');
   }
 
-
   /**
-   * Test indexing an atomic entity (here: a user).
+   * Test indexing an atomic entity (here: a user)
+   * @todo Not working
    */
-  public function indexAtomicEntity() {
+/*  public function testAtomicEntityIndexation() {
     $user = $this->createPrivilegedUser();
-    $this->generator->setBundleSettings('user');
+    $this->generator->setBundleSettings('user')
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertNoText('user/' . $user->id());
+
+    user_role_grant_permissions(0, ['access user profiles']);
+    $this->generator->generateSitemap('nobatch');
+
     $this->drupalGet('sitemap.xml');
     $this->assertText('user/' . $user->id());
-  }
+  }*/
 
   /**
    * @todo Test indexing menu.
