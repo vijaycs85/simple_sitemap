@@ -2,48 +2,15 @@
 
 namespace Drupal\simple_sitemap\Tests;
 
-use Drupal\simpletest\WebTestBase;
-
 /**
- * Class SimplesitemapTest.
+ * Class SimplesitemapTest
  *
  * Tests Simple XML sitemap functional integration.
  *
  * @package Drupal\simple_sitemap\Tests
  * @group simple_sitemap
  */
-class SimplesitemapTest extends WebTestBase {
-
-  /**
-   * Modules to enable.
-   *
-   * @var array
-   */
-  public static $modules = ['simple_sitemap', 'node'];
-
-  protected $generator;
-  protected $node;
-  protected $node2;
-  protected $privilegedUser;
-
-  // Uncomment to disable strict schema checks.
-//  protected $strictConfigSchema = FALSE;
-
-  /**
-   * Implements setup().
-   */
-  protected function setUp() {
-    parent::setUp();
-
-    $this->drupalCreateContentType(['type' => 'page']);
-    $this->node = $this->createNode(['title' => 'Node', 'type' => 'page']);
-    $this->node2 = $this->createNode(['title' => 'Node2', 'type' => 'page']);
-
-    $perms = array_keys(\Drupal::service('user.permissions')->getPermissions());
-    $this->privilegedUser = $this->drupalCreateUser($perms);
-
-    $this->generator = \Drupal::service('simple_sitemap.generator');
-  }
+class SimplesitemapTest extends SimplesitemapTestBase {
 
   /**
    * Verify sitemap.xml has the link to the front page after first generation.
@@ -71,7 +38,7 @@ class SimplesitemapTest extends WebTestBase {
   }
 
   /**
-   *
+   * Test default settings of custom links.
    */
   public function testAddCustomLinkDefaults() {
     $this->generator->removeCustomLinks()
@@ -108,9 +75,11 @@ class SimplesitemapTest extends WebTestBase {
   }
 
   /**
-   * Tests setting
+   * Tests setting bundle settings.
    */
   public function testSetBundleSettings() {
+
+    $this->assertFalse($this->generator->bundleIsIndexed('node', 'page'));
 
     // Index new bundle.
     $this->generator->removeCustomLinks()
@@ -121,6 +90,8 @@ class SimplesitemapTest extends WebTestBase {
     $this->assertText('node/' . $this->node->id());
     $this->assertText('0.5');
     $this->assertText('hourly');
+
+    $this->assertTrue($this->generator->bundleIsIndexed('node', 'page'));
 
     // Only change bundle priority.
     $this->generator->setBundleSettings('node', 'page', ['priority' => 0.9])
@@ -149,16 +120,30 @@ class SimplesitemapTest extends WebTestBase {
     $this->assertNoRaw('changefreq');
     $this->assertNoText('daily');
 
+    // Index two bundles.
+    $this->drupalCreateContentType(['type' => 'blog']);
+
+    $node3 = $this->createNode(['title' => 'Node3', 'type' => 'blog']);
+    $this->generator->setBundleSettings('node', 'page', ['index' => TRUE])
+      ->setBundleSettings('node', 'blog', ['index' => TRUE])
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('node/' . $this->node->id());
+    $this->assertText('node/' . $node3->id());
+
     // Set bundle 'index' setting to false.
     $this->generator->setBundleSettings('node', 'page', ['index' => FALSE])
+      ->setBundleSettings('node', 'blog', ['index' => FALSE])
       ->generateSitemap('nobatch');
 
     $this->drupalGet('sitemap.xml');
     $this->assertNoText('node/' . $this->node->id());
+    $this->assertNoText('node/' . $node3->id());
   }
 
   /**
-   *
+   * Test default settings of bundles.
    */
   public function testSetBundleSettingsDefaults() {
 
@@ -170,6 +155,70 @@ class SimplesitemapTest extends WebTestBase {
     $this->assertText('node/' . $this->node->id());
     $this->assertText('0.5');
     $this->assertNoRaw('changefreq');
+  }
+
+  /**
+   * Tests the duplicate setting.
+   *
+   * @todo On second generation too many links in XML output here?
+   */
+  public function testRemoveDuplicatesSetting() {
+    $this->generator->setBundleSettings('node', 'page', ['index' => true])
+      ->addCustomLink('/node/1')
+      ->saveSetting('remove_duplicates', TRUE)
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertUniqueText('node/' . $this->node->id());
+
+    $this->generator->saveSetting('remove_duplicates', FALSE)
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertNoUniqueText('node/' . $this->node->id());
+  }
+
+  /**
+   * Test max links setting and the sitemap index.
+   */
+  public function testMaxLinksSetting() {
+    $this->generator->setBundleSettings('node', 'page')
+      ->saveSetting('max_links', 1)
+      ->removeCustomLinks()
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('sitemaps/1/sitemap.xml');
+    $this->assertText('sitemaps/2/sitemap.xml');
+
+    $this->drupalGet('sitemaps/1/sitemap.xml');
+    $this->assertText('node/' . $this->node->id());
+    $this->assertText('0.5');
+    $this->assertNoText('node/' . $this->node2->id());
+
+    $this->drupalGet('sitemaps/2/sitemap.xml');
+    $this->assertText('node/' . $this->node2->id());
+    $this->assertText('0.5');
+    $this->assertNoText('node/' . $this->node->id());
+  }
+
+  /**
+   * Test setting the base URL.
+   */
+  public function testBaseUrlSetting() {
+    $this->generator->setBundleSettings('node', 'page')
+      ->saveSetting('base_url', 'http://base_url_test')
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('http://base_url_test');
+
+    // Set base URL in the sitemap index.
+    $this->generator->saveSetting('max_links', 1)
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('http://base_url_test/sitemaps/1/sitemap.xml');
   }
 
   /**
@@ -207,15 +256,33 @@ class SimplesitemapTest extends WebTestBase {
     $this->assertText('never');
   }
 
+
+  /**
+   * Test indexing an atomic entity (here: a user).
+   */
+  public function indexAtomicEntity() {
+    $user = $this->createPrivilegedUser();
+    $this->generator->setBundleSettings('user');
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('user/' . $user->id());
+  }
+
+  /**
+   * @todo Test indexing menu.
+   */
+
+  /**
+   * @todo Test deleting a bundle.
+   */
+
   /**
    * Test disabling sitemap support for an entity type.
    */
   public function testDisableEntityType() {
     $this->generator->setBundleSettings('node', 'page')
-      ->removeCustomLinks()
       ->disableEntityType('node');
 
-    $this->drupalLogin($this->privilegedUser);
+    $this->drupalLogin($this->createPrivilegedUser());
     $this->drupalGet('admin/structure/types/manage/page');
     $this->assertNoText('Simple XML sitemap');
 
@@ -223,6 +290,8 @@ class SimplesitemapTest extends WebTestBase {
 
     $this->drupalGet('sitemap.xml');
     $this->assertNoText('node/' . $this->node->id());
+
+    $this->assertFalse($this->generator->entityTypeIsEnabled('node'));
   }
 
   /**
@@ -230,11 +299,10 @@ class SimplesitemapTest extends WebTestBase {
    */
   public function testEnableEntityType() {
     $this->generator->disableEntityType('node')
-      ->removeCustomLinks()
       ->enableEntityType('node')
       ->setBundleSettings('node', 'page');
 
-    $this->drupalLogin($this->privilegedUser);
+    $this->drupalLogin($this->createPrivilegedUser());
     $this->drupalGet('admin/structure/types/manage/page');
     $this->assertText('Simple XML sitemap');
 
@@ -242,52 +310,7 @@ class SimplesitemapTest extends WebTestBase {
 
     $this->drupalGet('sitemap.xml');
     $this->assertText('node/' . $this->node->id());
-  }
 
-  /**
-   * Test sitemap index.
-   */
-  public function testSitemapIndex() {
-    $this->generator->setBundleSettings('node', 'page')
-      ->saveSetting('max_links', 1)
-      ->removeCustomLinks()
-      ->generateSitemap('nobatch');
-
-    $this->drupalGet('sitemap.xml');
-    $this->assertText('sitemaps/1/sitemap.xml');
-    $this->assertText('sitemaps/2/sitemap.xml');
-
-    $this->drupalGet('sitemaps/1/sitemap.xml');
-    $this->assertText('node/' . $this->node->id());
-    $this->assertText('0.5');
-
-    $this->drupalGet('sitemaps/2/sitemap.xml');
-    $this->assertText('node/' . $this->node2->id());
-    $this->assertText('0.5');
-  }
-
-  /**
-   * Test setting the base URL.
-   */
-  public function testSetBaseUrl() {
-    $this->generator->setBundleSettings('node', 'page')
-      ->saveSetting('base_url', 'http://base_url_test')
-      ->generateSitemap('nobatch');
-
-    $this->drupalGet('sitemap.xml');
-    $this->assertText('http://base_url_test');
-  }
-
-  /**
-   * Test setting the base URL in the sitemap index.
-   */
-  public function testSetBaseUrlInSitemapIndex() {
-    $this->generator->setBundleSettings('node', 'page')
-      ->saveSetting('max_links', 1)
-      ->saveSetting('base_url', 'http://base_url_test')
-      ->generateSitemap('nobatch');
-
-    $this->drupalGet('sitemap.xml');
-    $this->assertText('http://base_url_test');
+    $this->assertTrue($this->generator->entityTypeIsEnabled('node'));
   }
 }
