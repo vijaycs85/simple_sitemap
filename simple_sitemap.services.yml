@@ -23,6 +23,11 @@ services:
       - '@module_handler'
       - '@language_manager'
       - '@datetime.time'
+      - '@simple_sitemap.sitemap_writer'
+
+  simple_sitemap.sitemap_writer:
+    class: Drupal\simple_sitemap\SitemapWriter
+    public: false
 
   simple_sitemap.entity_helper:
     class: Drupal\simple_sitemap\EntityHelper

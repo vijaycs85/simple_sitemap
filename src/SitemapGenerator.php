@@ -58,6 +58,11 @@ class SitemapGenerator {
   protected $settings;
 
   /**
+   * @var \XMLWriter
+   */
+  protected $writer;
+
+  /**
    * @var array
    */
   protected static $attributes = [
@@ -80,19 +85,22 @@ class SitemapGenerator {
    * @param \Drupal\Core\Extension\ModuleHandler $module_handler
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Component\Datetime\Time $time
+   * @param \Drupal\simple_sitemap\SitemapWriter $sitemapWriter
    */
   public function __construct(
     EntityHelper $entityHelper,
     Connection $database,
     ModuleHandler $module_handler,
     LanguageManagerInterface $language_manager,
-    Time $time
+    Time $time,
+    SitemapWriter $sitemapWriter
   ) {
     $this->entityHelper = $entityHelper;
     $this->db = $database;
     $this->moduleHandler = $module_handler;
     $this->languageManager = $language_manager;
     $this->time = $time;
+    $this->writer = $sitemapWriter;
     $this->setIsHreflangSitemap();
   }
 
@@ -148,30 +156,29 @@ class SitemapGenerator {
    * @return string sitemap index
    */
   public function generateSitemapIndex(array $chunk_info) {
-    $writer = new XMLWriter();
-    $writer->openMemory();
-    $writer->setIndent(TRUE);
-    $writer->startDocument(self::XML_VERSION, self::ENCODING);
-    $writer->writeComment(self::GENERATED_BY);
-    $writer->startElement('sitemapindex');
+    $this->writer->openMemory();
+    $this->writer->setIndent(TRUE);
+    $this->writer->startDocument(self::XML_VERSION, self::ENCODING);
+    $this->writer->writeComment(self::GENERATED_BY);
+    $this->writer->startElement('sitemapindex');
 
     // Add attributes to document.
     $this->moduleHandler->alter('simple_sitemap_index_attributes', self::$indexAttributes);
     foreach (self::$indexAttributes as $name => $value) {
-      $writer->writeAttribute($name, $value);
+      $this->writer->writeAttribute($name, $value);
     }
 
     // Add sitemap locations to document.
     foreach ($chunk_info as $chunk_id => $chunk_data) {
-      $writer->startElement('sitemap');
-      $writer->writeElement('loc', $this->getCustomBaseUrl() . '/sitemaps/' . $chunk_id . '/' . 'sitemap.xml');
-      $writer->writeElement('lastmod', date_iso8601($chunk_data->sitemap_created));
-      $writer->endElement();
+      $this->writer->startElement('sitemap');
+      $this->writer->writeElement('loc', $this->getCustomBaseUrl() . '/sitemaps/' . $chunk_id . '/' . 'sitemap.xml');
+      $this->writer->writeElement('lastmod', date_iso8601($chunk_data->sitemap_created));
+      $this->writer->endElement();
     }
 
-    $writer->endElement();
-    $writer->endDocument();
-    return $writer->outputMemory();
+    $this->writer->endElement();
+    $this->writer->endDocument();
+    return $this->writer->outputMemory();
   }
 
   /**
@@ -192,12 +199,11 @@ class SitemapGenerator {
    *   Sitemap chunk
    */
   protected function generateSitemapChunk(array $links) {
-    $writer = new XMLWriter();
-    $writer->openMemory();
-    $writer->setIndent(TRUE);
-    $writer->startDocument(self::XML_VERSION, self::ENCODING);
-    $writer->writeComment(self::GENERATED_BY);
-    $writer->startElement('urlset');
+    $this->writer->openMemory();
+    $this->writer->setIndent(TRUE);
+    $this->writer->startDocument(self::XML_VERSION, self::ENCODING);
+    $this->writer->writeComment(self::GENERATED_BY);
+    $this->writer->startElement('urlset');
 
     // Add attributes to document.
     if (!$this->isHreflangSitemap()) {
@@ -205,7 +211,7 @@ class SitemapGenerator {
     }
     $this->moduleHandler->alter('simple_sitemap_attributes', self::$attributes);
     foreach (self::$attributes as $name => $value) {
-      $writer->writeAttribute($name, $value);
+      $this->writer->writeAttribute($name, $value);
     }
 
     // Add URLs to document.
@@ -213,51 +219,51 @@ class SitemapGenerator {
     foreach ($links as $link) {
 
       // Add each translation variant URL as location to the sitemap.
-      $writer->startElement('url');
-      $writer->writeElement('loc', $link['url']);
+      $this->writer->startElement('url');
+      $this->writer->writeElement('loc', $link['url']);
 
       // If more than one language is enabled, add all translation variant URLs
       // as alternate links to this location turning the sitemap into a hreflang
       // sitemap.
       if (isset($link['alternate_urls']) && $this->isHreflangSitemap()) {
         foreach ($link['alternate_urls'] as $language_id => $alternate_url) {
-          $writer->startElement('xhtml:link');
-          $writer->writeAttribute('rel', 'alternate');
-          $writer->writeAttribute('hreflang', $language_id);
-          $writer->writeAttribute('href', $alternate_url);
-          $writer->endElement();
+          $this->writer->startElement('xhtml:link');
+          $this->writer->writeAttribute('rel', 'alternate');
+          $this->writer->writeAttribute('hreflang', $language_id);
+          $this->writer->writeAttribute('href', $alternate_url);
+          $this->writer->endElement();
         }
       }
 
       // Add lastmod if any.
       if (isset($link['lastmod'])) {
-        $writer->writeElement('lastmod', $link['lastmod']);
+        $this->writer->writeElement('lastmod', $link['lastmod']);
       }
 
       // Add changefreq if any.
       if (isset($link['changefreq'])) {
-        $writer->writeElement('changefreq', $link['changefreq']);
+        $this->writer->writeElement('changefreq', $link['changefreq']);
       }
 
       // Add priority if any.
       if (isset($link['priority'])) {
-        $writer->writeElement('priority', $link['priority']);
+        $this->writer->writeElement('priority', $link['priority']);
       }
 
       // Add images if any.
       if (!empty($link['images'])) {
         foreach ($link['images'] as $image) {
-          $writer->startElement('image:image');
-          $writer->writeElement('image:loc', $image['path']);
-          $writer->endElement();
+          $this->writer->startElement('image:image');
+          $this->writer->writeElement('image:loc', $image['path']);
+          $this->writer->endElement();
         }
       }
 
-      $writer->endElement();
+      $this->writer->endElement();
     }
-    $writer->endElement();
-    $writer->endDocument();
-    return $writer->outputMemory();
+    $this->writer->endElement();
+    $this->writer->endDocument();
+    return $this->writer->outputMemory();
   }
 
 }
