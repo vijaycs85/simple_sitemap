@@ -15,6 +15,7 @@ use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\simple_sitemap\SitemapGenerator;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Language\Language;
 
 /**
  * Class UrlGeneratorBase
@@ -159,18 +160,53 @@ abstract class UrlGeneratorBase extends PluginBase implements PluginInspectionIn
     return $this->batchSettings['from'] != 'nobatch';
   }
 
+  protected function getProcessedElements() {
+    return !empty($this->context['results']['processed_paths'])
+      ? $this->context['results']['processed_paths']
+      : [];
+  }
+
+  protected function addProcessedElement($path) {
+    $this->context['results']['processed_paths'][] = $path;
+  }
+
+  protected function setProcessedElements($elements) {
+    $this->context['results']['processed_elements'] = $elements;
+  }
+
+  protected function getBatchResults() {
+    return !empty($this->context['results']['generate'])
+      ? $this->context['results']['generate']
+      : [];
+  }
+
+  protected function addBatchResult($result) {
+    $this->context['results']['generate'][] = $result;
+  }
+
+  protected function setBatchResults($results) {
+    $this->context['results']['generate'] = $results;
+  }
+
+  protected function getChunkCount() {
+    return !empty($this->context['results']['chunk_count'])
+      ? $this->context['results']['chunk_count']
+      : 0;
+  }
+
+  protected function setChunkCount($chunk_count) {
+    $this->context['results']['chunk_count'] = $chunk_count;
+  }
+
   /**
    * @param string $path
    * @return bool
    */
   protected function pathProcessed($path) {
-    $path_pool = isset($this->context['results']['processed_paths'])
-      ? $this->context['results']['processed_paths']
-      : [];
-    if (in_array($path, $path_pool)) {
+    if (in_array($path, $this->getProcessedElements())) {
       return TRUE;
     }
-    $this->context['results']['processed_paths'][] = $path;
+    $this->addProcessedElement($path);
     return FALSE;
   }
 
@@ -184,7 +220,7 @@ abstract class UrlGeneratorBase extends PluginBase implements PluginInspectionIn
       $this->addUrlVariants($path_data, $url_object);
     }
     else {
-      $this->context['results']['generate'][] = $path_data;
+      $this->addBatchResult($path_data);
     }
   }
 
@@ -193,48 +229,68 @@ abstract class UrlGeneratorBase extends PluginBase implements PluginInspectionIn
    * @param array $path_data
    */
   protected function addUrlVariants(array $path_data, Url $url_object) {
-    $alternate_urls = [];
     $entity = $this->entityHelper->getEntityFromUrlObject($url_object);
-    $translation_languages = $entity instanceof ContentEntityBase && $this->batchSettings['skip_untranslated']
-      ? $entity->getTranslationLanguages()
-      : $this->languages;
 
-    // Entity is not translated.
-    if ($entity instanceof ContentEntityBase && isset($translation_languages['und'])) {
-      if ($url_object->access($this->anonUser)) {
-        $url_object->setOption('language', $this->languages[$this->defaultLanguageId]);
-        $alternate_urls[$this->defaultLanguageId] = $this->replaceBaseUrlWithCustom($url_object->toString());
+    if ($entity instanceof ContentEntityBase && $this->batchSettings['skip_untranslated']) {
+      $translation_languages = $entity->getTranslationLanguages();
+      if (isset($translation_languages[Language::LANGCODE_NOT_SPECIFIED])
+        || isset($translation_languages[Language::LANGCODE_NOT_APPLICABLE])) {
+        // Content entity's language is unknown, including only default variant.
+        $alternate_urls = $this->getAlternateUrlsForDefaultLanguage($url_object);
+      }
+      else {
+        // Including only translated variants of content entity.
+        $alternate_urls = $this->getAlternateUrlsForTranslatedLanguages($entity, $url_object);
       }
     }
     else {
-      // Including only translated variants of content entity.
-      if ($entity instanceof ContentEntityBase && $this->batchSettings['skip_untranslated']) {
-        foreach ($translation_languages as $language) {
-          if (!isset($this->batchSettings['excluded_languages'][$language->getId()]) || $language->isDefault()) {
-            $translation = $entity->getTranslation($language->getId());
-            if ($translation->access('view', $this->anonUser)) {
-              $url_object->setOption('language', $language);
-              $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object->toString());
-            }
-          }
-        }
-      }
-
       // Not a content entity or including all untranslated variants.
-      elseif ($url_object->access($this->anonUser)) {
-        foreach ($translation_languages as $language) {
-          if (!isset($this->batchSettings['excluded_languages'][$language->getId()]) || $language->isDefault()) {
-            $url_object->setOption('language', $language);
-            $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object->toString());
-          }
-        }
-      }
+      $alternate_urls = $this->getAlternateUrlsForAllLanguages($url_object);
     }
 
     foreach ($alternate_urls as $langcode => $url) {
-      $this->context['results']['generate'][] = $path_data + [
-        'langcode' => $langcode, 'url' => $url, 'alternate_urls' => $alternate_urls];
+      $this->addBatchResult(
+        $path_data + [
+          'langcode' => $langcode, 'url' => $url, 'alternate_urls' => $alternate_urls
+        ]
+      );
     }
+  }
+
+  protected function getAlternateUrlsForDefaultLanguage($url_object) {
+    $alternate_urls = [];
+    if ($url_object->access($this->anonUser)) {
+      $url_object->setOption('language', $this->languages[$this->defaultLanguageId]);
+      $alternate_urls[$this->defaultLanguageId] = $this->replaceBaseUrlWithCustom($url_object->toString());
+    }
+    return $alternate_urls;
+  }
+
+  protected function getAlternateUrlsForTranslatedLanguages($entity, $url_object) {
+    $alternate_urls = [];
+    foreach ($entity->getTranslationLanguages() as $language) {
+      if (!isset($this->batchSettings['excluded_languages'][$language->getId()]) || $language->isDefault()) {
+        $translation = $entity->getTranslation($language->getId());
+        if ($translation->access('view', $this->anonUser)) {
+          $url_object->setOption('language', $language);
+          $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object->toString());
+        }
+      }
+    }
+    return $alternate_urls;
+  }
+
+  protected function getAlternateUrlsForAllLanguages($url_object) {
+    $alternate_urls = [];
+    if ($url_object->access($this->anonUser)) {
+      foreach ($this->languages as $language) {
+        if (!isset($this->batchSettings['excluded_languages'][$language->getId()]) || $language->isDefault()) {
+          $url_object->setOption('language', $language);
+          $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object->toString());
+        }
+      }
+    }
+    return $alternate_urls;
   }
 
   /**
@@ -248,14 +304,16 @@ abstract class UrlGeneratorBase extends PluginBase implements PluginInspectionIn
    * @param $max
    */
   protected function initializeBatch($max) {
-    $this->context['results']['generate'] = !empty($this->context['results']['generate']) ? $this->context['results']['generate'] : [];
+    $this->setBatchResults($this->getBatchResults());
+    $this->setChunkCount($this->getChunkCount());
+    $this->setProcessedElements($this->getProcessedElements());
+
+    // Initialize sandbox for the batch process.
     if ($this->isBatch()) {
       $this->context['sandbox']['progress'] = 0;
       $this->context['sandbox']['current_id'] = 0;
       $this->context['sandbox']['max'] = $max;
-      $this->context['results']['processed_paths'] = !empty($this->context['results']['processed_paths'])
-        ? $this->context['results']['processed_paths']
-        : [];
+      $this->context['sandbox']['finished'] = 0;
     }
   }
 
@@ -276,38 +334,47 @@ abstract class UrlGeneratorBase extends PluginBase implements PluginInspectionIn
     if ($this->isBatch()) {
       $this->setProgressInfo();
     }
-    if (!empty($this->batchSettings['max_links']) && count($this->context['results']['generate']) >= $this->batchSettings['max_links']) {
-      $chunks = array_chunk($this->context['results']['generate'], $this->batchSettings['max_links']);
-      foreach ($chunks as $i => $chunk_links) {
-        if (count($chunk_links) == $this->batchSettings['max_links']) {
-          $remove_sitemap = empty($this->context['results']['chunk_count']);
-          $this->sitemapGenerator->generateSitemap($chunk_links, $remove_sitemap);
-          $this->context['results']['chunk_count'] = !isset($this->context['results']['chunk_count'])
-            ? 1
-            : $this->context['results']['chunk_count'] + 1;
-          $this->context['results']['generate'] = array_slice($this->context['results']['generate'], count($chunk_links));
+
+    if (!empty($max_links = $this->batchSettings['max_links'])
+      && count($this->getBatchResults()) >= $max_links) {
+
+      foreach (array_chunk($this->getBatchResults(), $max_links) as $chunk_links) {
+
+        if (count($chunk_links) == $max_links) {
+
+          // Generate sitemap.
+          $this->sitemapGenerator->generateSitemap($chunk_links, empty($this->getChunkCount()));
+
+          // Update chunk count info.
+          $this->setChunkCount(empty($this->getChunkCount()) ? 1 : ($this->getChunkCount() + 1));
+
+          // Update remove links from array that have been generated.
+          $this->setBatchResults(array_slice($this->getBatchResults(), count($chunk_links)));
         }
       }
     }
   }
-
-  /**
-   *
-   */
+  
   protected function setProgressInfo() {
     if ($this->context['sandbox']['progress'] != $this->context['sandbox']['max']) {
-      // Providing progress info to the batch API.
+
+      // Provide progress info to the batch API.
       $this->context['finished'] = $this->context['sandbox']['progress'] / $this->context['sandbox']['max'];
-      // Adding processing message after finishing every batch segment.
-      end($this->context['results']['generate']);
-      $last_key = key($this->context['results']['generate']);
-      if (!empty($this->context['results']['generate'][$last_key]['path'])) {
-        $this->context['message'] = $this->t(self::PROCESSING_PATH_MESSAGE, [
-          '@current' => $this->context['sandbox']['progress'],
-          '@max' => $this->context['sandbox']['max'],
-          '@path' => HTML::escape($this->context['results']['generate'][$last_key]['path']),
-        ]);
-      }
+
+      // Add processing message after finishing every batch segment.
+      $this->setProcessingBatchMessage();
+    }
+  }
+
+  protected function setProcessingBatchMessage() {
+    $results = $this->getBatchResults();
+    end($results);
+    if (!empty($path = $results[key($results)]['meta']['path'])) {
+      $this->context['message'] = $this->t(self::PROCESSING_PATH_MESSAGE, [
+        '@current' => $this->context['sandbox']['progress'],
+        '@max' => $this->context['sandbox']['max'],
+        '@path' => HTML::escape($path),
+      ]);
     }
   }
 

@@ -249,6 +249,11 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->assertText('http://base_url_test/sitemaps/1/sitemap.xml');
   }
 
+
+  /**
+   * @todo testSkipNonExistentTranslations
+   */
+
   /**
    * Test cacheability of the response.
    */
