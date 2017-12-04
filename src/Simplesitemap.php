@@ -236,6 +236,8 @@ class Simplesitemap {
    * @param string $from
    *   Can be 'form', 'backend', 'drush' or 'nobatch'.
    *   This decides how the batch process is to be run.
+   *
+   * @return bool|\Drupal\simple_sitemap\Simplesitemap
    */
   public function generateSitemap($from = 'form') {
 
@@ -266,7 +268,8 @@ class Simplesitemap {
       }
     }
 
-    $this->batch->start();
+    $success = $this->batch->start();
+    return $from === 'nobatch' ? $this : $success;
   }
 
   /**

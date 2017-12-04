@@ -63,7 +63,7 @@ class Batch {
       case 'form':
         // Start batch process.
         batch_set($this->batch);
-        break;
+        return TRUE;
 
       case 'drush':
         // Start drush batch process.
@@ -75,7 +75,7 @@ class Batch {
 
         drush_log($this->t(self::BATCH_INIT_MESSAGE), 'status');
         drush_backend_batch_process();
-        break;
+        return TRUE;
 
       case 'backend':
         // Start backend batch process.
@@ -87,7 +87,7 @@ class Batch {
 
         // todo: Does not take advantage of batch API and eventually runs out of memory on very large sites. Use queue API instead?
         batch_process();
-        break;
+        return TRUE;
 
       case 'nobatch':
         // Call each batch operation the way the Drupal batch API would do, but
@@ -99,8 +99,9 @@ class Batch {
           call_user_func_array($operation[0], $operation[1]);
         }
         $this->finishGeneration(TRUE, !empty($context['results']) ? $context['results'] : [], []);
-        break;
+        return TRUE;
     }
+    return FALSE;
   }
 
   /**

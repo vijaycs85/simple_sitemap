@@ -230,6 +230,57 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->assertNoText('node/' . $this->node->id());
   }
 
+  public function testBatchProcessLimitSetting() {
+
+    // Create some nodes.
+    for ($i = 3; $i <=50; $i++) {
+      $this->createNode(['title' => "Node{$i}", 'type' => 'page']);
+    }
+
+    // Test batch_process_limit setting.
+    $sitemap = $this->generator->setBundleSettings('node', 'page')
+      ->generateSitemap('nobatch')
+      ->getSitemap();
+
+    $sitemap2 = $this->generator->saveSetting('batch_process_limit', 1)
+      ->generateSitemap('nobatch')
+      ->getSitemap();
+
+    $sitemap3 = $this->generator->saveSetting('batch_process_limit', 10)
+      ->generateSitemap('nobatch')
+      ->getSitemap();
+
+    $this->assertEqual($sitemap, $sitemap2);
+    $this->assertEqual($sitemap, $sitemap3);
+
+    // Test batch_process_limit setting in combination with max_links setting.
+    $sitemap_index = $this->generator->setBundleSettings('node', 'page')
+      ->saveSetting('batch_process_limit', 1500)
+      ->saveSetting('max_links', 30)
+      ->generateSitemap('nobatch')
+      ->getSitemap();
+
+    $sitemap_chunk = $this->generator->getSitemap(1);
+
+    $sitemap_index2 = $this->generator->saveSetting('batch_process_limit', 1)
+      ->generateSitemap('nobatch')
+      ->getSitemap();
+
+    $sitemap_chunk2 = $this->generator->getSitemap(1);
+
+    $sitemap_index3 = $this->generator->saveSetting('batch_process_limit', 10)
+      ->generateSitemap('nobatch')
+      ->getSitemap();
+
+    $sitemap_chunk3 = $this->generator->getSitemap(1);
+
+    $this->assertIdentical($sitemap_index, $sitemap_index2);
+    $this->assertIdentical($sitemap_chunk, $sitemap_chunk2);
+    $this->assertIdentical($sitemap_index, $sitemap_index3);
+    $this->assertIdentical($sitemap_chunk, $sitemap_chunk3);
+
+  }
+
   /**
    * Test setting the base URL.
    */
@@ -249,6 +300,9 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->assertText('http://base_url_test/sitemaps/1/sitemap.xml');
   }
 
+  /**
+   * @todo testSkipUntranslatedSetting
+   */
 
   /**
    * @todo testSkipNonExistentTranslations
