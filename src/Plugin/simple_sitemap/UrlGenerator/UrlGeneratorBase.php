@@ -2,9 +2,7 @@
 
 namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 
-use Drupal\Core\Plugin\PluginBase;
-use Drupal\Component\Plugin\PluginInspectionInterface;
-use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SimplesitemapPluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\ContentEntityBase;
@@ -21,7 +19,7 @@ use Drupal\Core\Language\Language;
  * Class UrlGeneratorBase
  * @package Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator
  */
-abstract class UrlGeneratorBase extends PluginBase implements PluginInspectionInterface, ContainerFactoryPluginInterface, UrlGeneratorInterface {
+abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGeneratorInterface {
 
   const ANONYMOUS_USER_ID = 0;
   const PROCESSING_PATH_MESSAGE = 'Processing path #@current out of @max: @path';

@@ -10,4 +10,8 @@ interface UrlGeneratorInterface {
 
   public function generate();
 
+  /**
+   * @return mixed
+   */
+  public function getDataSets();
 }

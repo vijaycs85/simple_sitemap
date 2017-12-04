@@ -15,7 +15,7 @@ abstract class SimplesitemapTestBase extends WebTestBase {
    *
    * @var array
    */
-  public static $modules = ['simple_sitemap', 'node'];
+  public static $modules = ['simple_sitemap', 'node', 'content_translation'];
 
   /**
    * @var \Drupal\simple_sitemap\Simplesitemap
