@@ -346,7 +346,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
           // Update chunk count info.
           $this->setChunkCount(empty($this->getChunkCount()) ? 1 : ($this->getChunkCount() + 1));
 
-          // Update remove links from array that have been generated.
+          // Remove links from result array that have been generated.
           $this->setBatchResults(array_slice($this->getBatchResults(), count($chunk_links)));
         }
       }

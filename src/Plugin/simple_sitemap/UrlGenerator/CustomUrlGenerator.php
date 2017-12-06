@@ -25,7 +25,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class CustomUrlGenerator extends UrlGeneratorBase {
 
-  const PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE = "The custom path @path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users. You can review custom paths <a href='@custom_paths_url'>here</a>.";
+  const PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE = 'The custom path @path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users. You can review custom paths <a href="@custom_paths_url">here</a>.';
 
 
   /**
@@ -61,8 +61,7 @@ class CustomUrlGenerator extends UrlGeneratorBase {
     EntityTypeManagerInterface $entity_type_manager,
     Logger $logger,
     EntityHelper $entityHelper,
-    PathValidator $path_validator
-  ) {
+    PathValidator $path_validator) {
     parent::__construct(
       $configuration,
       $plugin_id,

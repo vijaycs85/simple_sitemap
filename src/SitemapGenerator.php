@@ -178,6 +178,7 @@ class SitemapGenerator {
 
     $this->writer->endElement();
     $this->writer->endDocument();
+
     return $this->writer->outputMemory();
   }
 
@@ -263,6 +264,7 @@ class SitemapGenerator {
     }
     $this->writer->endElement();
     $this->writer->endDocument();
+
     return $this->writer->outputMemory();
   }
 

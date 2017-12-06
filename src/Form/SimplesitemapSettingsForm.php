@@ -102,7 +102,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
       '#type' => 'number',
       '#title' => $this->t('Maximum links in a sitemap'),
       '#min' => 1,
-      '#description' => $this->t("The maximum number of links one sitemap can hold. If more links are generated than set here, a sitemap index will be created and the links split into several sub-sitemaps.<br/>50 000 links is the maximum Google will parse per sitemap, however it is advisable to set this to a lower number. If left blank, all links will be shown on a single sitemap."),
+      '#description' => $this->t('The maximum number of links one sitemap can hold. If more links are generated than set here, a sitemap index will be created and the links split into several sub-sitemaps.<br/>50 000 links is the maximum Google will parse per sitemap, however it is advisable to set this to a lower number. If left blank, all links will be shown on a single sitemap.'),
       '#default_value' => $this->generator->getSetting('max_links', 2000),
     ];
 
@@ -110,7 +110,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
       '#type' => 'number',
       '#title' => $this->t('Refresh batch every n links'),
       '#min' => 1,
-      '#description' => $this->t("During sitemap generation, the batch process will issue a page refresh after n links processed to prevent PHP timeouts and memory exhaustion.<br/>Increasing this number will reduce the number of times Drupal has to bootstrap (thus speeding up the generation process), but will require more memory and less strict PHP timeout settings."),
+      '#description' => $this->t('During sitemap generation, the batch process will issue a page refresh after n links processed to prevent PHP timeouts and memory exhaustion.<br/>Increasing this number will reduce the number of times Drupal has to bootstrap (thus speeding up the generation process), but will require more memory and less strict PHP timeout settings.'),
       '#default_value' => $this->generator->getSetting('batch_process_limit', 1500),
       '#required' => TRUE,
     ];

@@ -18,7 +18,7 @@ function simple_sitemap_requirements($phase) {
     $requirements['simple_sitemap_php_extensions'] = [
       'title' => t('Simple XML sitemap PHP extensions'),
       'value' => t('Missing PHP xmlwriter extension'),
-      'description' => t("In order to be able to generate sitemaps, the Simple XML sitemap module requires the <em>xmlwriter</em> PHP extension to be enabled."),
+      'description' => t('In order to be able to generate sitemaps, the Simple XML sitemap module requires the <em>xmlwriter</em> PHP extension to be enabled.'),
       'severity' => REQUIREMENT_ERROR,
     ];
   }
@@ -34,8 +34,8 @@ function simple_sitemap_requirements($phase) {
       if (!$generated_ago) {
         $value = t('Not available');
         $description = t($cron_generation
-          ? "Run cron, or <a href='@generate'>generate</a> the sitemap manually."
-          : "Generation on cron run is disabled. <a href='@generate'>Generate</a> the sitemap manually.", [
+          ? 'Run cron, or <a href="@generate">generate</a> the sitemap manually.'
+          : 'Generation on cron run is disabled. <a href="@generate">Generate</a> the sitemap manually.', [
             '@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'
           ]
         );
@@ -43,10 +43,10 @@ function simple_sitemap_requirements($phase) {
       }
       else {
         $value = t('XML sitemap is available');
-        $description = t("The <a href='@sitemap'>XML sitemap</a> was generated @ago ago."
+        $description = t('The <a href="@sitemap">XML sitemap</a> was generated @ago ago.'
           . ' ' . ($cron_generation
-            ? "Run cron, or <a href='@generate'>regenerate</a> the sitemap manually."
-            : "Generation on cron run is disabled. <a href='@generate'>Regenerate</a> the sitemap manually."), [
+            ? 'Run cron, or <a href="@generate">regenerate</a> the sitemap manually.'
+            : 'Generation on cron run is disabled. <a href="@generate">Regenerate</a> the sitemap manually.'), [
               '@sitemap' => $GLOBALS['base_url'] . '/sitemap.xml',
               '@ago' => $generated_ago,
               '@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'
@@ -307,7 +307,7 @@ function simple_sitemap_update_8206() {
       unset($custom_links[$i]);
     }
   }
-  \Drupal::service('config.factory')->getEditable("simple_sitemap.custom")
+  \Drupal::service('config.factory')->getEditable('simple_sitemap.custom')
     ->setData(['links' => $custom_links])->save();
 }
 

@@ -89,12 +89,6 @@ class Simplesitemap {
     'include_images' => 0,
   ];
 
-  protected static $generatorServices = [
-    'simple_sitemap.custom_url_generator',
-    'simple_sitemap.entity_url_generator',
-    'simple_sitemap.arbitrary_url_generator',
-  ];
-
   /**
    * Simplesitemap constructor.
    * @param \Drupal\simple_sitemap\SitemapGenerator $sitemapGenerator
@@ -163,7 +157,7 @@ class Simplesitemap {
    * @return $this
    */
   public function saveSetting($name, $setting) {
-    $this->configFactory->getEditable("simple_sitemap.settings")
+    $this->configFactory->getEditable('simple_sitemap.settings')
       ->set($name, $setting)->save();
     return $this;
   }
@@ -212,7 +206,7 @@ class Simplesitemap {
    */
   protected function fetchSitemapChunkInfo() {
     return $this->db
-      ->query("SELECT id, sitemap_created FROM {simple_sitemap}")
+      ->query('SELECT id, sitemap_created FROM {simple_sitemap}')
       ->fetchAllAssoc('id');
   }
 
@@ -312,7 +306,7 @@ class Simplesitemap {
    * setBundleSettings() as well.
    *
    * @param string $entity_type_id
-   *   Entity type id like 'node'.
+   *  Entity type id like 'node'.
    *
    * @return $this
    */
@@ -360,12 +354,12 @@ class Simplesitemap {
    * of an entity type (e.g. page).
    *
    * @param string $entity_type_id
-   *   Entity type id like 'node' the bundle belongs to.
+   *  Entity type id like 'node' the bundle belongs to.
    * @param string $bundle_name
-   *   Name of the bundle. NULL if entity type has no bundles.
+   *  Name of the bundle. NULL if entity type has no bundles.
    * @param array $settings
-   *   An array of sitemap settings for this bundle/entity type.
-   *   Example: ['index' => TRUE, 'priority' => 0.5, 'changefreq' => 'never', 'include_images' => FALSE].
+   *  An array of sitemap settings for this bundle/entity type.
+   *  Example: ['index' => TRUE, 'priority' => 0.5, 'changefreq' => 'never', 'include_images' => FALSE].
    *
    * @return $this
    *
@@ -374,8 +368,12 @@ class Simplesitemap {
   public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings = []) {
     $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
 
-    $old_settings = $this->getBundleSettings($entity_type_id, $bundle_name);
-    $settings = !empty($old_settings) ? array_merge($old_settings, $settings) : $this->supplementDefaultSettings('entity', $settings);
+    if (!empty($old_settings = $this->getBundleSettings($entity_type_id, $bundle_name))) {
+      $settings = array_merge($old_settings, $settings);
+    }
+    else {
+      self::supplementDefaultSettings('entity', $settings);
+    }
 
     $bundle_settings = $this->configFactory
       ->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name");
@@ -458,7 +456,7 @@ class Simplesitemap {
       return !empty($bundle_settings) ? $bundle_settings : FALSE;
     }
     else {
-      $config_names = $this->configFactory->listAll("simple_sitemap.bundle_settings.");
+      $config_names = $this->configFactory->listAll('simple_sitemap.bundle_settings.');
       $all_settings = [];
       foreach($config_names as $config_name) {
         $config_name_parts = explode('.', $config_name);
@@ -472,17 +470,18 @@ class Simplesitemap {
    * Supplements all missing link setting with default values.
    *
    * @param string $type
-   * @param array $settings
-   * @return array
+   *  'entity'|'custom'
+   * @param array &$settings
+   * @param array $overrides
    */
-  protected function supplementDefaultSettings($type, $settings) {
+  public static function supplementDefaultSettings($type, &$settings, $overrides = []) {
     foreach(self::$allowedLinkSettings[$type] as $allowed_link_setting) {
       if (!isset($settings[$allowed_link_setting])
         && isset(self::$linkSettingDefaults[$allowed_link_setting])) {
         $settings[$allowed_link_setting] = self::$linkSettingDefaults[$allowed_link_setting];
       }
     }
-    return $settings;
+    $settings = array_merge($settings, $overrides);
   }
 
   /**
@@ -636,7 +635,7 @@ class Simplesitemap {
     }
     $link_key = isset($link_key) ? $link_key : count($custom_links);
     $custom_links[$link_key] = ['path' => $path] + $settings;
-    $this->configFactory->getEditable("simple_sitemap.custom")
+    $this->configFactory->getEditable('simple_sitemap.custom')
       ->set('links', $custom_links)->save();
     return $this;
   }
@@ -654,7 +653,8 @@ class Simplesitemap {
 
     if ($supplement_default_settings) {
       foreach ($custom_links as $i => $link_settings) {
-        $custom_links[$i] = $this->supplementDefaultSettings('custom', $link_settings);
+        self::supplementDefaultSettings('custom', $link_settings);
+        $custom_links[$i] = $link_settings;
       }
     }
 
@@ -690,7 +690,7 @@ class Simplesitemap {
       if ($link['path'] === $path) {
         unset($custom_links[$key]);
         $custom_links = array_values($custom_links);
-        $this->configFactory->getEditable("simple_sitemap.custom")
+        $this->configFactory->getEditable('simple_sitemap.custom')
           ->set('links', $custom_links)->save();
         break;
       }
@@ -704,7 +704,7 @@ class Simplesitemap {
    * @return $this
    */
   public function removeCustomLinks() {
-    $this->configFactory->getEditable("simple_sitemap.custom")
+    $this->configFactory->getEditable('simple_sitemap.custom')
       ->set('links', [])->save();
     return $this;
   }
