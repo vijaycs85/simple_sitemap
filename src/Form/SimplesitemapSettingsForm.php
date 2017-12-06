@@ -14,7 +14,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
   /**
    * {@inheritdoc}
    */
-  public function getFormID() {
+  public function getFormId() {
     return 'simple_sitemap_settings_form';
   }
 

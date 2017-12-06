@@ -6,7 +6,6 @@ use Drupal\Core\Entity\ContentEntityTypeInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Database\Connection;
-use Drupal\Core\Entity\Entity;
 use Drupal\Core\Url;
 
 /**

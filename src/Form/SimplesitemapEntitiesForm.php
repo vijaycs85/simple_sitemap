@@ -13,7 +13,7 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
   /**
    * {@inheritdoc}
    */
-  public function getFormID() {
+  public function getFormId() {
     return 'simple_sitemap_entities_form';
   }
 
@@ -61,7 +61,7 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
       if ($form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#default_value']) {
         $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#suffix']
           = '<div id="warning-' . $css_entity_type_id . '">'
-          . $this->t('<strong>Warning:</strong> This entity type\'s sitemap settings including per-entity overrides will be deleted after hitting <em>Save</em>.')
+          . $this->t("<strong>Warning:</strong> This entity type's sitemap settings including per-entity overrides will be deleted after hitting <em>Save</em>.")
           . '</div>';
       }
 

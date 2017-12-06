@@ -13,7 +13,8 @@ CONTENTS OF THIS FILE
 INTRODUCTION
 ------------
 
-Author and maintainer: Pawel Ginalski (gbyte.co) https://www.drupal.org/u/gbyte.co
+Author and maintainer: Pawel Ginalski (gbyte.co)
+https://www.drupal.org/u/gbyte.co
 
 The module generates a multilingual XML sitemap which adheres to Google's new
 hreflang standard. Out of the box the sitemap is able to index most of Drupal's

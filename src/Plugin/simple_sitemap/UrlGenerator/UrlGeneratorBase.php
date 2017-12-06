@@ -436,8 +436,8 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
    */
   protected function getImages($entity_type_name, $entity_id) {
     $images = [];
-    foreach ($this->entityHelper->getEntityImageUrls($entity_type_name, $entity_id) as $Url) {
-      $images[]['path'] = $this->replaceBaseUrlWithCustom($Url);
+    foreach ($this->entityHelper->getEntityImageUrls($entity_type_name, $entity_id) as $url) {
+      $images[]['path'] = $this->replaceBaseUrlWithCustom($url);
     }
     return $images;
   }

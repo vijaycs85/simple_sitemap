@@ -191,7 +191,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
    * @todo On second generation too many links in XML output here?
    */
   public function testRemoveDuplicatesSetting() {
-    $this->generator->setBundleSettings('node', 'page', ['index' => true])
+    $this->generator->setBundleSettings('node', 'page', ['index' => TRUE])
       ->addCustomLink('/node/1')
       ->saveSetting('remove_duplicates', TRUE)
       ->generateSitemap('nobatch');
@@ -233,7 +233,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
   public function testBatchProcessLimitSetting() {
 
     // Create some nodes.
-    for ($i = 3; $i <=50; $i++) {
+    for ($i = 3; $i <= 50; $i++) {
       $this->createNode(['title' => "Node{$i}", 'type' => 'page']);
     }
 

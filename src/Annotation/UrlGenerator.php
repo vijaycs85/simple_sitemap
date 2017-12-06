@@ -24,12 +24,12 @@ class UrlGenerator extends Plugin {
   public $id;
 
   /**
-   * @var integer
+   * @var int
    */
   public $weight;
 
   /**
-   * @var boolean
+   * @var bool
    */
   public $instantiateForEachDataSet;
 }
