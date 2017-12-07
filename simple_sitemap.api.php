@@ -80,6 +80,15 @@ function hook_simple_sitemap_index_attributes_alter(&$index_attributes) {
   $index_attributes['name'] = 'value';
 }
 
+function hook_simple_sitemap_url_generators_alter(&$generators) {
+
+  // Disable a generator.
+  unset($generators['entity']);
+
+  // Change the weight of a generator.
+  $generators['arbitrary']['weight'] = -100;
+}
+
 /**
  * @} End of "addtogroup hooks".
  */
