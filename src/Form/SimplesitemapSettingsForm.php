@@ -35,7 +35,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
       '#type' => 'submit',
       '#value' => $this->t('Regenerate sitemap'),
       '#submit' => ['::generateSitemap'],
-    // Skip form-level validator.
+      // Skip form-level validator.
       '#validate' => [],
     ];
 
