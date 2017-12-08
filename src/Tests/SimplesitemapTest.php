@@ -22,9 +22,6 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->assertText('daily');
   }
 
-  /**
-   * Test adding a custom link to the sitemap.
-   */
   public function testAddCustomLink() {
     $this->generator->addCustomLink('/node/' . $this->node->id(), ['priority' => 0.2, 'changefreq' => 'monthly'])
       ->generateSitemap('nobatch');
@@ -33,6 +30,17 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->assertText('node/' . $this->node->id());
     $this->assertText('0.2');
     $this->assertText('monthly');
+
+    $this->drupalLogin($this->createPrivilegedUser());
+
+    $this->drupalGet('admin/config/search/simplesitemap/custom');
+    $this->assertText('/node/' . $this->node->id() . ' 0.2 monthly');
+
+    $this->generator->addCustomLink('/node/' . $this->node->id(), ['changefreq' => 'yearly'])
+      ->generateSitemap('nobatch');
+
+    $this->drupalGet('admin/config/search/simplesitemap/custom');
+    $this->assertText('/node/' . $this->node->id() . ' yearly');
   }
 
   /**
@@ -74,6 +82,8 @@ class SimplesitemapTest extends SimplesitemapTestBase {
 
   /**
    * Tests setting bundle settings.
+   *
+   * @todo Add form tests
    */
   public function testSetBundleSettings() {
 
@@ -329,18 +339,63 @@ class SimplesitemapTest extends SimplesitemapTestBase {
   /**
    * Test overriding of bundle settings for a single entity.
    *
-   * @todo Test if overrides are removed if bundle settings are identical.
+   * @todo: Use form testing instead of assertRaw().
    */
   public function testSetEntityInstanceSettings() {
     $this->generator->setBundleSettings('node', 'page')
       ->removeCustomLinks()
       ->setEntityInstanceSettings('node', $this->node->id(), ['priority' => 0.1, 'changefreq' => 'never'])
+      ->setEntityInstanceSettings('node', $this->node2->id(), ['index' => FALSE])
       ->generateSitemap('nobatch');
 
+    // Test sitemap result.
     $this->drupalGet('sitemap.xml');
     $this->assertText('node/' . $this->node->id());
     $this->assertText('0.1');
     $this->assertText('never');
+    $this->assertNoText('node/' . $this->node2->id());
+    $this->assertNoText('0.5');
+
+    $this->drupalLogin($this->createPrivilegedUser());
+
+    // Test UI changes.
+    $this->drupalGet('node/' . $this->node->id() . '/edit');
+    $this->assertRaw('<option value="0.1" selected="selected">0.1</option>');
+    $this->assertRaw('<option value="never" selected="selected">never</option>');
+
+    // Test database changes.
+    $result = \Drupal::database()->select('simple_sitemap_entity_overrides', 'o')
+      ->fields('o', ['inclusion_settings'])
+      ->condition('o.entity_type', 'node')
+      ->condition('o.entity_id', $this->node->id())
+      ->execute()
+      ->fetchField();
+    $this->assertFalse(empty($result));
+
+    $this->generator->setBundleSettings('node', 'page', ['priority' => 0.1, 'changefreq' => 'never'])
+      ->generateSitemap('nobatch');
+
+    // Test sitemap result.
+    $this->drupalGet('sitemap.xml');
+    $this->assertText('node/' . $this->node->id());
+    $this->assertText('0.1');
+    $this->assertText('never');
+    $this->assertNoText('node/' . $this->node2->id());
+    $this->assertNoText('0.5');
+
+    // Test UI changes.
+    $this->drupalGet('node/' . $this->node->id() . '/edit');
+    $this->assertRaw('<option value="0.1" selected="selected">0.1 (default)</option>');
+    $this->assertRaw('<option value="never" selected="selected">never (default)</option>');
+
+    // Test if entity override has been removed from database after its equal to its bundle settings.
+    $result = \Drupal::database()->select('simple_sitemap_entity_overrides', 'o')
+      ->fields('o', ['inclusion_settings'])
+      ->condition('o.entity_type', 'node')
+      ->condition('o.entity_id', $this->node->id())
+      ->execute()
+      ->fetchField();
+    $this->assertTrue(empty($result));
   }
 
   /**
@@ -391,6 +446,8 @@ class SimplesitemapTest extends SimplesitemapTestBase {
 
   /**
    * Test enabling sitemap support for an entity type.
+   *
+   * @todo Test admin/config/search/simplesitemap/entities form.
    */
   public function testEnableEntityType() {
     $this->generator->disableEntityType('node')
