@@ -340,7 +340,7 @@ class Simplesitemap {
 
     // Deleting inclusion settings.
     $config_names = $this->configFactory->listAll("simple_sitemap.bundle_settings.$entity_type_id.");
-    foreach($config_names as $config_name) {
+    foreach ($config_names as $config_name) {
       $this->configFactory->getEditable($config_name)->delete();
     }
 
@@ -377,7 +377,7 @@ class Simplesitemap {
 
     $bundle_settings = $this->configFactory
       ->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name");
-    foreach($settings as $setting_key => $setting) {
+    foreach ($settings as $setting_key => $setting) {
       if ($setting_key === 'index') {
         $setting = intval($setting);
       }
@@ -408,7 +408,7 @@ class Simplesitemap {
       }
 
       $delete_instances = [];
-      foreach($query->execute()->fetchAll() as $result) {
+      foreach ($query->execute()->fetchAll() as $result) {
         $delete = TRUE;
         $instance_settings = unserialize($result->inclusion_settings);
         foreach ($instance_settings as $setting_key => $instance_setting) {
@@ -458,7 +458,7 @@ class Simplesitemap {
     else {
       $config_names = $this->configFactory->listAll('simple_sitemap.bundle_settings.');
       $all_settings = [];
-      foreach($config_names as $config_name) {
+      foreach ($config_names as $config_name) {
         $config_name_parts = explode('.', $config_name);
         $all_settings[$config_name_parts[2]][$config_name_parts[3]] = $this->configFactory->get($config_name)->get();
       }
