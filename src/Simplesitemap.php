@@ -475,13 +475,14 @@ class Simplesitemap {
    * @param array $overrides
    */
   public static function supplementDefaultSettings($type, &$settings, $overrides = []) {
-    foreach(self::$allowedLinkSettings[$type] as $allowed_link_setting) {
+    foreach (self::$allowedLinkSettings[$type] as $allowed_link_setting) {
       if (!isset($settings[$allowed_link_setting])
         && isset(self::$linkSettingDefaults[$allowed_link_setting])) {
-        $settings[$allowed_link_setting] = self::$linkSettingDefaults[$allowed_link_setting];
+        $settings[$allowed_link_setting] = isset($overrides[$allowed_link_setting])
+          ? $overrides[$allowed_link_setting]
+          : self::$linkSettingDefaults[$allowed_link_setting];
       }
     }
-    $settings = array_merge($settings, $overrides);
   }
 
   /**
