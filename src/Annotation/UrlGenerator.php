@@ -51,14 +51,14 @@ class UrlGenerator extends Plugin {
   /**
    * Whether this plugin is enabled or disabled by default.
    *
-   * @var bool (optional)
+   * @var bool
    */
   public $enabled = TRUE;
 
   /**
    * The default settings for the plugin.
    *
-   * @var array (optional)
+   * @var array
    */
   public $settings = [];
 }
