@@ -392,7 +392,7 @@ class Simplesitemap {
       $keys = $entity_type->getKeys();
 
       // Menu fix.
-      $keys['bundle'] = $entity_type_id == 'menu_link_content' ? 'menu_name' : $keys['bundle'];
+      $keys['bundle'] = $entity_type_id === 'menu_link_content' ? 'menu_name' : $keys['bundle'];
 
       $query = $this->entityTypeManager->getStorage($entity_type_id)->getQuery();
       if (!$this->entityHelper->entityTypeIsAtomic($entity_type_id)) {
@@ -622,7 +622,7 @@ class Simplesitemap {
       // todo: log error.
       return $this;
     }
-    if ($path[0] != '/') {
+    if ($path[0] !== '/') {
       // todo: log error.
       return $this;
     }

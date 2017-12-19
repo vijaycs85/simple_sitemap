@@ -25,7 +25,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
         $keys = $sitemap_entity_types[$entity_type_name]->getKeys();
 
         // Menu fix.
-        $keys['bundle'] = $entity_type_name == 'menu_link_content' ? 'menu_name' : $keys['bundle'];
+        $keys['bundle'] = $entity_type_name === 'menu_link_content' ? 'menu_name' : $keys['bundle'];
 
         foreach ($bundles as $bundle_name => $bundle_settings) {
           if ($bundle_settings['index']) {

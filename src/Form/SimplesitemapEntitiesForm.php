@@ -88,7 +88,7 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
     foreach ($values as $field_name => $value) {
-      if (substr($field_name, -strlen('_enabled')) == '_enabled') {
+      if (substr($field_name, -strlen('_enabled')) === '_enabled') {
         $entity_type_id = substr($field_name, 0, -8);
         if ($value) {
           $this->generator->enableEntityType($entity_type_id);

@@ -155,7 +155,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
    * @return bool
    */
   protected function isBatch() {
-    return $this->batchSettings['from'] != 'nobatch';
+    return $this->batchSettings['from'] !== 'nobatch';
   }
 
   protected function getProcessedElements() {

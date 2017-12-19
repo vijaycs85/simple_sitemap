@@ -154,7 +154,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $base_url = $form_state->getValue('base_url');
     $form_state->setValue('base_url', rtrim($base_url, '/'));
-    if ($base_url != '' && !UrlHelper::isValid($base_url, TRUE)) {
+    if ($base_url !== '' && !UrlHelper::isValid($base_url, TRUE)) {
       $form_state->setErrorByName('base_url', t('The base URL is invalid.'));
     }
   }
