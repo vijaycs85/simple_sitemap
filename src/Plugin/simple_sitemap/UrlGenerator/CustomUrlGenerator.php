@@ -19,9 +19,14 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @UrlGenerator(
  *   id = "custom",
+ *   title = @Translation("Custom URL generator"),
+ *   description = @Translation("Generates URLs set in admin/config/search/simplesitemap/custom."),
+ *   enabled = TRUE,
  *   weight = 0,
- *   instantiateForEachDataSet = false
+ *   settings = {
+ *   },
  * )
+ *
  */
 class CustomUrlGenerator extends UrlGeneratorBase {
 

@@ -24,12 +24,41 @@ class UrlGenerator extends Plugin {
   public $id;
 
   /**
+   * The human-readable name of the plugin.
+   *
+   * @ingroup plugin_translatable
+   *
+   * @var \Drupal\Core\Annotation\Translation
+   */
+  public $title;
+
+  /**
+   * A short description of the plugin.
+   *
+   * @ingroup plugin_translatable
+   *
+   * @var \Drupal\Core\Annotation\Translation
+   */
+  public $description;
+
+  /**
+   * An integer to determine the weight of this generator relative to others.
+   *
    * @var int
    */
   public $weight;
 
   /**
-   * @var bool
+   * Whether this plugin is enabled or disabled by default.
+   *
+   * @var bool (optional)
    */
-  public $instantiateForEachDataSet;
+  public $enabled = TRUE;
+
+  /**
+   * The default settings for the plugin.
+   *
+   * @var array (optional)
+   */
+  public $settings = [];
 }

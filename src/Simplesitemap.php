@@ -252,13 +252,15 @@ class Simplesitemap {
     });
 
     foreach ($plugins as $plugin) {
-      if ($plugin['instantiateForEachDataSet']) {
-        foreach ($this->urlGeneratorManager->createInstance($plugin['id'])->getDataSets() as $data_sets) {
-          $this->batch->addOperation($plugin['id'], $data_sets);
+      if ($plugin['enabled']) {
+        if (!empty($plugin['settings']['instantiate_for_each_data_set'])) {
+          foreach ($this->urlGeneratorManager->createInstance($plugin['id'])->getDataSets() as $data_sets) {
+            $this->batch->addOperation($plugin['id'], $data_sets);
+          }
         }
-      }
-      else {
-        $this->batch->addOperation($plugin['id']);
+        else {
+          $this->batch->addOperation($plugin['id']);
+        }
       }
     }
 

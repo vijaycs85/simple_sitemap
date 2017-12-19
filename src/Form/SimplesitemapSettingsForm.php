@@ -187,7 +187,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    */
   public function generateSitemap(array &$form, FormStateInterface $form_state) {
-    $this->generator->generateSitemap();
+    $this->generator->generateSitemap('nobatch');
   }
 
 }
