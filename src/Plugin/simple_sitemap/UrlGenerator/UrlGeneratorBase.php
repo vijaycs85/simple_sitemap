@@ -341,7 +341,9 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
         if (count($chunk_links) == $max_links) {
 
           // Generate sitemap.
-          $this->sitemapGenerator->generateSitemap($chunk_links, empty($this->getChunkCount()));
+          $this->sitemapGenerator
+            ->setSettings(['excluded_languages' => $this->batchSettings['excluded_languages']])
+            ->generateSitemap($chunk_links, empty($this->getChunkCount()));
 
           // Update chunk count info.
           $this->setChunkCount(empty($this->getChunkCount()) ? 1 : ($this->getChunkCount() + 1));
