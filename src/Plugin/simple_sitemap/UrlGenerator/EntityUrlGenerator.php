@@ -102,7 +102,8 @@ class EntityUrlGenerator extends UrlGeneratorBase {
 
         // Skip this entity type if another plugin is written to override its generation.
         foreach ($this->urlGeneratorManager->getDefinitions() as $plugin) {
-          if ($plugin['enabled'] && $plugin['id'] === 'entity_' . $entity_type_name) {
+          if ($plugin['enabled'] && !empty($plugin['settings']['overrides_entity_type'])
+            && $plugin['settings']['overrides_entity_type'] === $entity_type_name) {
             continue 2;
           }
         }
@@ -176,7 +177,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
   /**
    * @inheritdoc
    */
-  protected function getBatchIterationElements(array $entity_info) {
+  protected function getBatchIterationElements($entity_info) {
     $query = $this->entityTypeManager->getStorage($entity_info['entity_type_name'])->getQuery();
 
     if (!empty($entity_info['keys']['id'])) {

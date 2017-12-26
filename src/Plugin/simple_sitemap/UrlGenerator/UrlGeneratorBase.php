@@ -389,10 +389,10 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
   }
 
   /**
-   * @param array $elements
+   * @param mixed $elements
    * @return array
    */
-  protected function getBatchIterationElements(array $elements) {
+  protected function getBatchIterationElements($elements) {
     if ($this->needsInitialization()) {
       $this->initializeBatch(count($elements));
     }
