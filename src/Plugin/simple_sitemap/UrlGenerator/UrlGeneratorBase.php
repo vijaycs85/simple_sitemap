@@ -2,7 +2,7 @@
 
 namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 
-use Drupal\simple_sitemap\Plugin\simple_sitemap\SimplesitemapPluginBase;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGeneratorPluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\ContentEntityBase;
@@ -19,7 +19,7 @@ use Drupal\Core\Language\Language;
  * Class UrlGeneratorBase
  * @package Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator
  */
-abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGeneratorInterface {
+abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGeneratorInterface {
 
   const ANONYMOUS_USER_ID = 0;
   const PROCESSING_PATH_MESSAGE = 'Processing path #@current out of @max: @path';
@@ -115,11 +115,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
       ->load(self::ANONYMOUS_USER_ID);
   }
 
-  public static function create(
-    ContainerInterface $container,
-    array $configuration,
-    $plugin_id,
-    $plugin_definition) {
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
       $configuration,
       $plugin_id,
@@ -354,7 +350,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
       }
     }
   }
-  
+
   protected function setProgressInfo() {
     if ($this->context['sandbox']['progress'] != $this->context['sandbox']['max']) {
 

@@ -46,7 +46,7 @@ class UrlGenerator extends Plugin {
    *
    * @var int
    */
-  public $weight;
+  public $weight = 0;
 
   /**
    * Whether this plugin is enabled or disabled by default.
