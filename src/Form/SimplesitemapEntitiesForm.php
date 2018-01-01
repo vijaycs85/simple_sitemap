@@ -58,7 +58,9 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
       $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled'] = [
         '#type' => 'checkbox',
         '#title' => $this->t('Enable @entity_type_label <em>(@entity_type_id)</em> support', ['@entity_type_label' => strtolower($entity_type_label), '@entity_type_id' => $entity_type_id]),
-        '#description' => $this->t('Sitemap settings for this entity type can be set on its bundle pages and overridden on its entity pages.'),
+        '#description' => $atomic_entity_type
+          ? $this->t('Sitemap settings for the entity type <em>@entity_type_label</em> can be set below and overridden on its entity pages.', ['@entity_type_label' => strtolower($entity_type_label)])
+          : $this->t('Sitemap settings for the entity type <em>@entity_type_label</em> can be set on its bundle pages and overridden on its entity pages.', ['@entity_type_label' => strtolower($entity_type_label)]),
         '#default_value' => $enabled_entity_type,
       ];
 
@@ -71,7 +73,9 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
 
         if (!$atomic_entity_type) {
           $bundle_info .= '<div id="indexed-bundles-' . $css_entity_type_id . '">'
-            . (!empty($indexed_bundles) ? $this->t("Indexed bundles:") . ' ' . '<em>' . $indexed_bundles . '</em>' : $this->t('No bundles are set to be indexed yet.'))
+            . (!empty($indexed_bundles)
+              ? $this->t("Indexed <em>@entity_type_label bundles</em>:", ['@entity_type_label' => strtolower($entity_type_label)]) . ' ' . '<em>' . $indexed_bundles . '</em>'
+              : $this->t('No <em>@entity_type_label</em> bundles are set to be indexed yet.', ['@entity_type_label' => strtolower($entity_type_label)]))
             . '</div>';
         }
 
@@ -79,7 +83,7 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
           $bundle_info .= '<div id="warning-' . $css_entity_type_id . '">'
             . ($atomic_entity_type
               ? $this->t("<strong>Warning:</strong> This entity type's sitemap settings including per-entity overrides will be deleted after hitting <em>Save</em>.")
-              : $this->t("<strong>Warning:</strong> The sitemap settings for <em>@bundles</em> and their per-entity overrides will be deleted after hitting <em>Save</em>.",
+              : $this->t("<strong>Warning:</strong> The sitemap settings for <em>@bundles</em> and any per-entity overrides will be deleted after hitting <em>Save</em>.",
                 ['@bundles' => $indexed_bundles]))
             . '</div>';
         }
@@ -90,7 +94,6 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
       $form['#attached']['drupalSettings']['simple_sitemap']['all_entities'][] = $css_entity_type_id;
 
       if ($atomic_entity_type) {
-        $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_enabled']['#description'] = $this->t('Sitemap settings for this entity type can be set below and overridden on its entity pages.');
         $this->formHelper->setEntityCategory('bundle')
           ->setEntityTypeId($entity_type_id)
           ->setBundleName($entity_type_id)
