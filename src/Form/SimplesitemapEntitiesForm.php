@@ -74,7 +74,7 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
         if (!$atomic_entity_type) {
           $bundle_info .= '<div id="indexed-bundles-' . $css_entity_type_id . '">'
             . (!empty($indexed_bundles)
-              ? $this->t("Indexed <em>@entity_type_label bundles</em>:", ['@entity_type_label' => strtolower($entity_type_label)]) . ' ' . '<em>' . $indexed_bundles . '</em>'
+              ? $this->t("<em>@entity_type_label</em> bundles set to be indexed:", ['@entity_type_label' => ucfirst(strtolower($entity_type_label))]) . ' ' . '<em>' . $indexed_bundles . '</em>'
               : $this->t('No <em>@entity_type_label</em> bundles are set to be indexed yet.', ['@entity_type_label' => strtolower($entity_type_label)]))
             . '</div>';
         }
