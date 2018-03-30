@@ -121,7 +121,7 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
     $url_object = $link->getUrlObject();
 
     // Do not include external paths.
-    if (!$url_object->isRouted()) {
+    if ($url_object->isExternal()) {
       return FALSE;
     }
 
@@ -140,7 +140,18 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
       }
     }
 
-    $path = $url_object->getInternalPath();
+    // There can be internal paths that are not rooted, like 'base:/path'.
+    if ($url_object->isRouted()) {
+     $path = $url_object->getInternalPath();
+    }
+    else { // Handle base scheme.
+      if (strpos($uri = $url_object->toUriString(), 'base:/') === 0 ) {
+        $path = $uri[6] === '/' ? substr($uri, 7) : substr($uri, 6);
+      }
+      else { // Handle unforeseen schemes.
+        $path = $uri;
+      }
+    }
 
     // Do not include paths that have been already indexed.
     if ($this->batchSettings['remove_duplicates'] && $this->pathProcessed($path)) {

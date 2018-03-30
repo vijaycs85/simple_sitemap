@@ -223,9 +223,13 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
    * @param array $path_data
    */
   protected function addUrlVariants(array $path_data, Url $url_object) {
-    $entity = $this->entityHelper->getEntityFromUrlObject($url_object);
 
-    if ($entity instanceof ContentEntityBase && $this->batchSettings['skip_untranslated']) {
+    if (!$url_object->isRouted()) {
+      // Not a routed URL, including only default variant.
+      $alternate_urls = $this->getAlternateUrlsForDefaultLanguage($url_object);
+    }
+    elseif ($this->batchSettings['skip_untranslated']
+      && ($entity = $this->entityHelper->getEntityFromUrlObject($url_object)) instanceof ContentEntityBase) {
       $translation_languages = $entity->getTranslationLanguages();
       if (isset($translation_languages[Language::LANGCODE_NOT_SPECIFIED])
         || isset($translation_languages[Language::LANGCODE_NOT_APPLICABLE])) {

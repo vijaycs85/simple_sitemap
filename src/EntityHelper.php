@@ -104,9 +104,9 @@ class EntityHelper {
    * @return object|null
    */
   public function getEntityFromUrlObject(Url $url_object) {
-    $route_parameters = $url_object->getRouteParameters();
-    return !empty($route_parameters) && $this->entityTypeManager
-      ->getDefinition($entity_type_id = key($route_parameters), FALSE)
+    return $url_object->isRouted()
+    && !empty($route_parameters = $url_object->getRouteParameters())
+    && $this->entityTypeManager->getDefinition($entity_type_id = key($route_parameters), FALSE)
       ? $this->entityTypeManager->getStorage($entity_type_id)
         ->load($route_parameters[$entity_type_id])
       : NULL;
