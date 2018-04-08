@@ -3,7 +3,6 @@ services:
     class: Drupal\simple_sitemap\Simplesitemap
     public: true
     arguments:
-      - '@simple_sitemap.sitemap_generator'
       - '@simple_sitemap.entity_helper'
       - '@config.factory'
       - '@database'
@@ -13,21 +12,11 @@ services:
       - '@datetime.time'
       - '@simple_sitemap.batch'
       - '@plugin.manager.simple_sitemap.url_generator'
-
-  simple_sitemap.sitemap_generator:
-    class: Drupal\simple_sitemap\SitemapGenerator
-    public: true
-    arguments:
-      - '@simple_sitemap.entity_helper'
-      - '@database'
-      - '@module_handler'
-      - '@language_manager'
-      - '@datetime.time'
-      - '@simple_sitemap.sitemap_writer'
+      - '@plugin.manager.simple_sitemap.sitemap_generator'
 
   simple_sitemap.sitemap_writer:
-    class: Drupal\simple_sitemap\SitemapWriter
-    public: false
+    class: Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapWriter
+    public: true
 
   simple_sitemap.entity_helper:
     class: Drupal\simple_sitemap\EntityHelper
@@ -63,4 +52,8 @@ services:
 
   plugin.manager.simple_sitemap.url_generator:
     class: Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager
+    parent: default_plugin_manager
+
+  plugin.manager.simple_sitemap.sitemap_generator:
+    class: Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager
     parent: default_plugin_manager

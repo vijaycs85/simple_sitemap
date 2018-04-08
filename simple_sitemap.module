@@ -240,9 +240,9 @@ function simple_sitemap_delete_bundle_config($entity_type_id, $bundle) {
     // Delete bundle settings.
     \Drupal::service('config.factory')->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle")->delete();
 
-    $message = 'You may want to <a href="@url">regenerate</a> your XML sitemap now.';
+    $message = 'You may want to <a href="@url">regenerate</a> your XML sitemaps now.';
     if ($generator->getSetting('cron_generate')) {
-      $message .= ' Otherwise the sitemap will be regenerated during a future cron run.';
+      $message .= ' Otherwise the sitemaps will be regenerated during a future cron run.';
     }
     drupal_set_message(t($message, ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']));
   }
@@ -250,10 +250,13 @@ function simple_sitemap_delete_bundle_config($entity_type_id, $bundle) {
 
 /**
  * Implements hook_robotstxt().
+ *
+ * @todo Use sitemap base URL setting?
+ * @todo include non-default sitemaps as well?
  */
 function simple_sitemap_robotstxt() {
   return [
-    '# XML sitemap',
-    'Sitemap: ' . $GLOBALS['base_url'] . '/sitemap.xml', //todo: Use base URL setting?
+    '# XML sitemaps',
+    'Sitemap: ' . $GLOBALS['base_url'] . '/sitemap.xml',
   ];
 }

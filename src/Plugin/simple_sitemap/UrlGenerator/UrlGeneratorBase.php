@@ -2,7 +2,7 @@
 
 namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 
-use Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGeneratorPluginBase;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SimplesitemapPluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\ContentEntityBase;
@@ -10,7 +10,7 @@ use Drupal\Core\Url;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
 use Drupal\simple_sitemap\Simplesitemap;
-use Drupal\simple_sitemap\SitemapGenerator;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Language\Language;
@@ -19,7 +19,7 @@ use Drupal\Core\Language\Language;
  * Class UrlGeneratorBase
  * @package Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator
  */
-abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGeneratorInterface {
+abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGeneratorInterface {
 
   const ANONYMOUS_USER_ID = 0;
   const PROCESSING_PATH_MESSAGE = 'Processing path #@current out of @max: @path';
@@ -30,9 +30,9 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
   protected $generator;
 
   /**
-   * @var \Drupal\simple_sitemap\SitemapGenerator
+   * @var \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager
    */
-  protected $sitemapGenerator;
+  protected $sitemapGeneratorManager;
 
   /**
    * @var \Drupal\Core\Language\LanguageManagerInterface
@@ -75,6 +75,11 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
   protected $batchSettings;
 
   /**
+   * @var array
+   */
+  protected $batchMeta;
+
+  /**
    * @var \Drupal\simple_sitemap\EntityHelper
    */
   protected $entityHelper;
@@ -85,7 +90,7 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
    * @param string $plugin_id
    * @param mixed $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
-   * @param \Drupal\simple_sitemap\SitemapGenerator $sitemap_generator
+   * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager $sitemap_generator_manager
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    * @param \Drupal\simple_sitemap\Logger $logger
@@ -96,7 +101,7 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
     $plugin_id,
     $plugin_definition,
     Simplesitemap $generator,
-    SitemapGenerator $sitemap_generator,
+    SitemapGeneratorManager $sitemap_generator_manager,
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
     Logger $logger,
@@ -104,7 +109,7 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->generator = $generator;
-    $this->sitemapGenerator = $sitemap_generator;
+    $this->sitemapGeneratorManager = $sitemap_generator_manager;
     $this->languageManager = $language_manager;
     $this->languages = $language_manager->getLanguages();
     $this->defaultLanguageId = $language_manager->getDefaultLanguage()->getId();
@@ -121,7 +126,7 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
       $plugin_id,
       $plugin_definition,
       $container->get('simple_sitemap.generator'),
-      $container->get('simple_sitemap.sitemap_generator'),
+      $container->get('plugin.manager.simple_sitemap.sitemap_generator'),
       $container->get('language_manager'),
       $container->get('entity_type.manager'),
       $container->get('simple_sitemap.logger'),
@@ -148,48 +153,105 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
   }
 
   /**
-   * @return bool
+   * @param array $batch_meta
+   * @return $this
    */
-  protected function isBatch() {
-    return $this->batchSettings['from'] !== 'nobatch';
+  public function setBatchMeta(array $batch_meta) {
+    $this->batchMeta = $batch_meta;
+    return $this;
   }
 
+  /**
+   * @return array
+   * @todo Plugins can create links for other sitemaps than the default specified one in plugin annotation. Hence this method may return processed paths for the wrong sitemap.
+   */
   protected function getProcessedElements() {
-    return !empty($this->context['results']['processed_paths'])
-      ? $this->context['results']['processed_paths']
+    return !empty($this->context['results']['processed_paths'][$this->getPluginDefinition()['settings']['default_sitemap_generator']])
+      ? $this->context['results']['processed_paths'][$this->getPluginDefinition()['settings']['default_sitemap_generator']]
       : [];
   }
 
-  protected function addProcessedElement($path) {
-    $this->context['results']['processed_paths'][] = $path;
+  protected function addProcessedElement($element) {
+    $this->context['results']['processed_paths'][$this->getPluginDefinition()['settings']['default_sitemap_generator']][] = $element;
+
+    // Clean up duplicate data of processed sitemap types to save memory.
+    if (count($this->context['results']['processed_paths']) > 1) {
+      reset($this->context['results']['processed_paths']);
+      unset($this->context['results']['processed_paths'][key($this->context['results']['processed_paths'])]);
+    }
   }
 
-  protected function setProcessedElements($elements) {
-    $this->context['results']['processed_elements'] = $elements;
-  }
-
-  protected function getBatchResults() {
+  protected function getBatchResultQueue() {
     return !empty($this->context['results']['generate'])
       ? $this->context['results']['generate']
       : [];
   }
 
-  protected function addBatchResult($result) {
-    $this->context['results']['generate'][] = $result;
+  protected function addBatchResultToQueue($result) {
+    $sitemap_type = !empty($result['meta']['sitemap_generator'])
+      ? $result['meta']['sitemap_generator']
+      : $this->getPluginDefinition()['settings']['default_sitemap_generator'];
+    $this->context['results']['generate'][$sitemap_type][] = $result;
   }
 
-  protected function setBatchResults($results) {
-    $this->context['results']['generate'] = $results;
+  protected function sliceFromBatchResultQueue($sitemap_type, $number_results) {
+    $this->context['results']['generate'][$sitemap_type] = array_slice(
+      $this->context['results']['generate'][$sitemap_type], $number_results
+    );
+    if (empty($this->context['results']['generate'][$sitemap_type])) {
+      unset($this->context['results']['generate'][$sitemap_type]);
+    }
   }
 
-  protected function getChunkCount() {
-    return !empty($this->context['results']['chunk_count'])
-      ? $this->context['results']['chunk_count']
+  protected function getChunkCountForType($sitemap_type) {
+    return !empty($this->context['results']['chunk_count'][$sitemap_type])
+      ? $this->context['results']['chunk_count'][$sitemap_type]
       : 0;
   }
 
-  protected function setChunkCount($chunk_count) {
-    $this->context['results']['chunk_count'] = $chunk_count;
+  protected function incrementChunkCountForType($sitemap_type) {
+    if (isset($this->context['results']['chunk_count'][$sitemap_type])) {
+      $this->context['results']['chunk_count'][$sitemap_type]++;
+    }
+    else {
+      $this->context['results']['chunk_count'][$sitemap_type] = 1;
+    }
+  }
+
+  /**
+   * @return bool
+   */
+  protected function isDrupalBatch() {
+    return $this->batchMeta['from'] !== 'nobatch';
+  }
+
+  /**
+   * @return bool
+   */
+  protected function batchOperationNeedsInitialization() {
+    return $this->isDrupalBatch() && empty($this->context['sandbox']);
+  }
+
+  /**
+   * Initialize sandbox for the batch process.
+   *
+   * @param $max
+   */
+  protected function initializeBatchOperation($max) {
+    $this->context['sandbox']['progress'] = 0;
+    $this->context['sandbox']['current_id'] = NULL;
+    $this->context['sandbox']['max'] = $max;
+    $this->context['sandbox']['finished'] = 0;
+  }
+
+  /**
+   * @param $id
+   */
+  protected function setCurrentId($id) {
+    if ($this->isDrupalBatch()) {
+      $this->context['sandbox']['progress']++;
+      $this->context['sandbox']['current_id'] = $id;
+    }
   }
 
   /**
@@ -214,7 +276,7 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
       $this->addUrlVariants($path_data, $url_object);
     }
     else {
-      $this->addBatchResult($path_data);
+      $this->addBatchResultToQueue($path_data);
     }
   }
 
@@ -247,7 +309,7 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
     }
 
     foreach ($alternate_urls as $langcode => $url) {
-      $this->addBatchResult(
+      $this->addBatchResultToQueue(
         $path_data + [
           'langcode' => $langcode, 'url' => $url, 'alternate_urls' => $alternate_urls
         ]
@@ -291,72 +353,64 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
     return $alternate_urls;
   }
 
-  /**
-   * @return bool
-   */
-  protected function needsInitialization() {
-    return empty($this->context['sandbox']);
-  }
-
-  /**
-   * @param $max
-   */
-  protected function initializeBatch($max) {
-    $this->setBatchResults($this->getBatchResults());
-    $this->setChunkCount($this->getChunkCount());
-    $this->setProcessedElements($this->getProcessedElements());
-
-    // Initialize sandbox for the batch process.
-    if ($this->isBatch()) {
-      $this->context['sandbox']['progress'] = 0;
-      $this->context['sandbox']['current_id'] = 0;
-      $this->context['sandbox']['max'] = $max;
-      $this->context['sandbox']['finished'] = 0;
-    }
-  }
-
-  /**
-   * @param $id
-   */
-  protected function setCurrentId($id) {
-    if ($this->isBatch()) {
-      $this->context['sandbox']['progress']++;
-      $this->context['sandbox']['current_id'] = $id;
-    }
-  }
-
-  /**
-   *
-   */
   protected function processSegment() {
-    if ($this->isBatch()) {
-      $this->setProgressInfo();
-    }
+    $this->setBatchProgressInfo();
 
-    if (!empty($max_links = $this->batchSettings['max_links'])
-      && count($this->getBatchResults()) >= $max_links) {
+    // If this is not a batch operation, enter the generation process only if
+    // all links from all operations have been queued. If it is a batch
+    // operation, generate the required amount of links in this batch process
+    // segment before the generation process.
+    if ($this->isDrupalBatch() || $this->batchMeta['current_operation_no'] == $this->batchMeta['operations_count']) {
+      foreach ($this->getBatchResultQueue() as $sitemap_type => $queued_sitemap_links) {
 
-      foreach (array_chunk($this->getBatchResults(), $max_links) as $chunk_links) {
+        $sitemap_generator = $this->sitemapGeneratorManager
+          ->createInstance($sitemap_type)
+          ->setSettings(['excluded_languages' => $this->batchSettings['excluded_languages']]);
 
-        if (count($chunk_links) == $max_links) {
+        foreach (array_chunk($queued_sitemap_links, $this->batchSettings['max_links']) as $chunk_links) {
 
-          // Generate sitemap.
-          $this->sitemapGenerator
-            ->setSettings(['excluded_languages' => $this->batchSettings['excluded_languages']])
-            ->generateSitemap($chunk_links, empty($this->getChunkCount()));
+          // Generating chunk from all links of this sitemap type if this is not a batch operation.
+          if (!$this->isDrupalBatch()
 
-          // Update chunk count info.
-          $this->setChunkCount(empty($this->getChunkCount()) ? 1 : ($this->getChunkCount() + 1));
+            // If this is batch, generating chunk in case the required amount of
+            // links for this chunk have been queued.
+            || count($chunk_links) == $this->batchSettings['max_links']
 
-          // Remove links from result array that have been generated.
-          $this->setBatchResults(array_slice($this->getBatchResults(), count($chunk_links)));
+            // If this is batch, also generating in case of fewer links than
+            // defined per chunk, but only if these are the last links of this
+            // sitemap type.
+            || (count($chunk_links) < $this->batchSettings['max_links'] && count($this->getBatchResultQueue()) > 1)
+
+            // If this is batch, also generating in case this is the last batch
+            // segment of the last batch operation.
+            || (
+              $this->batchMeta['current_operation_no'] == $this->batchMeta['operations_count']
+              && $this->context['finished'] >= 1
+            )
+          ) {
+
+            // Remove sitemap if this is the first chunk to be generated.
+            if (empty($this->getChunkCountForType($sitemap_type))) {
+              $sitemap_generator->remove();
+            }
+
+            // Generate sitemap chunk.
+            $sitemap_generator->generate($chunk_links);
+
+            // Update chunk count info.
+            $this->incrementChunkCountForType($sitemap_type);
+
+            // Remove links from result array that have been generated.
+            $this->sliceFromBatchResultQueue($sitemap_type, count($chunk_links));
+          }
         }
       }
     }
   }
 
-  protected function setProgressInfo() {
-    if ($this->context['sandbox']['progress'] != $this->context['sandbox']['max']) {
+  protected function setBatchProgressInfo() {
+    if ($this->isDrupalBatch() &&
+      $this->context['sandbox']['progress'] != $this->context['sandbox']['max']) {
 
       // Provide progress info to the batch API.
       $this->context['finished'] = $this->context['sandbox']['progress'] / $this->context['sandbox']['max'];
@@ -367,9 +421,11 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
   }
 
   protected function setProcessingBatchMessage() {
-    $results = $this->getBatchResults();
+    $results = $this->getBatchResultQueue();
     end($results);
-    if (!empty($path = $results[key($results)]['meta']['path'])) {
+    $sitemap_type_results = $results[key($results)];
+    end($sitemap_type_results);
+    if (!empty($path = $sitemap_type_results[key($sitemap_type_results)]['meta']['path'])) {
       $this->context['message'] = $this->t(self::PROCESSING_PATH_MESSAGE, [
         '@current' => $this->context['sandbox']['progress'],
         '@max' => $this->context['sandbox']['max'],
@@ -393,11 +449,11 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
    * @return array
    */
   protected function getBatchIterationElements($elements) {
-    if ($this->needsInitialization()) {
-      $this->initializeBatch(count($elements));
+    if ($this->batchOperationNeedsInitialization()) {
+      $this->initializeBatchOperation(count($elements));
     }
 
-    return $this->isBatch()
+    return $this->isDrupalBatch()
       ? array_slice($elements, $this->context['sandbox']['progress'], $this->batchSettings['batch_process_limit'])
       : $elements;
   }
@@ -417,6 +473,8 @@ abstract class UrlGeneratorBase extends UrlGeneratorPluginBase implements UrlGen
    * Called by batch.
    *
    * @param array|null $data_sets
+   *
+   * @todo Need to add empty array signalling that no results have been generated for a sitemap in order to delete sitemap?
    */
   public function generate($data_sets = NULL) {
     $data_sets = NULL !== $data_sets ? $data_sets : $this->getDataSets();

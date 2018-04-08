@@ -25,7 +25,7 @@ class SimplesitemapCommands extends DrushCommands {
   }
 
   /**
-   * Regenerate the XML sitemap according to the module settings.
+   * Regenerate the XML sitemaps according to the module settings.
    *
    * @command simple-sitemap:generate
    * @validate-module-enabled simple_sitemap

@@ -5,7 +5,7 @@ namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
 use Drupal\simple_sitemap\Simplesitemap;
-use Drupal\simple_sitemap\SitemapGenerator;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -20,6 +20,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   description = @Translation("Generates URLs for entity bundles and bundle overrides."),
  *   weight = 10,
  *   settings = {
+ *     "default_sitemap_generator" = "default",
  *     "instantiate_for_each_data_set" = true,
  *   },
  * )
@@ -32,12 +33,12 @@ class EntityUrlGenerator extends UrlGeneratorBase {
   protected $urlGeneratorManager;
 
   /**
-   * EntityMenuLinkContentUrlGenerator constructor.
+   * EntityUrlGenerator constructor.
    * @param array $configuration
    * @param string $plugin_id
    * @param mixed $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
-   * @param \Drupal\simple_sitemap\SitemapGenerator $sitemap_generator
+   * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager $sitemap_generator_manager
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    * @param \Drupal\simple_sitemap\Logger $logger
@@ -49,7 +50,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
     $plugin_id,
     $plugin_definition,
     Simplesitemap $generator,
-    SitemapGenerator $sitemap_generator,
+    SitemapGeneratorManager $sitemap_generator_manager,
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
     Logger $logger,
@@ -61,7 +62,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $generator,
-      $sitemap_generator,
+      $sitemap_generator_manager,
       $language_manager,
       $entity_type_manager,
       $logger,
@@ -80,7 +81,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $container->get('simple_sitemap.generator'),
-      $container->get('simple_sitemap.sitemap_generator'),
+      $container->get('plugin.manager.simple_sitemap.sitemap_generator'),
       $container->get('language_manager'),
       $container->get('entity_type.manager'),
       $container->get('simple_sitemap.logger'),
@@ -169,6 +170,9 @@ class EntityUrlGenerator extends UrlGeneratorBase {
           'entity_type' => $entity_type_name,
           'id' => $entity_id,
         ],
+        'sitemap_generator' => !empty($entity_settings['sitemap_generator'])
+          ? $entity_settings['sitemap_generator']
+          : $this->getPluginDefinition()['settings']['default_sitemap_generator']
       ]
     ];
   }
@@ -189,12 +193,12 @@ class EntityUrlGenerator extends UrlGeneratorBase {
       $query->condition($entity_info['keys']['status'], 1);
     }
 
-    if ($this->needsInitialization()) {
+    if ($this->batchOperationNeedsInitialization()) {
       $count_query = clone $query;
-      $this->initializeBatch($count_query->count()->execute());
+      $this->initializeBatchOperation($count_query->count()->execute());
     }
 
-    if ($this->isBatch()) {
+    if ($this->isDrupalBatch()) {
       $query->range($this->context['sandbox']['progress'], $this->batchSettings['batch_process_limit']);
     }
 

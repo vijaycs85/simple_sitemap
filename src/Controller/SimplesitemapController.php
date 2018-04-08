@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Drupal\Core\Cache\CacheableResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Drupal\simple_sitemap\Simplesitemap;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 
 /**
@@ -47,26 +48,30 @@ class SimplesitemapController extends ControllerBase {
   }
 
   /**
-   * Returns the whole sitemap, a requested sitemap chunk, or the sitemap index file.
+   * Returns the whole sitemap of a certain type, its requested sitemap chunk,
+   * or its sitemap index file.
    * Caches the response in case of expected output, prevents caching otherwise.
    *
-   * @param int $chunk_id
-   *   Optional ID of the sitemap chunk. If none provided, the first chunk or
-   *   the sitemap index is fetched.
+   * @param string $type
+   *  Optional name of sitemap type. This corresponds to the plugin ID
+   *  of the sitemap generator plugin to be responsible for the generation.
+   *
+   * @param int $delta
+   *  Optional delta of the sitemap chunk. If none provided, the first chunk or
+   *  the sitemap index is fetched.
    *
    * @throws NotFoundHttpException
    *
    * @return object
-   *   Returns an XML response.
+   *  Returns an XML response.
    */
-  public function getSitemap($chunk_id = NULL) {
-    $output = $this->generator->getSitemap($chunk_id);
+  public function getSitemap($type = SitemapGeneratorBase::DEFAULT_SITEMAP_TYPE, $delta = NULL) {
+    $output = $this->generator->getSitemap($type, $delta);
     if (!$output) {
       $this->cacheKillSwitch->trigger();
       throw new NotFoundHttpException();
     }
 
-    // Display sitemap with correct XML header.
     $response = new CacheableResponse($output, Response::HTTP_OK, [
       'content-type' => 'application/xml',
       'X-Robots-Tag' => 'noindex', // Do not index the sitemap itself.

@@ -28,7 +28,7 @@ function simple_sitemap_requirements($phase) {
     case 'runtime':
 
       $generator = \Drupal::service('simple_sitemap.generator');
-      $generated_ago = $generator->getGeneratedAgo();
+      $generated_ago = $generator->getGeneratedAgo('default'); //todo
       $cron_generation = $generator->getSetting('cron_generate');
 
       if (!$generated_ago) {
@@ -42,12 +42,11 @@ function simple_sitemap_requirements($phase) {
         $severity = REQUIREMENT_WARNING;
       }
       else {
-        $value = t('XML sitemap is available');
-        $description = t('The <a href="@sitemap">XML sitemap</a> was generated @ago ago.'
+        $value = t('XML sitemaps are available');
+        $description = t('The last generation finished @ago ago.'
           . ' ' . ($cron_generation
-            ? 'Run cron, or <a href="@generate">regenerate</a> the sitemap manually.'
-            : 'Generation on cron run is disabled. <a href="@generate">Regenerate</a> the sitemap manually.'), [
-              '@sitemap' => $GLOBALS['base_url'] . '/sitemap.xml',
+            ? 'Run cron, or <a href="@generate">regenerate</a> the sitemaps manually.'
+            : 'Generation on cron run is disabled. <a href="@generate">Regenerate</a> the sitemaps manually.'), [
               '@ago' => $generated_ago,
               '@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'
             ]
@@ -80,6 +79,20 @@ function simple_sitemap_schema() {
         'not null' => TRUE,
         'unsigned' => TRUE,
       ],
+      'type' => [
+        'description' => 'Type of sitemap this chunk belongs to.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'delta' => [
+        'description' => 'Delta of the chunk within the type scope.',
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ],
       'sitemap_string' => [
         'description' => 'XML sitemap chunk string.',
         'type' => 'text',
@@ -96,6 +109,26 @@ function simple_sitemap_schema() {
     ],
     'primary key' => ['id'],
   ];
+
+//  $schema['simple_sitemap_index'] = [
+//    'description' => 'Holds XML sitemaps indexes as strings for quick retrieval.',
+//    'fields' => [
+//      'id' => [
+//        'description' => 'Sitemap index unique identifier.',
+//        'type' => 'varchar',
+//        'length' => 50,
+//        'not null' => TRUE,
+//        'default' => '',
+//      ],
+//      'sitemap_string' => [
+//        'description' => 'XML sitemap index string.',
+//        'type' => 'text',
+//        'size' => 'big',
+//        'not null' => TRUE,
+//      ]
+//    ],
+//    'primary key' => ['id'],
+//  ];
 
   $schema['simple_sitemap_entity_overrides'] = [
     'description' => 'Holds sitemap settings overridden by entities.',
@@ -398,3 +431,64 @@ function simple_sitemap_update_8209() {
 
   return t('You may now want to configure your sitemap entities to include images.');
 }
+
+/**
+ * Adding simple_sitemap_index table and altering the simple_sitemap table.
+ */
+function simple_sitemap_update_8210() {
+
+  $database = \Drupal::database();
+
+  // Create simple_sitemap_index table.
+//  if (!$database->schema()->tableExists('simple_sitemap_index')) {
+//    $database->schema()->createTable('simple_sitemap_index', [
+//      'description' => 'Holds XML sitemaps indexes as strings for quick retrieval.',
+//      'fields' => [
+//        'id' => [
+//          'description' => 'Sitemap index unique identifier.',
+//          'type' => 'varchar',
+//          'length' => 50,
+//          'not null' => TRUE,
+//          'default' => '',
+//        ],
+//        'sitemap_string' => [
+//          'description' => 'XML sitemap index string.',
+//          'type' => 'text',
+//          'size' => 'big',
+//          'not null' => TRUE,
+//        ]
+//      ],
+//      'primary key' => ['id'],
+//    ]);
+//  }
+
+    // Alter simple_sitemap table.
+    $database->truncate('simple_sitemap')->execute();
+
+    if (!$database->schema()->fieldExists('simple_sitemap', 'type')) {
+      $database->schema()->addField(
+        'simple_sitemap',
+        'type', [
+          'description' => 'Type of sitemap this chunk belongs to.',
+          'type' => 'varchar',
+          'length' => 50,
+          'not null' => TRUE,
+          'default' => '',
+        ]
+      );
+    }
+    if (!$database->schema()->fieldExists('simple_sitemap', 'delta')) {
+      $database->schema()->addField(
+        'simple_sitemap',
+        'delta', [
+          'description' => 'Delta of the chunk within the type scope.',
+          'type' => 'int',
+          'size' => 'small',
+          'not null' => TRUE,
+          'unsigned' => TRUE,
+        ]
+      );
+    }
+}
+
+

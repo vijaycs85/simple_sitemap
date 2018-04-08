@@ -5,7 +5,7 @@ namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
 use Drupal\simple_sitemap\Simplesitemap;
-use Drupal\simple_sitemap\SitemapGenerator;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Menu\MenuTreeParameters;
@@ -22,6 +22,7 @@ use Drupal\Core\Menu\MenuLinkTree;
  *   description = @Translation("Generates menu link URLs by overriding the 'entity' URL generator."),
  *   weight = 5,
  *   settings = {
+ *     "default_sitemap_generator" = "default",
  *     "instantiate_for_each_data_set" = true,
  *     "overrides_entity_type" = "menu_link_content",
  *   },
@@ -40,7 +41,7 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
    * @param string $plugin_id
    * @param mixed $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
-   * @param \Drupal\simple_sitemap\SitemapGenerator $sitemap_generator
+   * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager $sitemap_generator_manager
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    * @param \Drupal\simple_sitemap\Logger $logger
@@ -52,7 +53,7 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
     $plugin_id,
     $plugin_definition,
     Simplesitemap $generator,
-    SitemapGenerator $sitemap_generator,
+    SitemapGeneratorManager $sitemap_generator_manager,
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
     Logger $logger,
@@ -64,7 +65,7 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $generator,
-      $sitemap_generator,
+      $sitemap_generator_manager,
       $language_manager,
       $entity_type_manager,
       $logger,
@@ -83,7 +84,7 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $container->get('simple_sitemap.generator'),
-      $container->get('simple_sitemap.sitemap_generator'),
+      $container->get('plugin.manager.simple_sitemap.sitemap_generator'),
       $container->get('language_manager'),
       $container->get('entity_type.manager'),
       $container->get('simple_sitemap.logger'),
@@ -176,6 +177,9 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
       // Additional info useful in hooks.
       'meta' => [
         'path' => $path,
+        'sitemap_generator' => !empty($entity_settings['sitemap_generator'])
+          ? $entity_settings['sitemap_generator']
+          : $this->getPluginDefinition()['settings']['default_sitemap_generator']
       ]
     ];
     if (!empty($entity)) {
@@ -203,11 +207,11 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
     }
     $elements = array_values($elements);
 
-    if ($this->needsInitialization()) {
-      $this->initializeBatch(count($elements));
+    if ($this->batchOperationNeedsInitialization()) {
+      $this->initializeBatchOperation(count($elements));
     }
 
-    return $this->isBatch()
+    return $this->isDrupalBatch()
       ? array_slice($elements, $this->context['sandbox']['progress'], $this->batchSettings['batch_process_limit'])
       : $elements;
   }

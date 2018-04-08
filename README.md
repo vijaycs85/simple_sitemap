@@ -66,7 +66,7 @@ basis. Just head over to a bundle instance edit form (e.g. node/1/edit) to
 override its sitemap settings.
 
 If you wish for the sitemap to reflect the new configuration instantly, check
-'Regenerate sitemap after clicking save'. This setting only appears if a change
+'Regenerate sitemaps after clicking save'. This setting only appears if a change
 in the settings has been detected.
 
 As the sitemap is accessible to anonymous users, bear in mind that only links
@@ -77,7 +77,7 @@ To include custom links into the sitemap, visit
 /admin/config/search/simplesitemap/custom.
 
 The settings page can be found under admin/config/search/simplesitemap.
-Here the module can be configured and the sitemap can be manually regenerated.
+Here the module can be configured and the sitemaps can be manually regenerated.
 
 
 USAGE
@@ -85,7 +85,7 @@ USAGE
 
 The sitemap is accessible to the whole world under /sitemap.xml.
 
-If the cron generation is turned on, the sitemap will be regenerated according
+If the cron generation is turned on, the sitemaps will be regenerated according
 to the 'Sitemap generation interval' setting ranging from 'On every cron run' to
 'Once a week'.
 

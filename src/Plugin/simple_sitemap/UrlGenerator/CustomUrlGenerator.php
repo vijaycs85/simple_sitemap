@@ -7,7 +7,7 @@ use Drupal\simple_sitemap\Annotation\UrlGenerator;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
 use Drupal\simple_sitemap\Simplesitemap;
-use Drupal\simple_sitemap\SitemapGenerator;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Path\PathValidator;
@@ -22,12 +22,16 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   title = @Translation("Custom URL generator"),
  *   description = @Translation("Generates URLs set in admin/config/search/simplesitemap/custom."),
  *   weight = 0,
+ *   settings = {
+ *     "default_sitemap_generator" = "default",
+ *   },
+ *   enabled = true,
  * )
  *
  */
 class CustomUrlGenerator extends UrlGeneratorBase {
 
-  const PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE = 'The custom path @path has been omitted from the XML sitemap as it either does not exist, or it is not accessible to anonymous users. You can review custom paths <a href="@custom_paths_url">here</a>.';
+  const PATH_DOES_NOT_EXIST_OR_NO_ACCESS_MESSAGE = 'The custom path @path has been omitted from the XML sitemaps as it either does not exist, or it is not accessible to anonymous users. You can review custom paths <a href="@custom_paths_url">here</a>.';
 
 
   /**
@@ -46,7 +50,7 @@ class CustomUrlGenerator extends UrlGeneratorBase {
    * @param string $plugin_id
    * @param mixed $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
-   * @param \Drupal\simple_sitemap\SitemapGenerator $sitemap_generator
+   * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager $sitemap_generator_manager
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    * @param \Drupal\simple_sitemap\Logger $logger
@@ -58,7 +62,7 @@ class CustomUrlGenerator extends UrlGeneratorBase {
     $plugin_id,
     $plugin_definition,
     Simplesitemap $generator,
-    SitemapGenerator $sitemap_generator,
+    SitemapGeneratorManager $sitemap_generator_manager,
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
     Logger $logger,
@@ -69,7 +73,7 @@ class CustomUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $generator,
-      $sitemap_generator,
+      $sitemap_generator_manager,
       $language_manager,
       $entity_type_manager,
       $logger,
@@ -88,7 +92,7 @@ class CustomUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $container->get('simple_sitemap.generator'),
-      $container->get('simple_sitemap.sitemap_generator'),
+      $container->get('plugin.manager.simple_sitemap.sitemap_generator'),
       $container->get('language_manager'),
       $container->get('entity_type.manager'),
       $container->get('simple_sitemap.logger'),
@@ -141,6 +145,7 @@ class CustomUrlGenerator extends UrlGeneratorBase {
           : [],
         'meta' => [
           'path' => $path,
+          'sitemap_generator' => $this->getPluginDefinition()['settings']['default_sitemap_generator']
         ]
       ];
 

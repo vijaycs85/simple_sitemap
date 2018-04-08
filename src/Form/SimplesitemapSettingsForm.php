@@ -27,13 +27,13 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
 
     $form['simple_sitemap_settings']['regenerate'] = [
       '#type' => 'fieldset',
-      '#title' => $this->t('Regenerate sitemap'),
-      '#markup' => '<p>' . $this->t('This will regenerate the XML sitemap immediately.') . '</p>',
+      '#title' => $this->t('Regenerate sitemaps'),
+      '#markup' => '<p>' . $this->t('This will regenerate the XML sitemaps immediately.') . '</p>',
     ];
 
     $form['simple_sitemap_settings']['regenerate']['regenerate_submit'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Regenerate sitemap'),
+      '#value' => $this->t('Regenerate sitemaps'),
       '#submit' => ['::generateSitemap'],
       // Skip form-level validator.
       '#validate' => [],
@@ -46,8 +46,8 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
 
     $form['simple_sitemap_settings']['settings']['cron_generate'] = [
       '#type' => 'checkbox',
-      '#title' => $this->t('Regenerate the sitemap during cron runs'),
-      '#description' => $this->t('Uncheck this if you intend to only regenerate the sitemap manually or via drush.'),
+      '#title' => $this->t('Regenerate the sitemaps during cron runs'),
+      '#description' => $this->t('Uncheck this if you intend to only regenerate the sitemaps manually or via drush.'),
       '#default_value' => $this->generator->getSetting('cron_generate', TRUE),
     ];
 

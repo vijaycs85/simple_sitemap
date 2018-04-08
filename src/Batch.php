@@ -26,11 +26,16 @@ class Batch {
    */
   protected $batchSettings;
 
+  /**
+   * @var array
+   */
+  protected $batchMeta;
+
   const BATCH_TITLE = 'Generating XML sitemap';
   const BATCH_INIT_MESSAGE = 'Initializing batch...';
   const BATCH_ERROR_MESSAGE = 'An error has occurred. This may result in an incomplete XML sitemap.';
   const BATCH_PROGRESS_MESSAGE = 'Processing @current out of @total link types.';
-  const REGENERATION_FINISHED_MESSAGE = 'The <a href="@url" target="_blank">XML sitemap</a> has been regenerated.';
+  const REGENERATION_FINISHED_MESSAGE = 'The XML sitemaps have been regenerated.';
   const REGENERATION_FINISHED_ERROR_MESSAGE = 'The sitemap generation finished with an error.';
 
   /**
@@ -55,10 +60,23 @@ class Batch {
   }
 
   /**
+   * @param array $batch_meta
+   */
+  public function setBatchMeta(array $batch_meta) {
+    $this->batchMeta = $batch_meta;
+  }
+
+  /**
    * Starts the batch process depending on where it was requested from.
    */
   public function start() {
-    switch ($this->batchSettings['from']) {
+
+    // Update total operation count for each operation.
+    foreach ($this->batch['operations'] as $i => $operation) {
+      $this->batch['operations'][$i][1][3]['operations_count'] = count($this->batch['operations']);
+    }
+
+    switch ($this->batchMeta['from']) {
 
       case 'form':
         // Start batch process.
@@ -98,8 +116,7 @@ class Batch {
           $operation[1][] = &$context;
           call_user_func_array($operation[0], $operation[1]);
         }
-        $this->finishGeneration(TRUE, !empty($context['results']) ? $context['results'] : [], []);
-        return TRUE;
+        return $this->finishGeneration(TRUE, !empty($context['results']) ? $context['results'] : [], []);
     }
     return FALSE;
   }
@@ -107,29 +124,32 @@ class Batch {
   /**
    * Adds an operation to the batch.
    *
-   * @param $plugin_id
+   * @param string $url_generator_id$data_sets
    * @param array|null $data_sets
    */
-  public function addOperation($plugin_id, $data_sets = NULL) {
-    $this->batch['operations'][] = [
-      __CLASS__ . '::generate', [$plugin_id, $data_sets, $this->batchSettings],
+  public function addOperation($url_generator_id, $data_sets = NULL) {
+    $operation_no = count($this->batch['operations']) + 1;
+    $this->batch['operations'][$operation_no] = [
+      __CLASS__ . '::generate', [$url_generator_id, $data_sets, $this->batchSettings, $this->batchMeta + ['current_operation_no' => $operation_no]],
     ];
   }
 
   /**
    * Batch callback function which generates URLs.
    *
-   * @param $plugin_id
+   * @param string $url_generator_id
    * @param array|null $data_sets
    * @param array $batch_settings
+   * @param array $batch_meta
    * @param $context
    *
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
-  public static function generate($plugin_id, $data_sets, array $batch_settings, &$context) {
+  public static function generate($url_generator_id, $data_sets, array $batch_settings, array $batch_meta, &$context) {
     \Drupal::service('plugin.manager.simple_sitemap.url_generator')
-      ->createInstance($plugin_id)
+      ->createInstance($url_generator_id)
       ->setContext($context)
+      ->setBatchMeta($batch_meta)
       ->setBatchSettings($batch_settings)
       ->generate($data_sets);
   }
@@ -141,19 +161,14 @@ class Batch {
    * @param $results
    * @param $operations
    *
+   * @return bool
+   *
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
   public static function finishGeneration($success, $results, $operations) {
     if ($success) {
-      $remove_sitemap = empty($results['chunk_count']);
-      if (!empty($results['generate']) || $remove_sitemap) {
-        \Drupal::service('simple_sitemap.sitemap_generator')
-          ->setSettings(['excluded_languages' => \Drupal::service('simple_sitemap.generator')->getSetting('excluded_languages', [])])
-          ->generateSitemap(!empty($results['generate']) ? $results['generate'] : [], $remove_sitemap);
-      }
       Cache::invalidateTags(['simple_sitemap']);
-      \Drupal::service('simple_sitemap.logger')->m(self::REGENERATION_FINISHED_MESSAGE,
-        ['@url' => $GLOBALS['base_url'] . '/sitemap.xml'])
+      \Drupal::service('simple_sitemap.logger')->m(self::REGENERATION_FINISHED_MESSAGE)
 //        ['@url' => $this->sitemapGenerator->getCustomBaseUrl() . '/sitemap.xml']) //todo: Use actual base URL for message.
         ->display('status')
         ->log('info');
@@ -163,6 +178,8 @@ class Batch {
         ->display('error', 'administer sitemap settings')
         ->log('error');
     }
+
+    return $success;
   }
 
 }

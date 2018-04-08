@@ -231,15 +231,15 @@ class SimplesitemapTest extends SimplesitemapTestBase {
       ->generateSitemap('nobatch');
 
     $this->drupalGet('sitemap.xml');
-    $this->assertSession()->responseContains('sitemaps/1/sitemap.xml');
-    $this->assertSession()->responseContains('sitemaps/2/sitemap.xml');
+    $this->assertSession()->responseContains('sitemaps/default/1/sitemap.xml');
+    $this->assertSession()->responseContains('sitemaps/default/2/sitemap.xml');
 
-    $this->drupalGet('sitemaps/1/sitemap.xml');
+    $this->drupalGet('sitemaps/default/1/sitemap.xml');
     $this->assertSession()->responseContains('node/' . $this->node->id());
     $this->assertSession()->responseContains('0.5');
     $this->assertSession()->responseNotContains('node/' . $this->node2->id());
 
-    $this->drupalGet('sitemaps/2/sitemap.xml');
+    $this->drupalGet('sitemaps/default/2/sitemap.xml');
     $this->assertSession()->responseContains('node/' . $this->node2->id());
     $this->assertSession()->responseContains('0.5');
     $this->assertSession()->responseNotContains('node/' . $this->node->id());
@@ -313,7 +313,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
       ->generateSitemap('nobatch');
 
     $this->drupalGet('sitemap.xml');
-    $this->assertSession()->responseContains('http://base_url_test/sitemaps/1/sitemap.xml');
+    $this->assertSession()->responseContains('http://base_url_test/sitemaps/default/1/sitemap.xml');
   }
 
   /**
