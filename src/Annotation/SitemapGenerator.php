@@ -61,7 +61,6 @@ class SitemapGenerator extends Plugin {
    * @var array
    */
   public $settings = [
-    'list' => TRUE,
     'default' => FALSE,
   ];
 }

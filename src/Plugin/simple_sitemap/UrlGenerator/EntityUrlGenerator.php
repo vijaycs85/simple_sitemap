@@ -21,7 +21,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   weight = 10,
  *   settings = {
  *     "default_sitemap_generator" = "default",
- *     "instantiate_for_each_data_set" = true,
  *   },
  * )
  */
@@ -110,7 +109,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
 
         foreach ($bundles as $bundle_name => $bundle_settings) {
           if ($bundle_settings['index']) {
-            $data_sets[] = [
+            $data_sets[$this->getPluginDefinition()['settings']['default_sitemap_generator']][] = [
               'bundle_settings' => $bundle_settings,
               'bundle_name' => $bundle_name,
               'entity_type_name' => $entity_type_name,
@@ -148,7 +147,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
     $path = $url_object->getInternalPath();
 
     // Do not include paths that have been already indexed.
-    if ($this->batchSettings['remove_duplicates'] && $this->pathProcessed($path)) {
+    if ($this->settings['remove_duplicates'] && $this->pathProcessed($path)) {
       return FALSE;
     }
 
@@ -199,7 +198,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
     }
 
     if ($this->isDrupalBatch()) {
-      $query->range($this->context['sandbox']['progress'], $this->batchSettings['batch_process_limit']);
+      $query->range($this->context['sandbox']['progress'], $this->settings['batch_process_limit']);
     }
 
     return $this->entityTypeManager

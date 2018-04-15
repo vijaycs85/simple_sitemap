@@ -62,6 +62,5 @@ class UrlGenerator extends Plugin {
    */
   public $settings = [
     'default_sitemap_generator' => 'default',
-    'instantiate_for_each_data_set' => FALSE,
   ];
 }

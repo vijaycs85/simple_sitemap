@@ -22,9 +22,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   title = @Translation("Custom URL generator"),
  *   description = @Translation("Generates URLs set in admin/config/search/simplesitemap/custom."),
  *   weight = 0,
- *   settings = {
- *     "default_sitemap_generator" = "default",
- *   },
  *   enabled = true,
  * )
  *
@@ -106,8 +103,7 @@ class CustomUrlGenerator extends UrlGeneratorBase {
    */
   public function getDataSets() {
     $this->includeImages = $this->generator->getSetting('custom_links_include_images', FALSE);
-
-    return array_values($this->generator->getCustomLinks());
+    return [$this->getPluginDefinition()['settings']['default_sitemap_generator'] => [0 => array_values($this->generator->getCustomLinks())]];
   }
 
   /**
@@ -128,7 +124,7 @@ class CustomUrlGenerator extends UrlGeneratorBase {
       $url_object = Url::fromUserInput($data_set['path'], ['absolute' => TRUE]);
       $path = $url_object->getInternalPath();
 
-      if ($this->batchSettings['remove_duplicates'] && $this->pathProcessed($path)) {
+      if ($this->settings['remove_duplicates'] && $this->pathProcessed($path)) {
         return FALSE;
       }
 

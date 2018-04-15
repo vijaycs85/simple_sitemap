@@ -20,9 +20,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   title = @Translation("Arbitrary URL generator"),
  *   description = @Translation("Generates URLs from data sets collected in the hook_arbitrary_links_alter hook."),
  *   weight = 20,
- *   settings = {
- *     "default_sitemap_generator" = "default",
- *   },
  * )
  */
 class ArbitraryUrlGenerator extends UrlGeneratorBase {
@@ -94,7 +91,7 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase {
   public function getDataSets() {
     $arbitrary_links = [];
     $this->moduleHandler->alter('simple_sitemap_arbitrary_links', $arbitrary_links);
-    return array_values($arbitrary_links);
+    return [$this->getPluginDefinition()['settings']['default_sitemap_generator'] => [0 => array_values($arbitrary_links)]];
   }
 
   /**

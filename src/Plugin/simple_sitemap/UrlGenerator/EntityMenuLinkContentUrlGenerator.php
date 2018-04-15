@@ -22,8 +22,6 @@ use Drupal\Core\Menu\MenuLinkTree;
  *   description = @Translation("Generates menu link URLs by overriding the 'entity' URL generator."),
  *   weight = 5,
  *   settings = {
- *     "default_sitemap_generator" = "default",
- *     "instantiate_for_each_data_set" = true,
  *     "overrides_entity_type" = "menu_link_content",
  *   },
  * )
@@ -97,17 +95,17 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
    * @inheritdoc
    */
   public function getDataSets() {
-    $menu_names = [];
+    $data_sets = [];
     $bundle_settings = $this->generator->getBundleSettings();
     if (!empty($bundle_settings['menu_link_content'])) {
       foreach ($bundle_settings['menu_link_content'] as $bundle_name => $settings) {
         if ($settings['index']) {
-          $menu_names[] = $bundle_name;
+          $data_sets[$this->getPluginDefinition()['settings']['default_sitemap_generator']][] = $bundle_name;
         }
       }
     }
 
-    return $menu_names;
+    return $data_sets;
   }
 
   /**
@@ -155,7 +153,7 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
     }
 
     // Do not include paths that have been already indexed.
-    if ($this->batchSettings['remove_duplicates'] && $this->pathProcessed($path)) {
+    if ($this->settings['remove_duplicates'] && $this->pathProcessed($path)) {
       return FALSE;
     }
 
@@ -212,7 +210,7 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
     }
 
     return $this->isDrupalBatch()
-      ? array_slice($elements, $this->context['sandbox']['progress'], $this->batchSettings['batch_process_limit'])
+      ? array_slice($elements, $this->context['sandbox']['progress'], $this->settings['batch_process_limit'])
       : $elements;
   }
 

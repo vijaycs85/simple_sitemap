@@ -24,17 +24,12 @@ class Batch {
   /**
    * @var array
    */
-  protected $batchSettings;
-
-  /**
-   * @var array
-   */
   protected $batchMeta;
 
   const BATCH_TITLE = 'Generating XML sitemap';
   const BATCH_INIT_MESSAGE = 'Initializing batch...';
   const BATCH_ERROR_MESSAGE = 'An error has occurred. This may result in an incomplete XML sitemap.';
-  const BATCH_PROGRESS_MESSAGE = 'Processing @current out of @total link types.';
+  const BATCH_PROGRESS_MESSAGE = 'Running @current out of @total operations.';
   const REGENERATION_FINISHED_MESSAGE = 'The XML sitemaps have been regenerated.';
   const REGENERATION_FINISHED_ERROR_MESSAGE = 'The sitemap generation finished with an error.';
 
@@ -53,13 +48,6 @@ class Batch {
   }
 
   /**
-   * @param array $batch_settings
-   */
-  public function setBatchSettings(array $batch_settings) {
-    $this->batchSettings = $batch_settings;
-  }
-
-  /**
    * @param array $batch_meta
    */
   public function setBatchMeta(array $batch_meta) {
@@ -67,14 +55,105 @@ class Batch {
   }
 
   /**
+   * Adds an operation to the batch.
+   *
+   * @param string $operation_name
+   * @param array $arguments
+   */
+  public function addOperation($operation_name, $arguments = []) {
+    $this->batch['operations'][] = [
+      __CLASS__ . '::' . $operation_name, [$arguments, $this->batchMeta]
+    ];
+  }
+
+  /**
+   * Batch callback function which generates URLs.
+   *
+   * @param array $arguments
+   * @param array $batch_meta
+   * @param $context
+   *
+   * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
+   */
+  public static function generateSitemap(array $arguments, array $batch_meta, &$context) {
+    \Drupal::service('plugin.manager.simple_sitemap.url_generator')
+      ->createInstance($arguments['url_generator'])
+      ->setContext($context)
+      ->setSettings($arguments['settings'])
+      ->setBatchMeta($batch_meta)
+      ->generate($arguments['data_set']);
+  }
+
+  /**
+   * Batch callback function which generates URLs.
+   *
+   * @param array $arguments
+   * @param array $batch_meta
+   * @param $context
+   *
+   * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
+   */
+  public static function generateIndex(array $arguments, array $batch_meta, &$context) {
+    \Drupal::service('plugin.manager.simple_sitemap.sitemap_generator')
+      ->createInstance($arguments['sitemap_generator'])
+      ->setSettings($arguments['settings'])
+      ->generateIndex();
+  }
+
+  /**
+   * Batch callback function which generates URLs.
+   *
+   * @param array $arguments
+   * @param array $batch_meta
+   * @param $context
+   *
+   * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
+   */
+  public static function removeSitemap(array $arguments, array $batch_meta, &$context) {
+    \Drupal::service('plugin.manager.simple_sitemap.sitemap_generator')
+      ->createInstance($arguments['sitemap_generator'])
+      ->remove();
+  }
+
+  /**
+   * Callback function called by the batch API when all operations are finished.
+   *
+   * @param $success
+   * @param $results
+   * @param $operations
+   *
+   * @return bool
+   *
+   * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
+   *
+   * @todo Display success/failure message in Drush > 9.
+   */
+  public static function finishGeneration($success, $results, $operations) {
+    if ($success) {
+      Cache::invalidateTags(['simple_sitemap']);
+      \Drupal::service('simple_sitemap.logger')->m(self::REGENERATION_FINISHED_MESSAGE)
+//        ['@url' => $this->sitemapGenerator->getCustomBaseUrl() . '/sitemap.xml']) //todo: Use actual base URL for message.
+        ->display('status')
+        ->log('info');
+    }
+    else {
+      \Drupal::service('simple_sitemap.logger')->m(self::REGENERATION_FINISHED_ERROR_MESSAGE)
+        ->display('error', 'administer sitemap settings')
+        ->log('error');
+    }
+
+    return $success;
+  }
+
+  /**
    * Starts the batch process depending on where it was requested from.
+   *
+   * @return bool
    */
   public function start() {
 
-    // Update total operation count for each operation.
-    foreach ($this->batch['operations'] as $i => $operation) {
-      $this->batch['operations'][$i][1][3]['operations_count'] = count($this->batch['operations']);
-    }
+    // Update last operation info for each operation.
+    $this->addAdditionalMetaInfo();
 
     switch ($this->batchMeta['from']) {
 
@@ -121,65 +200,18 @@ class Batch {
     return FALSE;
   }
 
-  /**
-   * Adds an operation to the batch.
-   *
-   * @param string $url_generator_id$data_sets
-   * @param array|null $data_sets
-   */
-  public function addOperation($url_generator_id, $data_sets = NULL) {
-    $operation_no = count($this->batch['operations']) + 1;
-    $this->batch['operations'][$operation_no] = [
-      __CLASS__ . '::generate', [$url_generator_id, $data_sets, $this->batchSettings, $this->batchMeta + ['current_operation_no' => $operation_no]],
-    ];
-  }
-
-  /**
-   * Batch callback function which generates URLs.
-   *
-   * @param string $url_generator_id
-   * @param array|null $data_sets
-   * @param array $batch_settings
-   * @param array $batch_meta
-   * @param $context
-   *
-   * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
-   */
-  public static function generate($url_generator_id, $data_sets, array $batch_settings, array $batch_meta, &$context) {
-    \Drupal::service('plugin.manager.simple_sitemap.url_generator')
-      ->createInstance($url_generator_id)
-      ->setContext($context)
-      ->setBatchMeta($batch_meta)
-      ->setBatchSettings($batch_settings)
-      ->generate($data_sets);
-  }
-
-  /**
-   * Callback function called by the batch API when all operations are finished.
-   *
-   * @param $success
-   * @param $results
-   * @param $operations
-   *
-   * @return bool
-   *
-   * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
-   */
-  public static function finishGeneration($success, $results, $operations) {
-    if ($success) {
-      Cache::invalidateTags(['simple_sitemap']);
-      \Drupal::service('simple_sitemap.logger')->m(self::REGENERATION_FINISHED_MESSAGE)
-//        ['@url' => $this->sitemapGenerator->getCustomBaseUrl() . '/sitemap.xml']) //todo: Use actual base URL for message.
-        ->display('status')
-        ->log('info');
+  protected function addAdditionalMetaInfo() {
+    $last_operation_no = 0;
+    foreach ($this->batch['operations'] as $i => $operation) {
+      if ($operation[0] === __CLASS__ . '::generateSitemap') {
+        $this->batch['operations'][$i][1][1]['current_generate_sitemap_operation_no'] = $i;
+        $last_operation_no = $i;
+      }
     }
-    else {
-      \Drupal::service('simple_sitemap.logger')->m(self::REGENERATION_FINISHED_ERROR_MESSAGE)
-        ->display('error', 'administer sitemap settings')
-        ->log('error');
+    foreach ($this->batch['operations'] as $i => $operation) {
+      if ($operation[0] === __CLASS__ . '::generateSitemap') {
+        $this->batch['operations'][$i][1][1]['last_generate_sitemap_operation_no'] = $last_operation_no;
+      }
     }
-
-    return $success;
   }
-
 }

@@ -182,17 +182,17 @@ class Simplesitemap {
   public function getSitemap($type = SitemapGeneratorBase::DEFAULT_SITEMAP_TYPE, $delta = NULL) {
     $chunk_info = $this->fetchSitemapChunkInfo($type);
 
-    if (NULL === $delta || !isset($chunk_info[$delta])) {
+    if (empty($delta) || !isset($chunk_info[$delta])) {
 
-      if (count($chunk_info) > 1) {
+      if (isset($chunk_info[SitemapGeneratorBase::INDEX_DELTA])) {
         // Return sitemap index, if there are multiple sitemap chunks.
-        return $this->getSitemapIndex($chunk_info);
+        return $this->fetchSitemapChunk($chunk_info[SitemapGeneratorBase::INDEX_DELTA]->id)
+          ->sitemap_string;
       }
       else {
         // Return sitemap if there is only one chunk.
-        return count($chunk_info) === 1
-        && isset($chunk_info[SitemapGeneratorBase::FIRST_DELTA_INDEX])
-          ? $this->fetchSitemapChunk($chunk_info[SitemapGeneratorBase::FIRST_DELTA_INDEX]->id)
+        return isset($chunk_info[SitemapGeneratorBase::FIRST_CHUNK_DELTA])
+          ? $this->fetchSitemapChunk($chunk_info[SitemapGeneratorBase::FIRST_CHUNK_DELTA]->id)
             ->sitemap_string
           : FALSE;
       }
@@ -201,21 +201,6 @@ class Simplesitemap {
       // Return specific sitemap chunk.
       return $this->fetchSitemapChunk($chunk_info[$delta]->id)->sitemap_string;
     }
-  }
-
-  /**
-   * Generates and returns the sitemap index as string.
-   *
-   * @param array $chunk_info
-   *   Array containing chunk creation timestamps keyed by chunk ID.
-   *
-   * @return string
-   *   The sitemap index.
-   */
-  protected function getSitemapIndex($chunk_info) {
-    return $this->sitemapGeneratorManager->createInstance('index')
-      ->setSettings(['base_url' => $this->getSetting('base_url', '')])
-      ->getSitemapIndex($chunk_info);
   }
 
   /**
@@ -260,18 +245,21 @@ class Simplesitemap {
    *   Can be 'form', 'backend', 'drush' or 'nobatch'.
    *   This decides how the batch process is to be run.
    *
+   * @param array|null $sitemap_types
+   *
    * @return bool|\Drupal\simple_sitemap\Simplesitemap
    */
-  public function generateSitemap($from = 'form') {
+  public function generateSitemap($from = 'form', $sitemap_types = NULL) {
+    $sitemap_types = NULL === $sitemap_types ? NULL : (array) $sitemap_types;
 
-    $this->batch->setBatchSettings([
+    $settings = [
       'base_url' => $this->getSetting('base_url', ''),
       'batch_process_limit' => $this->getSetting('batch_process_limit', 1500),
       'max_links' => $this->getSetting('max_links', 2000),
       'skip_untranslated' => $this->getSetting('skip_untranslated', FALSE),
       'remove_duplicates' => $this->getSetting('remove_duplicates', TRUE),
       'excluded_languages' => $this->getSetting('excluded_languages', []),
-    ]);
+    ];
 
     $this->batch->setBatchMeta(['from' => $from]);
 
@@ -284,27 +272,73 @@ class Simplesitemap {
       });
     }
 
-    foreach ($sitemap_generators as $sitemap_generator) {
-      if ($sitemap_generator['enabled'] && $sitemap_generator['settings']['list']) {
-        foreach ($url_generators as $url_generator) {
-          if ($url_generator['enabled']
-            && $url_generator['settings']['default_sitemap_generator'] === $sitemap_generator['id']) {
-            if (!empty($url_generator['settings']['instantiate_for_each_data_set'])) {
-              foreach ($this->urlGeneratorManager->createInstance($url_generator['id'])->getDataSets() as $data_sets) {
-                $this->batch->addOperation($url_generator['id'], $data_sets);
-              }
-            }
-            else {
-              $this->batch->addOperation($url_generator['id']);
+    $operations_per_type = [];
+    foreach ($url_generators as $url_generator) {
+      if ($url_generator['enabled']) {
+        foreach ($this->urlGeneratorManager->createInstance($url_generator['id'])->getDataSets() as $sitemap_type => $data_sets) {
+
+          // Skipping unwanted sitemap types.
+          if (NULL !== $sitemap_types && !in_array($sitemap_type, $sitemap_types)) {
+            continue;
+          }
+
+          // Adding a remove_sitemap operation for all sitemap types.
+          if (!isset($operations_per_type[$sitemap_type])) {
+            $operations_per_type[$sitemap_type][] = [
+              'operation' => 'removeSitemap',
+              'arguments' => [
+                'sitemap_generator' => $sitemap_type,
+              ]
+            ];
+          }
+
+          // Adding generate_sitemap operations for all data sets.
+          foreach ($data_sets as $data_set) {
+            if (!empty($data_set)) {
+              $operations_per_type[$sitemap_type][] = [
+                'operation' => 'generateSitemap',
+                'arguments' => [
+                  'url_generator' => $url_generator['id'],
+                  'data_set' => $data_set,
+                  'settings' => $settings,
+                ],
+              ];
             }
           }
         }
       }
     }
 
-    $success = $this->batch->start();
-    return $from === 'nobatch' ? $this : $success;
+    // Adding generate_index operations at the right position for all sitemap types.
+    foreach ($operations_per_type as $sitemap_type => $operations) {
+      $operations_per_type[$sitemap_type][] = [
+        'operation' => 'generateIndex',
+        'arguments' => [
+          'sitemap_generator' => $sitemap_type,
+          'settings' => $settings,
+        ],
+      ];
+    }
+
+    // todo Sort operations according to sitemap type weight.
+    // todo Only add operation if sitemap type is enabled.
+
+    // Adding operations to batch.
+    if (!empty($operations_per_type)) {
+      foreach ($operations_per_type as $sitemap_type => $operations) {
+        foreach ($operations as $operation_data) {
+          $this->batch->addOperation($operation_data['operation'], $operation_data['arguments']);
+        }
+      }
+      $success = $this->batch->start();
+    }
+
+    return $from === 'nobatch' ? $this : (isset($success) ? $success : FALSE);
   }
+
+  /**
+   * @todo Add removeSitemap API method.
+   */
 
   /**
    * Returns a 'time ago' string of last timestamp generation.
@@ -317,9 +351,9 @@ class Simplesitemap {
   public function getGeneratedAgo($type = NULL) {
     $chunks = $this->fetchSitemapChunkInfo($type);
     if ($type !== NULL) {
-      return isset($chunks[DefaultSitemapGenerator::FIRST_DELTA_INDEX]->sitemap_created)
+      return isset($chunks[DefaultSitemapGenerator::FIRST_CHUNK_DELTA]->sitemap_created)
         ? $this->dateFormatter
-          ->formatInterval($this->time->getRequestTime() - $chunks[DefaultSitemapGenerator::FIRST_DELTA_INDEX]
+          ->formatInterval($this->time->getRequestTime() - $chunks[DefaultSitemapGenerator::FIRST_CHUNK_DELTA]
               ->sitemap_created)
         : FALSE;
     }

@@ -72,7 +72,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
   /**
    * @var array
    */
-  protected $batchSettings;
+  protected $settings;
 
   /**
    * @var array
@@ -144,11 +144,11 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
   }
 
   /**
-   * @param array $batch_settings
+   * @param array $settings
    * @return $this
    */
-  public function setBatchSettings(array $batch_settings) {
-    $this->batchSettings = $batch_settings;
+  public function setSettings(array $settings) {
+    $this->settings = $settings;
     return $this;
   }
 
@@ -200,21 +200,6 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
     );
     if (empty($this->context['results']['generate'][$sitemap_type])) {
       unset($this->context['results']['generate'][$sitemap_type]);
-    }
-  }
-
-  protected function getChunkCountForType($sitemap_type) {
-    return !empty($this->context['results']['chunk_count'][$sitemap_type])
-      ? $this->context['results']['chunk_count'][$sitemap_type]
-      : 0;
-  }
-
-  protected function incrementChunkCountForType($sitemap_type) {
-    if (isset($this->context['results']['chunk_count'][$sitemap_type])) {
-      $this->context['results']['chunk_count'][$sitemap_type]++;
-    }
-    else {
-      $this->context['results']['chunk_count'][$sitemap_type] = 1;
     }
   }
 
@@ -290,7 +275,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
       // Not a routed URL, including only default variant.
       $alternate_urls = $this->getAlternateUrlsForDefaultLanguage($url_object);
     }
-    elseif ($this->batchSettings['skip_untranslated']
+    elseif ($this->settings['skip_untranslated']
       && ($entity = $this->entityHelper->getEntityFromUrlObject($url_object)) instanceof ContentEntityBase) {
       $translation_languages = $entity->getTranslationLanguages();
       if (isset($translation_languages[Language::LANGCODE_NOT_SPECIFIED])
@@ -329,7 +314,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
   protected function getAlternateUrlsForTranslatedLanguages($entity, $url_object) {
     $alternate_urls = [];
     foreach ($entity->getTranslationLanguages() as $language) {
-      if (!isset($this->batchSettings['excluded_languages'][$language->getId()]) || $language->isDefault()) {
+      if (!isset($this->settings['excluded_languages'][$language->getId()]) || $language->isDefault()) {
         $translation = $entity->getTranslation($language->getId());
         if ($translation->access('view', $this->anonUser)) {
           $url_object->setOption('language', $language);
@@ -344,7 +329,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
     $alternate_urls = [];
     if ($url_object->access($this->anonUser)) {
       foreach ($this->languages as $language) {
-        if (!isset($this->batchSettings['excluded_languages'][$language->getId()]) || $language->isDefault()) {
+        if (!isset($this->settings['excluded_languages'][$language->getId()]) || $language->isDefault()) {
           $url_object->setOption('language', $language);
           $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object->toString());
         }
@@ -360,45 +345,39 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
     // all links from all operations have been queued. If it is a batch
     // operation, generate the required amount of links in this batch process
     // segment before the generation process.
-    if ($this->isDrupalBatch() || $this->batchMeta['current_operation_no'] == $this->batchMeta['operations_count']) {
+    if ($this->isDrupalBatch() || $this->batchMeta['current_generate_sitemap_operation_no']
+      == $this->batchMeta['last_generate_sitemap_operation_no']) {
       foreach ($this->getBatchResultQueue() as $sitemap_type => $queued_sitemap_links) {
 
         $sitemap_generator = $this->sitemapGeneratorManager
           ->createInstance($sitemap_type)
-          ->setSettings(['excluded_languages' => $this->batchSettings['excluded_languages']]);
+          ->setSettings(['excluded_languages' => $this->settings['excluded_languages']]);
 
-        foreach (array_chunk($queued_sitemap_links, $this->batchSettings['max_links']) as $chunk_links) {
+        foreach (array_chunk($queued_sitemap_links, $this->settings['max_links']) as $chunk_links) {
 
           // Generating chunk from all links of this sitemap type if this is not a batch operation.
           if (!$this->isDrupalBatch()
 
             // If this is batch, generating chunk in case the required amount of
             // links for this chunk have been queued.
-            || count($chunk_links) == $this->batchSettings['max_links']
+            || count($chunk_links) == $this->settings['max_links']
 
             // If this is batch, also generating in case of fewer links than
             // defined per chunk, but only if these are the last links of this
             // sitemap type.
-            || (count($chunk_links) < $this->batchSettings['max_links'] && count($this->getBatchResultQueue()) > 1)
+            || (count($chunk_links) < $this->settings['max_links'] && count($this->getBatchResultQueue()) > 1)
 
             // If this is batch, also generating in case this is the last batch
             // segment of the last batch operation.
             || (
-              $this->batchMeta['current_operation_no'] == $this->batchMeta['operations_count']
+              $this->batchMeta['current_generate_sitemap_operation_no']
+              == $this->batchMeta['last_generate_sitemap_operation_no']
               && $this->context['finished'] >= 1
             )
           ) {
 
-            // Remove sitemap if this is the first chunk to be generated.
-            if (empty($this->getChunkCountForType($sitemap_type))) {
-              $sitemap_generator->remove();
-            }
-
             // Generate sitemap chunk.
             $sitemap_generator->generate($chunk_links);
-
-            // Update chunk count info.
-            $this->incrementChunkCountForType($sitemap_type);
 
             // Remove links from result array that have been generated.
             $this->sliceFromBatchResultQueue($sitemap_type, count($chunk_links));
@@ -439,8 +418,8 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
    * @return string
    */
   protected function replaceBaseUrlWithCustom($url) {
-    return !empty($this->batchSettings['base_url'])
-      ? str_replace($GLOBALS['base_url'], $this->batchSettings['base_url'], $url)
+    return !empty($this->settings['base_url'])
+      ? str_replace($GLOBALS['base_url'], $this->settings['base_url'], $url)
       : $url;
   }
 
@@ -454,7 +433,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
     }
 
     return $this->isDrupalBatch()
-      ? array_slice($elements, $this->context['sandbox']['progress'], $this->batchSettings['batch_process_limit'])
+      ? array_slice($elements, $this->context['sandbox']['progress'], $this->settings['batch_process_limit'])
       : $elements;
   }
 
@@ -472,12 +451,9 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
   /**
    * Called by batch.
    *
-   * @param array|null $data_sets
-   *
-   * @todo Need to add empty array signalling that no results have been generated for a sitemap in order to delete sitemap?
+   * @param array $data_sets
    */
-  public function generate($data_sets = NULL) {
-    $data_sets = NULL !== $data_sets ? $data_sets : $this->getDataSets();
+  public function generate(array $data_sets) {
     foreach ($this->getBatchIterationElements($data_sets) as $id => $data_set) {
       $this->setCurrentId($id);
       $path_data = $this->processDataSet($data_set);
