@@ -451,9 +451,9 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
   /**
    * Called by batch.
    *
-   * @param array $data_sets
+   * @param mixed $data_sets
    */
-  public function generate(array $data_sets) {
+  public function generate($data_sets) {
     foreach ($this->getBatchIterationElements($data_sets) as $id => $data_set) {
       $this->setCurrentId($id);
       $path_data = $this->processDataSet($data_set);

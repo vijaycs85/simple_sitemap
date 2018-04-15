@@ -8,7 +8,7 @@ namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
  */
 interface UrlGeneratorInterface {
 
-  public function generate(array $data_sets);
+  public function generate($data_sets);
 
   public function getDataSets();
 }
