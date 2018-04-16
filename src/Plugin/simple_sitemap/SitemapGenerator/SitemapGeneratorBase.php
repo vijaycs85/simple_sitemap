@@ -39,11 +39,6 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
   protected $moduleHandler;
 
   /**
-   * @var bool
-   */
-  protected $isHreflangSitemap;
-
-  /**
    * @var \Drupal\Component\Datetime\Time
    */
   protected $time;
@@ -208,16 +203,6 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
         ])
         ->execute();
     }
-  }
-
-  /**
-   * @return bool
-   */
-  protected function isHreflangSitemap() {
-    if (NULL === $this->isHreflangSitemap) {
-      $this->isHreflangSitemap = count(array_diff_key($this->languageManager->getLanguages(), $this->settings['excluded_languages'])) > 1;
-    }
-    return $this->isHreflangSitemap;
   }
 
   /**

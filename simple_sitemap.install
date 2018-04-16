@@ -5,6 +5,8 @@
  * Module install and update procedures.
  */
 
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
+
 /**
  * Implements hook_requirements().
  *
@@ -28,7 +30,7 @@ function simple_sitemap_requirements($phase) {
     case 'runtime':
 
       $generator = \Drupal::service('simple_sitemap.generator');
-      $generated_ago = $generator->getGeneratedAgo('default'); //todo
+      $generated_ago = $generator->getGeneratedAgo(SitemapGeneratorBase::DEFAULT_SITEMAP_TYPE); //todo
       $cron_generation = $generator->getSetting('cron_generate');
 
       if (!$generated_ago) {
@@ -373,7 +375,7 @@ function simple_sitemap_update_8208() {
     }
   }
 
-  return t('You may now want to configure the new changefreq setting for sitemap entities and custom links.');
+  return t('You may now want to configure the new changefreq setting for the XML sitemap entities and custom links.');
 }
 
 /**
@@ -409,7 +411,7 @@ function simple_sitemap_update_8209() {
     }
   }
 
-  return t('You may now want to configure your sitemap entities to include images.');
+  return t('You may now want to configure your XML sitemap entities to include images.');
 }
 
 /**
@@ -444,6 +446,8 @@ function simple_sitemap_update_8210() {
       ]
     );
   }
+
+  return t('The XML sitemap needs to be regenerated.');
 }
 
 

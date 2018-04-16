@@ -172,7 +172,7 @@ HOW CAN YOU CONTRIBUTE?
    https://localize.drupal.org/translate/projects/simple_sitemap
 
  * If you would like to say thanks and support the development of this module, a
-   donation is always appreciated.
+   donation will be much appreciated.
    https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5AFYRSBLGSC3W
 
 

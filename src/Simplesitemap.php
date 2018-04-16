@@ -134,13 +134,13 @@ class Simplesitemap {
    * exist.
    *
    * @param string $name
-   *   Name of the setting, like 'max_links'.
+   *  Name of the setting, like 'max_links'.
    *
    * @param mixed $default
-   *   Value to be returned if the setting does not exist in the configuration.
+   *  Value to be returned if the setting does not exist in the configuration.
    *
    * @return mixed
-   *   The current setting from configuration or a default value.
+   *  The current setting from configuration or a default value.
    */
   public function getSetting($name, $default = FALSE) {
     $setting = $this->configFactory
@@ -153,9 +153,9 @@ class Simplesitemap {
    * Stores a specific sitemap setting in configuration.
    *
    * @param string $name
-   *   Setting name, like 'max_links'.
+   *  Setting name, like 'max_links'.
    * @param mixed $setting
-   *   The setting to be saved.
+   *  The setting to be saved.
    *
    * @return $this
    */
@@ -174,10 +174,10 @@ class Simplesitemap {
    * @param int $delta
    *
    * @return string|false
-   *   If no sitemap id provided, either a sitemap index is returned, or the
-   *   whole sitemap, if the amount of links does not exceed the max links
-   *   setting. If a sitemap id is provided, a sitemap chunk is returned. False
-   *   if sitemap is not retrievable from the database.
+   *  If no sitemap ID provided, either a sitemap index is returned, or the
+   *  whole sitemap, if the amount of links does not exceed the max links
+   *  setting. If a sitemap ID is provided, a sitemap chunk is returned.
+   *  Returns false if the sitemap is not retrievable from the database.
    */
   public function getSitemap($type = SitemapGeneratorBase::DEFAULT_SITEMAP_TYPE, $delta = NULL) {
     $chunk_info = $this->fetchSitemapChunkInfo($type);
@@ -185,12 +185,12 @@ class Simplesitemap {
     if (empty($delta) || !isset($chunk_info[$delta])) {
 
       if (isset($chunk_info[SitemapGeneratorBase::INDEX_DELTA])) {
-        // Return sitemap index, if there are multiple sitemap chunks.
+        // Return sitemap index if one exists.
         return $this->fetchSitemapChunk($chunk_info[SitemapGeneratorBase::INDEX_DELTA]->id)
           ->sitemap_string;
       }
       else {
-        // Return sitemap if there is only one chunk.
+        // Return sitemap chunk if there is only one chunk.
         return isset($chunk_info[SitemapGeneratorBase::FIRST_CHUNK_DELTA])
           ? $this->fetchSitemapChunk($chunk_info[SitemapGeneratorBase::FIRST_CHUNK_DELTA]->id)
             ->sitemap_string
@@ -209,7 +209,7 @@ class Simplesitemap {
    * @param string|null $type
    *
    * @return array
-   *   An array containing chunk creation timestamps keyed by chunk ID.
+   *  An array containing chunk creation timestamps keyed by chunk ID.
    */
   protected function fetchSitemapChunkInfo($type = NULL) {
     $query = $this->db->select('simple_sitemap', 's')
@@ -239,11 +239,11 @@ class Simplesitemap {
   }
 
   /**
-   * Generates the XML sitemap and saves it to the db.
+   * Generates the XML sitemap and saves it to the database.
    *
    * @param string $from
-   *   Can be 'form', 'backend', 'drush' or 'nobatch'.
-   *   This decides how the batch process is to be run.
+   *  Can be 'form', 'backend', 'drush' or 'nobatch'.
+   *  This decides how the batch process is to be run.
    *
    * @param array|null $sitemap_types
    *
@@ -337,8 +337,13 @@ class Simplesitemap {
   }
 
   /**
+   * @param null|array $sitemap_types
+   *
    * @todo Add removeSitemap API method.
    */
+  public function removeSitemap($sitemap_types = NULL) {
+
+  }
 
   /**
    * Returns a 'time ago' string of last timestamp generation.
@@ -346,7 +351,7 @@ class Simplesitemap {
    * @param string|null $type
    *
    * @return string|array|false
-   *   Formatted timestamp of last sitemap generation, otherwise FALSE.
+   *  Formatted timestamp of last sitemap generation, otherwise FALSE.
    */
   public function getGeneratedAgo($type = NULL) {
     $chunks = $this->fetchSitemapChunkInfo($type);

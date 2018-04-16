@@ -28,6 +28,11 @@ class DefaultSitemapGenerator extends SitemapGeneratorBase {
   const XMLNS_IMAGE = 'http://www.google.com/schemas/sitemap-image/1.1';
 
   /**
+   * @var bool
+   */
+  protected $isHreflangSitemap;
+
+  /**
    * @var array
    */
   protected static $attributes = [
@@ -162,6 +167,19 @@ class DefaultSitemapGenerator extends SitemapGeneratorBase {
     $this->writer->endDocument();
 
     return $this->writer->outputMemory();
+  }
+
+  /**
+   * @return bool
+   */
+  protected function isHreflangSitemap() {
+    if (NULL === $this->isHreflangSitemap) {
+      $this->isHreflangSitemap = count(
+        array_diff_key($this->languageManager->getLanguages(),
+          $this->settings['excluded_languages'])
+        ) > 1;
+    }
+    return $this->isHreflangSitemap;
   }
 
 }
