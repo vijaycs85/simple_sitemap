@@ -148,7 +148,7 @@ function simple_sitemap_schema() {
  */
 function simple_sitemap_install() {
   $base_url = $GLOBALS['base_url'];
-  drupal_set_message(t("You can now include content into the sitemap by visiting the corresponding entity type edit pages (e.g. <a href='@content_type_url'>node type edit pages</a>).<br/>Support for additional entity types and custom links can be added on <a href='@config_url'>the module's configuration pages</a>.", ['@content_type_url' => "$base_url/admin/structure/types", '@config_url' => "$base_url/admin/config/search/simplesitemap"]));
+  \Drupal::messenger()->addMessage(t("You can now include content into the sitemap by visiting the corresponding entity type edit pages (e.g. <a href='@content_type_url'>node type edit pages</a>).<br/>Support for additional entity types and custom links can be added on <a href='@config_url'>the module's configuration pages</a>.", ['@content_type_url' => "$base_url/admin/structure/types", '@config_url' => "$base_url/admin/config/search/simplesitemap"]));
 }
 
 /**

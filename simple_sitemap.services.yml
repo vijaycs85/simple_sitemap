@@ -42,6 +42,7 @@ services:
     public: true
     arguments:
       - '@logger.channel.simple_sitemap'
+      - '@messenger'
       - '@current_user'
 
   logger.channel.simple_sitemap:
