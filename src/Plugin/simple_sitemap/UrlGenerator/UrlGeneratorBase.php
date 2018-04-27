@@ -14,6 +14,7 @@ use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGenerato
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Language\Language;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
 
 /**
  * Class UrlGeneratorBase
@@ -277,9 +278,12 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
     }
     elseif ($this->settings['skip_untranslated']
       && ($entity = $this->entityHelper->getEntityFromUrlObject($url_object)) instanceof ContentEntityBase) {
+
+      /** @var ContentEntityBase $entity */
       $translation_languages = $entity->getTranslationLanguages();
       if (isset($translation_languages[Language::LANGCODE_NOT_SPECIFIED])
         || isset($translation_languages[Language::LANGCODE_NOT_APPLICABLE])) {
+
         // Content entity's language is unknown, including only default variant.
         $alternate_urls = $this->getAlternateUrlsForDefaultLanguage($url_object);
       }
@@ -302,7 +306,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
     }
   }
 
-  protected function getAlternateUrlsForDefaultLanguage($url_object) {
+  protected function getAlternateUrlsForDefaultLanguage(Url $url_object) {
     $alternate_urls = [];
     if ($url_object->access($this->anonUser)) {
       $url_object->setOption('language', $this->languages[$this->defaultLanguageId]);
@@ -311,9 +315,11 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
     return $alternate_urls;
   }
 
-  protected function getAlternateUrlsForTranslatedLanguages($entity, $url_object) {
+  protected function getAlternateUrlsForTranslatedLanguages(ContentEntityBase $entity, Url $url_object) {
     $alternate_urls = [];
     foreach ($entity->getTranslationLanguages() as $language) {
+
+      /** @var Language $language */
       if (!isset($this->settings['excluded_languages'][$language->getId()]) || $language->isDefault()) {
         $translation = $entity->getTranslation($language->getId());
         if ($translation->access('view', $this->anonUser)) {
@@ -325,7 +331,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
     return $alternate_urls;
   }
 
-  protected function getAlternateUrlsForAllLanguages($url_object) {
+  protected function getAlternateUrlsForAllLanguages(Url $url_object) {
     $alternate_urls = [];
     if ($url_object->access($this->anonUser)) {
       foreach ($this->languages as $language) {
@@ -349,6 +355,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
       == $this->batchMeta['last_generate_sitemap_operation_no']) {
       foreach ($this->getBatchResultQueue() as $sitemap_type => $queued_sitemap_links) {
 
+        /** @var SitemapGeneratorBase $sitemap_generator */
         $sitemap_generator = $this->sitemapGeneratorManager
           ->createInstance($sitemap_type)
           ->setSettings(['excluded_languages' => $this->settings['excluded_languages']]);
@@ -408,7 +415,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
       $this->context['message'] = $this->t(self::PROCESSING_PATH_MESSAGE, [
         '@current' => $this->context['sandbox']['progress'],
         '@max' => $this->context['sandbox']['max'],
-        '@path' => HTML::escape($path),
+        '@path' => Html::escape($path),
       ]);
     }
   }

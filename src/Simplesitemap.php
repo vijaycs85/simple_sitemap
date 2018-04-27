@@ -245,7 +245,7 @@ class Simplesitemap {
    *  Can be 'form', 'backend', 'drush' or 'nobatch'.
    *  This decides how the batch process is to be run.
    *
-   * @param array|null $sitemap_types
+   * @param array|string|null $sitemap_types
    *
    * @return bool|\Drupal\simple_sitemap\Simplesitemap
    */

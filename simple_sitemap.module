@@ -34,9 +34,7 @@ function simple_sitemap_help($route_name, RouteMatchInterface $route_match) {
  */
 function simple_sitemap_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 
-  /**
-   * @var Drupal\simple_sitemap\Form\FormHelper $f
-   */
+  /** @var Drupal\simple_sitemap\Form\FormHelper $f */
   $f = \Drupal::service('simple_sitemap.form_helper');
   if (!$f->processForm($form_state)) {
     return;
@@ -88,9 +86,7 @@ function simple_sitemap_form_alter(&$form, FormStateInterface $form_state, $form
  */
 function simple_sitemap_entity_form_submit($form, FormStateInterface &$form_state) {
 
-  /**
-   * @var Drupal\simple_sitemap\Form\FormHelper $f
-   */
+  /** @var Drupal\simple_sitemap\Form\FormHelper $f */
   $f = \Drupal::service('simple_sitemap.form_helper');
   if (!$f->processForm($form_state)) {
     return;
@@ -104,9 +100,7 @@ function simple_sitemap_entity_form_submit($form, FormStateInterface &$form_stat
   // Only make changes in DB if sitemap settings actually changed.
   if ($f->valuesChanged($form, $values)) {
 
-    /**
-     * @var \Drupal\simple_sitemap\Simplesitemap $generator
-     */
+    /** @var \Drupal\simple_sitemap\Simplesitemap $generator */
     $generator = \Drupal::service('simple_sitemap.generator');
 
     $settings = [
@@ -147,9 +141,7 @@ function simple_sitemap_entity_form_submit($form, FormStateInterface &$form_stat
  */
 function simple_sitemap_cron() {
 
-  /**
-   * @var \Drupal\simple_sitemap\Simplesitemap $generator
-   */
+  /** @var \Drupal\simple_sitemap\Simplesitemap $generator */
   $generator = \Drupal::service('simple_sitemap.generator');
   if ($generator->getSetting('cron_generate')) {
     $interval = (int) $generator->getSetting('cron_generate_interval', 0) * 60 * 60;
@@ -168,9 +160,7 @@ function simple_sitemap_cron() {
  */
 function simple_sitemap_configurable_language_delete(ConfigurableLanguageInterface $language) {
 
-  /**
-   * @var \Drupal\simple_sitemap\Simplesitemap $generator
-   */
+  /** @var \Drupal\simple_sitemap\Simplesitemap $generator */
   $generator = \Drupal::service('simple_sitemap.generator');
   $excluded_languages = $generator->getSetting('excluded_languages');
   if (isset($excluded_languages[$language->id()])) {
@@ -188,9 +178,7 @@ function simple_sitemap_configurable_language_delete(ConfigurableLanguageInterfa
  */
 function simple_sitemap_entity_delete(EntityInterface $entity) {
 
-  /**
-   * @var \Drupal\simple_sitemap\Simplesitemap $generator
-   */
+  /** @var \Drupal\simple_sitemap\Simplesitemap $generator */
   $generator = \Drupal::service('simple_sitemap.generator');
   $generator->removeEntityInstanceSettings(
     $entity->getEntityTypeId(), $entity->id()
@@ -230,12 +218,10 @@ function simple_sitemap_menu_delete(MenuInterface $menu) {
  */
 function simple_sitemap_delete_bundle_config($entity_type_id, $bundle) {
 
-  /**
-   * @var \Drupal\simple_sitemap\Simplesitemap $generator
-   */
+  /** @var \Drupal\simple_sitemap\Simplesitemap $generator */
   $generator = \Drupal::service('simple_sitemap.generator');
   $deleted_bundle_settings = $generator->getBundleSettings($entity_type_id, $bundle);
-  if ($deleted_bundle_settings !== FALSE) {
+  if (!empty($deleted_bundle_settings['index'])) {
 
     // Delete bundle settings.
     \Drupal::service('config.factory')->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle")->delete();
