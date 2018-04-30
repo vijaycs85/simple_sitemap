@@ -42,25 +42,9 @@ class UrlGenerator extends Plugin {
   public $description;
 
   /**
-   * An integer to determine the weight of this generator relative to others.
-   *
-   * @var int
-   */
-  public $weight = 0;
-
-  /**
-   * Whether the generator is enabled by default.
-   *
-   * @var bool
-   */
-  public $enabled = TRUE;
-
-  /**
    * Default generator settings.
    *
    * @var array
    */
-  public $settings = [
-    'default_sitemap_generator' => 'default',
-  ];
+  public $settings = [];
 }

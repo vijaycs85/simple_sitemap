@@ -5,29 +5,29 @@ simple_sitemap.sitemap_default:
   requirements:
     _access: 'TRUE'
 
-simple_sitemap.sitemap_type:
-  path: '/sitemaps/{type}/sitemap.xml'
+simple_sitemap.sitemap_variant:
+  path: '/sitemaps/{variant}/sitemap.xml'
   defaults:
     _controller: '\Drupal\simple_sitemap\Controller\SimplesitemapController::getSitemap'
   requirements:
     _access: 'TRUE'
     
-simple_sitemap.sitemap_type_fallback:
-  path: '/sitemaps/{type}'
+simple_sitemap.sitemap_variant_fallback:
+  path: '/sitemaps/{variant}'
   defaults:
     _controller: '\Drupal\simple_sitemap\Controller\SimplesitemapController::getSitemap'
   requirements:
     _access: 'TRUE'
 
-simple_sitemap.sitemap_type_delta:
-  path: '/sitemaps/{type}/{delta}/sitemap.xml'
+simple_sitemap.sitemap_variant_delta:
+  path: '/sitemaps/{variant}/{delta}/sitemap.xml'
   defaults:
     _controller: '\Drupal\simple_sitemap\Controller\SimplesitemapController::getSitemap'
   requirements:
     _access: 'TRUE'
 
-simple_sitemap.sitemap_type_delta_fallback:
-  path: '/sitemaps/{type}/{delta}'
+simple_sitemap.sitemap_variant_delta_fallback:
+  path: '/sitemaps/{variant}/{delta}'
   defaults:
     _controller: '\Drupal\simple_sitemap\Controller\SimplesitemapController::getSitemap'
   requirements:

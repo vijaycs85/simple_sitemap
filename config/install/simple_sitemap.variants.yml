@@ -1,0 +1,4 @@
+variants:
+  default:
+    label: 'Default'
+    type: 'default_hreflang'

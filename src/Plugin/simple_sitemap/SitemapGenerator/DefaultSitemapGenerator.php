@@ -16,10 +16,6 @@ use Drupal\Component\Datetime\Time;
  *   id = "default",
  *   title = @Translation("Default sitemap generator"),
  *   description = @Translation("Generates a standard conform hreflang sitemap of your content."),
- *   weight = 0,
- *   settings = {
- *     "default" = true,
- *   },
  * )
  */
 class DefaultSitemapGenerator extends SitemapGeneratorBase {
@@ -108,16 +104,19 @@ class DefaultSitemapGenerator extends SitemapGeneratorBase {
     $this->writer->startElement('urlset');
 
     // Add attributes to document.
+    $attributes = self::$attributes;
     if (!$this->isHreflangSitemap()) {
-      unset(self::$attributes['xmlns:xhtml']);
+      unset($attributes['xmlns:xhtml']);
     }
-    $this->moduleHandler->alter('simple_sitemap_attributes', self::$attributes);
-    foreach (self::$attributes as $name => $value) {
+    $sitemap_variant = $this->sitemapVariant;
+    $this->moduleHandler->alter('simple_sitemap_attributes', $attributes, $sitemap_variant);
+    foreach ($attributes as $name => $value) {
       $this->writer->writeAttribute($name, $value);
     }
 
     // Add URLs to document.
-    $this->moduleHandler->alter('simple_sitemap_links', $links);
+    $sitemap_variant = $this->sitemapVariant;
+    $this->moduleHandler->alter('simple_sitemap_links', $links, $sitemap_variant);
     foreach ($links as $link) {
 
       // Add each translation variant URL as location to the sitemap.

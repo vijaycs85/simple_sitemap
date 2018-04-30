@@ -30,7 +30,7 @@ function simple_sitemap_requirements($phase) {
     case 'runtime':
 
       $generator = \Drupal::service('simple_sitemap.generator');
-      $generated_ago = $generator->getGeneratedAgo(SitemapGeneratorBase::DEFAULT_SITEMAP_TYPE); //todo
+      $generated_ago = $generator->getGeneratedAgo(SitemapGeneratorBase::DEFAULT_SITEMAP_VARIANT); //todo
       $cron_generation = $generator->getSetting('cron_generate');
 
       if (!$generated_ago) {
@@ -448,6 +448,38 @@ function simple_sitemap_update_8210() {
   }
 
   return t('The XML sitemap needs to be regenerated.');
+}
+
+/**
+ * Adding simple_sitemap.variants and simple_sitemap.types to configuration.
+ */
+function simple_sitemap_update_8211() {
+  $config_factory = \Drupal::service('config.factory');
+
+  // Add simple_sitemap.types.
+  $config_factory
+    ->getEditable('simple_sitemap.types.default_hreflang')
+    ->setData([
+      'label' => 'Default hreflang',
+      'description' => 'The default hreflang sitemap type.',
+      'sitemap_generator' => 'default',
+      'url_generators' => [
+        'custom',
+        'entity',
+        'entity_menu_link_content',
+        'arbitrary',
+      ],
+    ])->save();
+
+  // Add simple_sitemap.variants.
+  $config_factory
+    ->getEditable('simple_sitemap.variants')
+    ->set('variants', [
+      'default' => [
+        'label' => 'Default',
+        'type' => 'default_hreflang',
+      ]
+    ])->save();
 }
 
 

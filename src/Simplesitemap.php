@@ -4,6 +4,7 @@ namespace Drupal\simple_sitemap;
 
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Core\Path\PathValidator;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Datetime\DateFormatter;
@@ -55,14 +56,14 @@ class Simplesitemap {
   protected $time;
 
   /**
-   * @var \Drupal\simple_sitemap\Batch
-   */
-  protected $batch;
-
-  /**
    * @var \Drupal\Core\Extension\ModuleHandler
    */
   protected $moduleHandler;
+
+  /**
+   * @var \Drupal\simple_sitemap\Batch
+   */
+  protected $batch;
 
   /**
    * @var \Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager
@@ -101,6 +102,7 @@ class Simplesitemap {
    * @param \Drupal\Core\Path\PathValidator $path_validator
    * @param \Drupal\Core\Datetime\DateFormatter $date_formatter
    * @param \Drupal\Component\Datetime\Time $time
+   * @param \Drupal\Core\Extension\ModuleHandler $module_handler
    * @param \Drupal\simple_sitemap\Batch $batch
    * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager $url_generator_manager
    * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager $sitemap_generator_manager
@@ -113,6 +115,7 @@ class Simplesitemap {
     PathValidator $path_validator,
     DateFormatter $date_formatter,
     Time $time,
+    ModuleHandler $module_handler,
     Batch $batch,
     UrlGeneratorManager $url_generator_manager,
     SitemapGeneratorManager $sitemap_generator_manager
@@ -124,6 +127,7 @@ class Simplesitemap {
     $this->pathValidator = $path_validator;
     $this->dateFormatter = $date_formatter;
     $this->time = $time;
+    $this->moduleHandler = $module_handler;
     $this->batch = $batch;
     $this->urlGeneratorManager = $url_generator_manager;
     $this->sitemapGeneratorManager = $sitemap_generator_manager;
@@ -169,18 +173,18 @@ class Simplesitemap {
    * Returns the whole sitemap, a requested sitemap chunk,
    * or the sitemap index file.
    *
-   * @param string $type
+   * @param string $variant
    *
    * @param int $delta
    *
    * @return string|false
    *  If no sitemap ID provided, either a sitemap index is returned, or the
-   *  whole sitemap, if the amount of links does not exceed the max links
-   *  setting. If a sitemap ID is provided, a sitemap chunk is returned.
+   *  whole sitemap variant, if the amount of links does not exceed the max
+   *  links setting. If a sitemap ID is provided, a sitemap chunk is returned.
    *  Returns false if the sitemap is not retrievable from the database.
    */
-  public function getSitemap($type = SitemapGeneratorBase::DEFAULT_SITEMAP_TYPE, $delta = NULL) {
-    $chunk_info = $this->fetchSitemapChunkInfo($type);
+  public function getSitemap($variant = SitemapGeneratorBase::DEFAULT_SITEMAP_VARIANT, $delta = NULL) {
+    $chunk_info = $this->fetchSitemapChunkInfo($variant);
 
     if (empty($delta) || !isset($chunk_info[$delta])) {
 
@@ -206,22 +210,22 @@ class Simplesitemap {
   /**
    * Fetches all sitemap chunk timestamps keyed by chunk ID.
    *
-   * @param string|null $type
+   * @param string|null $variant
    *
    * @return array
    *  An array containing chunk creation timestamps keyed by chunk ID.
    */
-  protected function fetchSitemapChunkInfo($type = NULL) {
+  protected function fetchSitemapChunkInfo($variant = NULL) {
     $query = $this->db->select('simple_sitemap', 's')
       ->fields('s', ['id', 'delta', 'sitemap_created', 'type']);
 
-    if (NULL !== $type) {
-      $query->condition('s.type', $type);
+    if (NULL !== $variant) {
+      $query->condition('s.type', $variant);
     }
 
     $result = $query->execute();
 
-    return NULL === $type ? $result->fetchAllAssoc('type') : $result->fetchAllAssoc('delta');
+    return NULL === $variant ? $result->fetchAllAssoc('type') : $result->fetchAllAssoc('delta');
   }
 
   /**
@@ -239,18 +243,115 @@ class Simplesitemap {
   }
 
   /**
+   * @return array
+   *
+   * @todo document
+   */
+  public function getSitemapTypeDefinitions() {
+    $type_definitions = [];
+    foreach ($this->configFactory->listAll('simple_sitemap.types.') as $config_name) {
+      $type_definitions[explode('.', $config_name)[2]] = $this->configFactory->get($config_name)->get();
+    }
+
+    return $type_definitions;
+  }
+
+  /**
+   * @param $name
+   * @param $definition
+   *
+   * @todo document
+   */
+  public function setSitemapTypeDefinition($name, $definition) {
+    $type = $this->configFactory->getEditable("simple_sitemap.types.$name");
+    foreach ($definition as $key => $value) {
+      if (in_array($key, ['label', 'description', 'sitemap_generator', 'url_generators'])) {
+        $type->set($key, $value);
+      }
+      else {
+        //todo exception
+      }
+    }
+    $type->save();
+  }
+
+  /**
+   * @param $name
+   *
+   * @todo document
+   * @todo translate label, description
+   */
+  public function removeSitemapTypeDefinition($name) {
+    if ($name !== SitemapGeneratorBase::DEFAULT_SITEMAP_TYPE) {
+      $this->configFactory->getEditable("simple_sitemap.types.$name")->delete();
+    }
+    else {
+      //todo: exception
+    }
+  }
+
+  /**
+   * @return array
+   *
+   * @todo document
+   * @todo translate label
+   */
+  public function getSitemapVariants() {
+    return $this->configFactory->get('simple_sitemap.variants')->get('variants');
+  }
+
+  /**
+   * @param $name
+   * @param $definition
+   * @return $this
+   *
+   * @todo document
+   * @todo exceptions
+   */
+  public function addSitemapVariant($name, $definition) {
+    if (empty($definition['label'])) {
+      $definition['type'] = $name;
+    }
+
+    if (empty($definition['type'])) {
+      $definition['type'] = SitemapGeneratorBase::DEFAULT_SITEMAP_TYPE;
+    }
+
+    $variants = array_merge($this->getSitemapVariants(), [$name => ['label' => $definition['label'], 'type' => $definition['type']]]);
+    $this->configFactory->getEditable('simple_sitemap.variants')
+      ->set('variants', $variants)->save();
+
+    return $this;
+  }
+
+  /**
+   * @param $name
+   * @return $this
+   *
+   * @todo document
+   */
+  public function removeSitemapVariant($name) {
+    $variants = $this->getSitemapVariants();
+    unset($variants[$name]);
+    $this->configFactory->getEditable('simple_sitemap.variants')
+      ->set('variants', $variants)->save();
+
+    return $this;
+  }
+
+  /**
    * Generates the XML sitemap and saves it to the database.
    *
    * @param string $from
    *  Can be 'form', 'backend', 'drush' or 'nobatch'.
    *  This decides how the batch process is to be run.
    *
-   * @param array|string|null $sitemap_types
+   * @param array|string|null $variants
    *
    * @return bool|\Drupal\simple_sitemap\Simplesitemap
    */
-  public function generateSitemap($from = 'form', $sitemap_types = NULL) {
-    $sitemap_types = NULL === $sitemap_types ? NULL : (array) $sitemap_types;
+  public function generateSitemap($from = 'form', $variants = NULL) {
+    $variants = NULL === $variants ? NULL : (array) $variants;
 
     $settings = [
       'base_url' => $this->getSetting('base_url', ''),
@@ -263,72 +364,67 @@ class Simplesitemap {
 
     $this->batch->setBatchMeta(['from' => $from]);
 
-    $sitemap_generators = $this->sitemapGeneratorManager->getDefinitions();
-    $url_generators = $this->urlGeneratorManager->getDefinitions();
+    $operations = [];
 
-    foreach ([&$sitemap_generators, &$url_generators] as &$plugin_group) {
-      usort($plugin_group, function($a, $b) {
-        return $a['weight'] - $b['weight'];
-      });
-    }
+    $type_definitions = $this->getSitemapTypeDefinitions();
+    $this->moduleHandler->alter('simple_sitemap_types', $type_definitions);
 
-    $operations_per_type = [];
-    foreach ($url_generators as $url_generator) {
-      if ($url_generator['enabled']) {
-        foreach ($this->urlGeneratorManager->createInstance($url_generator['id'])->getDataSets() as $sitemap_type => $data_sets) {
+    $sitemap_variants = $this->getSitemapVariants();
+    $this->moduleHandler->alter('simple_sitemap_variants', $sitemap_variants);
 
-          // Skipping unwanted sitemap types.
-          if (NULL !== $sitemap_types && !in_array($sitemap_type, $sitemap_types)) {
-            continue;
-          }
+    foreach ($sitemap_variants as $variant_name => $variant_definition) {
 
-          // Adding a remove_sitemap operation for all sitemap types.
-          if (!isset($operations_per_type[$sitemap_type])) {
-            $operations_per_type[$sitemap_type][] = [
-              'operation' => 'removeSitemap',
+      // Skipping unwanted sitemap variants.
+      if (NULL !== $variants && !in_array($variant_name, $variants)) {
+        continue;
+      }
+
+      $type = $variant_definition['type'];
+
+      // Adding a remove_sitemap operation for all sitemap variants.
+      $operations[] = [
+        'operation' => 'removeSitemap',
+        'arguments' => [
+          'sitemap_generator' => $type_definitions[$type]['sitemap_generator'],
+          'variant' => $variant_name,
+        ]
+      ];
+
+      // Adding generate_sitemap operations for all data sets.
+      foreach ($type_definitions[$type]['url_generators'] as $url_generator_id) {
+        foreach ($this->urlGeneratorManager->createInstance($url_generator_id)
+                   ->setSitemapVariant($variant_name)
+                   ->getDataSets() as $data_set) {
+          if (!empty($data_set)) {
+            $operations[] = [
+              'operation' => 'generateSitemap',
               'arguments' => [
-                'sitemap_generator' => $sitemap_type,
-              ]
+                'url_generator' => $url_generator_id,
+                'data_set' => $data_set,
+                'variant' => $variant_name,
+                'sitemap_generator' => $type_definitions[$type]['sitemap_generator'],
+                'settings' => $settings,
+              ],
             ];
-          }
-
-          // Adding generate_sitemap operations for all data sets.
-          foreach ($data_sets as $data_set) {
-            if (!empty($data_set)) {
-              $operations_per_type[$sitemap_type][] = [
-                'operation' => 'generateSitemap',
-                'arguments' => [
-                  'url_generator' => $url_generator['id'],
-                  'data_set' => $data_set,
-                  'settings' => $settings,
-                ],
-              ];
-            }
           }
         }
       }
-    }
 
-    // Adding generate_index operations at the right position for all sitemap types.
-    foreach ($operations_per_type as $sitemap_type => $operations) {
-      $operations_per_type[$sitemap_type][] = [
+      // Adding generate_index operations for all sitemap variants.
+      $operations[] = [
         'operation' => 'generateIndex',
         'arguments' => [
-          'sitemap_generator' => $sitemap_type,
+          'sitemap_generator' => $type_definitions[$type]['sitemap_generator'],
+          'variant' => $variant_name,
           'settings' => $settings,
         ],
       ];
     }
 
-    // todo Sort operations according to sitemap type weight.
-    // todo Only add operation if sitemap type is enabled.
-
-    // Adding operations to batch.
-    if (!empty($operations_per_type)) {
-      foreach ($operations_per_type as $sitemap_type => $operations) {
-        foreach ($operations as $operation_data) {
-          $this->batch->addOperation($operation_data['operation'], $operation_data['arguments']);
-        }
+    // Adding operations to and starting batch.
+    if (!empty($operations)) {
+      foreach ($operations as $operation_data) {
+        $this->batch->addOperation($operation_data['operation'], $operation_data['arguments']);
       }
       $success = $this->batch->start();
     }
@@ -337,25 +433,25 @@ class Simplesitemap {
   }
 
   /**
-   * @param null|array $sitemap_types
+   * @param null|array $variant
    *
    * @todo Add removeSitemap API method.
    */
-  public function removeSitemap($sitemap_types = NULL) {
+  public function removeSitemap($variant = NULL) {
 
   }
 
   /**
    * Returns a 'time ago' string of last timestamp generation.
    *
-   * @param string|null $type
+   * @param string|null $variant
    *
    * @return string|array|false
    *  Formatted timestamp of last sitemap generation, otherwise FALSE.
    */
-  public function getGeneratedAgo($type = NULL) {
-    $chunks = $this->fetchSitemapChunkInfo($type);
-    if ($type !== NULL) {
+  public function getGeneratedAgo($variant = NULL) {
+    $chunks = $this->fetchSitemapChunkInfo($variant);
+    if ($variant !== NULL) {
       return isset($chunks[DefaultSitemapGenerator::FIRST_CHUNK_DELTA]->sitemap_created)
         ? $this->dateFormatter
           ->formatInterval($this->time->getRequestTime() - $chunks[DefaultSitemapGenerator::FIRST_CHUNK_DELTA]
@@ -441,7 +537,7 @@ class Simplesitemap {
    * @todo: enableEntityType automatically
    */
   public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings = []) {
-    $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
+    $bundle_name = NULL !== $bundle_name ? $bundle_name : $entity_type_id;
 
     if (!empty($old_settings = $this->getBundleSettings($entity_type_id, $bundle_name))) {
       $settings = array_merge($old_settings, $settings);
@@ -524,11 +620,11 @@ class Simplesitemap {
    */
   public function getBundleSettings($entity_type_id = NULL, $bundle_name = NULL) {
     if (NULL !== $entity_type_id) {
-      $bundle_name = empty($bundle_name) ? $entity_type_id : $bundle_name;
+      $bundle_name = NULL !== $bundle_name ? $bundle_name : $entity_type_id;
       $bundle_settings = $this->configFactory
         ->get("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name")
         ->get();
-      return !empty($bundle_settings) ? $bundle_settings : FALSE;
+      $bundle_settings = !empty($bundle_settings) ? $bundle_settings : FALSE;
     }
     else {
       $config_names = $this->configFactory->listAll('simple_sitemap.bundle_settings.');
@@ -537,8 +633,9 @@ class Simplesitemap {
         $config_name_parts = explode('.', $config_name);
         $all_settings[$config_name_parts[2]][$config_name_parts[3]] = $this->configFactory->get($config_name)->get();
       }
-      return $all_settings;
+      $bundle_settings = $all_settings;
     }
+    return $bundle_settings;
   }
 
   /**

@@ -2,6 +2,7 @@
 
 namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 
+use Drupal\Core\Extension\ModuleHandler;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
 use Drupal\simple_sitemap\Simplesitemap;
@@ -20,7 +21,6 @@ use Drupal\Core\Menu\MenuLinkTree;
  *   id = "entity_menu_link_content",
  *   title = @Translation("Menu link URL generator"),
  *   description = @Translation("Generates menu link URLs by overriding the 'entity' URL generator."),
- *   weight = 5,
  *   settings = {
  *     "overrides_entity_type" = "menu_link_content",
  *   },
@@ -34,10 +34,15 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
   protected $menuLinkTree;
 
   /**
+   * @var \Drupal\Core\Extension\ModuleHandler
+   */
+  protected $moduleHandler;
+
+  /**
    * EntityMenuLinkContentUrlGenerator constructor.
    * @param array $configuration
-   * @param string $plugin_id
-   * @param mixed $plugin_definition
+   * @param $plugin_id
+   * @param $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
    * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager $sitemap_generator_manager
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
@@ -45,6 +50,7 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
    * @param \Drupal\simple_sitemap\Logger $logger
    * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
    * @param \Drupal\Core\Menu\MenuLinkTree $menu_link_tree
+   * @param \Drupal\Core\Extension\ModuleHandler $module_handler
    */
   public function __construct(
     array $configuration,
@@ -56,7 +62,8 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
     EntityTypeManagerInterface $entity_type_manager,
     Logger $logger,
     EntityHelper $entityHelper,
-    MenuLinkTree $menu_link_tree
+    MenuLinkTree $menu_link_tree,
+    ModuleHandler $module_handler
   ) {
     parent::__construct(
       $configuration,
@@ -70,6 +77,7 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
       $entityHelper
     );
     $this->menuLinkTree = $menu_link_tree;
+    $this->moduleHandler = $module_handler;
   }
 
   public static function create(
@@ -87,7 +95,8 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
       $container->get('entity_type.manager'),
       $container->get('simple_sitemap.logger'),
       $container->get('simple_sitemap.entity_helper'),
-      $container->get('menu.link_tree')
+      $container->get('menu.link_tree'),
+      $container->get('module_handler')
     );
   }
 
@@ -97,10 +106,21 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
   public function getDataSets() {
     $data_sets = [];
     $bundle_settings = $this->generator->getBundleSettings();
-    if (!empty($bundle_settings['menu_link_content'])) {
-      foreach ($bundle_settings['menu_link_content'] as $bundle_name => $settings) {
+    $entity_type_name = 'menu_link_content';
+    if (!empty($bundle_settings[$entity_type_name])) {
+      foreach ($bundle_settings[$entity_type_name] as $bundle_name => $settings) {
+        $bundle_name_alterable = $bundle_name;
+
+        $this->moduleHandler->alter('simple_sitemap_bundle_settings', $settings, $entity_type_name, $bundle_name_alterable);
+
+        // Skip this bundle if it is to be generated in a different sitemap variant.
+        if (NULL !== $this->sitemapVariant && isset($settings['variant'])
+          && $settings['variant'] !== $this->sitemapVariant) {
+          continue;
+        }
+
         if ($settings['index']) {
-          $data_sets[$this->getPluginDefinition()['settings']['default_sitemap_generator']][] = $bundle_name;
+          $data_sets[] = $bundle_name;
         }
       }
     }
@@ -175,9 +195,6 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
       // Additional info useful in hooks.
       'meta' => [
         'path' => $path,
-        'sitemap_generator' => !empty($entity_settings['sitemap_generator'])
-          ? $entity_settings['sitemap_generator']
-          : $this->getPluginDefinition()['settings']['default_sitemap_generator']
       ]
     ];
     if (!empty($entity)) {

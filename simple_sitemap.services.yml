@@ -10,6 +10,7 @@ services:
       - '@path.validator'
       - '@date.formatter'
       - '@datetime.time'
+      - '@module_handler'
       - '@simple_sitemap.batch'
       - '@plugin.manager.simple_sitemap.url_generator'
       - '@plugin.manager.simple_sitemap.sitemap_generator'

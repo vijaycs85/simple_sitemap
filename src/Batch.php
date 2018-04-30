@@ -81,6 +81,8 @@ class Batch {
       ->setContext($context)
       ->setSettings($arguments['settings'])
       ->setBatchMeta($batch_meta)
+      ->setSitemapVariant($arguments['variant'])
+      ->setSitemapGeneratorId($arguments['sitemap_generator'])
       ->generate($arguments['data_set']);
   }
 
@@ -97,6 +99,7 @@ class Batch {
     \Drupal::service('plugin.manager.simple_sitemap.sitemap_generator')
       ->createInstance($arguments['sitemap_generator'])
       ->setSettings($arguments['settings'])
+      ->setSitemapVariant($arguments['variant'])
       ->generateIndex();
   }
 
@@ -112,6 +115,7 @@ class Batch {
   public static function removeSitemap(array $arguments, array $batch_meta, &$context) {
     \Drupal::service('plugin.manager.simple_sitemap.sitemap_generator')
       ->createInstance($arguments['sitemap_generator'])
+      ->setSitemapVariant($arguments['variant'])
       ->remove();
   }
 

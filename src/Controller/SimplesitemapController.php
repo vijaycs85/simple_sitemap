@@ -48,13 +48,14 @@ class SimplesitemapController extends ControllerBase {
   }
 
   /**
-   * Returns the whole sitemap of a certain type, its requested sitemap chunk,
+   * Returns the whole sitemap variant, its requested chunk,
    * or its sitemap index file.
    * Caches the response in case of expected output, prevents caching otherwise.
    *
-   * @param string $type
-   *  Optional name of sitemap type. This corresponds to the plugin ID
-   *  of the sitemap generator plugin to be responsible for the generation.
+   * @param string $variant
+   *  Optional name of sitemap variant.
+   *  @see \hook_simple_sitemap_variants_alter()
+   *  @see Simplesitemap::getSitemapVariants()
    *
    * @param int $delta
    *  Optional delta of the sitemap chunk. If none provided, the first chunk or
@@ -65,8 +66,8 @@ class SimplesitemapController extends ControllerBase {
    * @return object
    *  Returns an XML response.
    */
-  public function getSitemap($type = SitemapGeneratorBase::DEFAULT_SITEMAP_TYPE, $delta = NULL) {
-    $output = $this->generator->getSitemap($type, $delta);
+  public function getSitemap($variant = SitemapGeneratorBase::DEFAULT_SITEMAP_VARIANT, $delta = NULL) {
+    $output = $this->generator->getSitemap($variant, $delta);
     if (!$output) {
       $this->cacheKillSwitch->trigger();
       throw new NotFoundHttpException();

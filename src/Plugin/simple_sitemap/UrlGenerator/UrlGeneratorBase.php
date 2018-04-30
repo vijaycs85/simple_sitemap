@@ -86,6 +86,16 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
   protected $entityHelper;
 
   /**
+   * @var string
+   */
+  protected $sitemapGeneratorId;
+
+  /**
+   * @var string
+   */
+  protected $sitemapVariant;
+
+  /**
    * UrlGeneratorBase constructor.
    * @param array $configuration
    * @param string $plugin_id
@@ -163,17 +173,34 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
   }
 
   /**
+   * @param string $sitemap_generator_id
+   * @return $this
+   */
+  public function setSitemapGeneratorId($sitemap_generator_id) {
+    $this->sitemapGeneratorId = $sitemap_generator_id;
+    return $this;
+  }
+
+  /**
+   * @param string $sitemap_variant
+   * @return $this
+   */
+  public function setSitemapVariant($sitemap_variant) {
+    $this->sitemapVariant = $sitemap_variant;
+    return $this;
+  }
+
+  /**
    * @return array
-   * @todo Plugins can create links for other sitemaps than the default specified one in plugin annotation. Hence this method may return processed paths for the wrong sitemap.
    */
   protected function getProcessedElements() {
-    return !empty($this->context['results']['processed_paths'][$this->getPluginDefinition()['settings']['default_sitemap_generator']])
-      ? $this->context['results']['processed_paths'][$this->getPluginDefinition()['settings']['default_sitemap_generator']]
+    return !empty($this->context['results']['processed_paths'][$this->sitemapVariant])
+      ? $this->context['results']['processed_paths'][$this->sitemapVariant]
       : [];
   }
 
   protected function addProcessedElement($element) {
-    $this->context['results']['processed_paths'][$this->getPluginDefinition()['settings']['default_sitemap_generator']][] = $element;
+    $this->context['results']['processed_paths'][$this->sitemapVariant][] = $element;
 
     // Clean up duplicate data of processed sitemap types to save memory.
     if (count($this->context['results']['processed_paths']) > 1) {
@@ -189,17 +216,15 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
   }
 
   protected function addBatchResultToQueue($result) {
-    $sitemap_type = !empty($result['meta']['sitemap_generator'])
-      ? $result['meta']['sitemap_generator']
-      : $this->getPluginDefinition()['settings']['default_sitemap_generator'];
-    $this->context['results']['generate'][$sitemap_type][] = $result;
+    $this->context['results']['generate'][$this->sitemapVariant]['sitemap_generator_id'] = $this->sitemapGeneratorId;
+    $this->context['results']['generate'][$this->sitemapVariant]['queued_links'][] = $result;
   }
 
   protected function sliceFromBatchResultQueue($sitemap_type, $number_results) {
-    $this->context['results']['generate'][$sitemap_type] = array_slice(
-      $this->context['results']['generate'][$sitemap_type], $number_results
+    $this->context['results']['generate'][$sitemap_type]['queued_links'] = array_slice(
+      $this->context['results']['generate'][$sitemap_type]['queued_links'], $number_results
     );
-    if (empty($this->context['results']['generate'][$sitemap_type])) {
+    if (empty($this->context['results']['generate'][$sitemap_type]['queued_links'])) {
       unset($this->context['results']['generate'][$sitemap_type]);
     }
   }
@@ -353,14 +378,15 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
     // segment before the generation process.
     if ($this->isDrupalBatch() || $this->batchMeta['current_generate_sitemap_operation_no']
       == $this->batchMeta['last_generate_sitemap_operation_no']) {
-      foreach ($this->getBatchResultQueue() as $sitemap_type => $queued_sitemap_links) {
+      foreach ($this->getBatchResultQueue() as $sitemap_variant => $queue_data) {
 
         /** @var SitemapGeneratorBase $sitemap_generator */
         $sitemap_generator = $this->sitemapGeneratorManager
-          ->createInstance($sitemap_type)
+          ->createInstance($queue_data['sitemap_generator_id'])
+          ->setSitemapVariant($sitemap_variant)
           ->setSettings(['excluded_languages' => $this->settings['excluded_languages']]);
 
-        foreach (array_chunk($queued_sitemap_links, $this->settings['max_links']) as $chunk_links) {
+        foreach (array_chunk($queue_data['queued_links'], $this->settings['max_links']) as $chunk_links) {
 
           // Generating chunk from all links of this sitemap type if this is not a batch operation.
           if (!$this->isDrupalBatch()
@@ -387,7 +413,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
             $sitemap_generator->generate($chunk_links);
 
             // Remove links from result array that have been generated.
-            $this->sliceFromBatchResultQueue($sitemap_type, count($chunk_links));
+            $this->sliceFromBatchResultQueue($sitemap_variant, count($chunk_links));
           }
         }
       }
@@ -409,7 +435,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
   protected function setProcessingBatchMessage() {
     $results = $this->getBatchResultQueue();
     end($results);
-    $sitemap_type_results = $results[key($results)];
+    $sitemap_type_results = $results[key($results)]['queued_links'];
     end($sitemap_type_results);
     if (!empty($path = $sitemap_type_results[key($sitemap_type_results)]['meta']['path'])) {
       $this->context['message'] = $this->t(self::PROCESSING_PATH_MESSAGE, [
@@ -445,7 +471,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
   }
 
   /**
-   * @return array
+   * @return mixed
    */
   abstract public function getDataSets();
 

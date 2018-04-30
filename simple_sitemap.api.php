@@ -15,9 +15,13 @@
  * This hook gets invoked for every sitemap chunk generated.
  *
  * @param array &$links
- *   Array containing multilingual links generated for each path to be indexed.
+ *   Array containing multilingual links generated for each path to be indexed
+ *
+ * @param string|null $sitemap_variant
+ *
+ * @todo Make work for sitemap types.
  */
-function hook_simple_sitemap_links_alter(array &$links) {
+function hook_simple_sitemap_links_alter(array &$links, $sitemap_variant) {
 
   // Remove German URL for a certain path in the hreflang sitemap.
   foreach ($links as $key => $link) {
@@ -43,12 +47,13 @@ function hook_simple_sitemap_links_alter(array &$links) {
  * Add arbitrary links to the sitemap.
  *
  * @param array &$arbitrary_links
+ * @param string|null $sitemap_variant
  */
-function hook_simple_sitemap_arbitrary_links_alter(array &$arbitrary_links) {
+function hook_simple_sitemap_arbitrary_links_alter(array &$arbitrary_links, $sitemap_variant) {
 
-  // Add an arbitrary link.
+  // Add an arbitrary link to all sitemap variants.
   $arbitrary_links[] = [
-    'url' => 'http://this-is-your-life.net/tyler',
+    'url' => 'http://some-arbitrary-link/',
     'priority' => '0.5',
 
     // An ISO8601 formatted date.
@@ -66,6 +71,15 @@ function hook_simple_sitemap_arbitrary_links_alter(array &$arbitrary_links) {
       'de' => 'http://this-is-your-life.net/en/tyler',
     ]
   ];
+
+  // Add an arbitrary link to the 'fight_club' sitemap variant only.
+  switch ($sitemap_variant) {
+    case 'fight_club':
+      $arbitrary_links[] = [
+        'url' => 'http://this-is-your-life.net/tyler',
+      ];
+      break;
+  }
 }
 
 /**
@@ -73,8 +87,9 @@ function hook_simple_sitemap_arbitrary_links_alter(array &$arbitrary_links) {
  * Attributes can be added, changed and removed.
  *
  * @param array &$attributes
+ * @param string|null $sitemap_variant
  */
-function hook_simple_sitemap_attributes_alter(array &$attributes) {
+function hook_simple_sitemap_attributes_alter(array &$attributes, $sitemap_variant) {
 
   // Remove the xhtml attribute e.g. if no xhtml sitemap elements are present.
   unset($attributes['xmlns:xhtml']);
@@ -85,8 +100,9 @@ function hook_simple_sitemap_attributes_alter(array &$attributes) {
  * Attributes can be added, changed and removed.
  *
  * @param array &$index_attributes
+ * @param string|null $sitemap_variant
  */
-function hook_simple_sitemap_index_attributes_alter(array &$index_attributes) {
+function hook_simple_sitemap_index_attributes_alter(array &$index_attributes, $sitemap_variant) {
 
   // Add some attribute to the sitemap index.
   $index_attributes['name'] = 'value';
@@ -95,16 +111,67 @@ function hook_simple_sitemap_index_attributes_alter(array &$index_attributes) {
 /**
  * Alter properties of and remove generator plugins.
  *
- * @param array $generators
+ * @param array $url_generators
  */
-function hook_simple_sitemap_url_generators_alter(array &$generators) {
+function hook_simple_sitemap_url_generators_alter(array &$url_generators) {
 
   // Remove the entity generator.
-  // Useful when creating your own entity generator plugin.
-  unset($generators['entity']);
+  unset($url_generators['entity']);
+}
 
-  // Change the weight of the arbitrary link generator.
-  $generators['arbitrary']['weight'] = -100;
+/**
+ * Alter properties of and remove generator plugins.
+ *
+ * @param array $sitemap_generators
+ */
+function hook_simple_sitemap_sitemap_generators_alter(array &$sitemap_generators) {
+
+  // Remove the default generator.
+  unset($sitemap_generators['default']);
+}
+
+/**
+ * @param array $sitemap_types
+ */
+function hook_simple_sitemap_types_alter(array &$sitemap_types) {
+
+  // Remove the custom links generator from the default sitemap type definition.
+  $key = array_search('custom', $sitemap_types['default_hreflang']['url_generators']);
+  unset($sitemap_types['default_hreflang']['url_generators'][$key]);
+
+  // Define a new sitemap type to be generated with the default sitemap generator.
+  // Make it use only the custom and arbitrary link generators.
+  $sitemap_types['fight_club_sitemap_type'] = [
+    'label' => t('Fight Club Sitemap'),
+    'description' => t('The second rule of Fight Club is...'),
+    'sitemap_generator' => 'default',
+    'url_generators' => [
+      'custom',
+      'arbitrary',
+    ],
+  ];
+}
+
+/**
+ * @param array $variants
+ */
+function hook_simple_sitemap_variants_alter(array &$variants) {
+
+  // Add a new sitemap variant of the 'fight_club_sitemap_type' type.
+  $variants['fight_club'] = [
+    'type' => 'fight_club_sitemap_type',
+    'label' => t('Fight Club'),
+  ];
+
+}
+
+/**
+ * @param $bundle_settings
+ * @param $entity_type_id
+ * @param $bundle_name
+ */
+function hook_simple_sitemap_bundle_settings_alter(array &$bundle_settings, $entity_type_id, $bundle_name) {
+
 }
 
 /**
