@@ -166,11 +166,11 @@ function hook_simple_sitemap_variants_alter(array &$variants) {
 }
 
 /**
- * @param $bundle_settings
- * @param $entity_type_id
- * @param $bundle_name
+ * @param array $bundle_settings
+ * @param array $bundle_context
+ * @param string|null $sitemap_variant
  */
-function hook_simple_sitemap_bundle_settings_alter(array &$bundle_settings, $entity_type_id, $bundle_name) {
+function hook_simple_sitemap_bundle_settings_alter(array &$bundle_settings, $bundle_context, $sitemap_variant) {
 
 }
 

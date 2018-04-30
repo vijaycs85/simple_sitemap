@@ -113,11 +113,14 @@ class EntityUrlGenerator extends UrlGeneratorBase {
           }
         }
 
-        $entity_type_name_alterable = $entity_type_name;
         foreach ($bundles as $bundle_name => $bundle_settings) {
-          $bundle_name_alterable = $bundle_name;
 
-          $this->moduleHandler->alter('simple_sitemap_bundle_settings', $bundle_settings, $entity_type_name_alterable, $bundle_name_alterable);
+          $bundle_context = [
+            'entity_type_id' => $entity_type_name,
+            'bundle_name' => $bundle_name,
+          ];
+          $sitemap_variant = $this->sitemapVariant;
+          $this->moduleHandler->alter('simple_sitemap_bundle_settings', $bundle_settings, $bundle_context, $sitemap_variant);
 
           // Skip this bundle if it is to be generated in a different sitemap variant.
           if (NULL !== $this->sitemapVariant && isset($bundle_settings['variant'])

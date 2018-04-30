@@ -106,20 +106,23 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
   public function getDataSets() {
     $data_sets = [];
     $bundle_settings = $this->generator->getBundleSettings();
-    $entity_type_name = 'menu_link_content';
-    if (!empty($bundle_settings[$entity_type_name])) {
-      foreach ($bundle_settings[$entity_type_name] as $bundle_name => $settings) {
-        $bundle_name_alterable = $bundle_name;
+    if (!empty($bundle_settings['menu_link_content'])) {
+      foreach ($bundle_settings['menu_link_content'] as $bundle_name => $bundle_settings) {
 
-        $this->moduleHandler->alter('simple_sitemap_bundle_settings', $settings, $entity_type_name, $bundle_name_alterable);
+        $bundle_context = [
+          'entity_type_id' => 'menu_link_content',
+          'bundle_name' => $bundle_name,
+        ];
+        $sitemap_variant = $this->sitemapVariant;
+        $this->moduleHandler->alter('simple_sitemap_bundle_settings', $bundle_settings, $bundle_context, $sitemap_variant);
 
         // Skip this bundle if it is to be generated in a different sitemap variant.
-        if (NULL !== $this->sitemapVariant && isset($settings['variant'])
-          && $settings['variant'] !== $this->sitemapVariant) {
+        if (NULL !== $this->sitemapVariant && isset($bundle_settings['variant'])
+          && $bundle_settings['variant'] !== $this->sitemapVariant) {
           continue;
         }
 
-        if ($settings['index']) {
+        if ($bundle_settings['index']) {
           $data_sets[] = $bundle_name;
         }
       }
