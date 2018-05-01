@@ -30,7 +30,7 @@ function simple_sitemap_requirements($phase) {
     case 'runtime':
 
       $generator = \Drupal::service('simple_sitemap.generator');
-      $generated_ago = $generator->getGeneratedAgo(SitemapGeneratorBase::DEFAULT_SITEMAP_VARIANT); //todo
+      $generated_ago = $generator->getGeneratedAgo(\Drupal\simple_sitemap\Simplesitemap::DEFAULT_SITEMAP_VARIANT); //todo
       $cron_generation = $generator->getSetting('cron_generate');
 
       if (!$generated_ago) {

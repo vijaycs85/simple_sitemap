@@ -20,6 +20,9 @@ use Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager
  */
 class Simplesitemap {
 
+  const DEFAULT_SITEMAP_TYPE = 'default_hreflang';
+  const DEFAULT_SITEMAP_VARIANT = 'default';
+
   /**
    * @var \Drupal\simple_sitemap\EntityHelper
    */
@@ -183,8 +186,8 @@ class Simplesitemap {
    *  links setting. If a sitemap ID is provided, a sitemap chunk is returned.
    *  Returns false if the sitemap is not retrievable from the database.
    */
-  public function getSitemap($variant = SitemapGeneratorBase::DEFAULT_SITEMAP_VARIANT, $delta = NULL) {
-    $chunk_info = $this->fetchSitemapChunkInfo($variant);
+  public function getSitemap($variant = self::DEFAULT_SITEMAP_VARIANT, $delta = NULL) {
+    $chunk_info = $this->fetchSitemapVariantInfo($variant);
 
     if (empty($delta) || !isset($chunk_info[$delta])) {
 
@@ -208,14 +211,15 @@ class Simplesitemap {
   }
 
   /**
-   * Fetches all sitemap chunk timestamps keyed by chunk ID.
+   * Fetches info about all sitemap variants and their chunks.
    *
    * @param string|null $variant
    *
    * @return array
-   *  An array containing chunk creation timestamps keyed by chunk ID.
+   *  An array containing all sitemap chunk IDs, deltas and creation timestamps
+   * keyed by their variant ID.
    */
-  protected function fetchSitemapChunkInfo($variant = NULL) {
+  protected function fetchSitemapVariantInfo($variant = NULL) {
     $query = $this->db->select('simple_sitemap', 's')
       ->fields('s', ['id', 'delta', 'sitemap_created', 'type']);
 
@@ -279,10 +283,9 @@ class Simplesitemap {
    * @param $name
    *
    * @todo document
-   * @todo translate label, description
    */
   public function removeSitemapTypeDefinition($name) {
-    if ($name !== SitemapGeneratorBase::DEFAULT_SITEMAP_TYPE) {
+    if ($name !== self::DEFAULT_SITEMAP_TYPE) {
       $this->configFactory->getEditable("simple_sitemap.types.$name")->delete();
     }
     else {
@@ -310,11 +313,11 @@ class Simplesitemap {
    */
   public function addSitemapVariant($name, $definition) {
     if (empty($definition['label'])) {
-      $definition['type'] = $name;
+      $definition['label'] = $name;
     }
 
     if (empty($definition['type'])) {
-      $definition['type'] = SitemapGeneratorBase::DEFAULT_SITEMAP_TYPE;
+      $definition['type'] = self::DEFAULT_SITEMAP_TYPE;
     }
 
     $variants = array_merge($this->getSitemapVariants(), [$name => ['label' => $definition['label'], 'type' => $definition['type']]]);
@@ -332,9 +335,11 @@ class Simplesitemap {
    */
   public function removeSitemapVariant($name) {
     $variants = $this->getSitemapVariants();
-    unset($variants[$name]);
-    $this->configFactory->getEditable('simple_sitemap.variants')
-      ->set('variants', $variants)->save();
+    if (isset($variants[$name])) {
+      unset($variants[$name]);
+      $this->configFactory->getEditable('simple_sitemap.variants')
+        ->set('variants', $variants)->save();
+    }
 
     return $this;
   }
@@ -450,7 +455,7 @@ class Simplesitemap {
    *  Formatted timestamp of last sitemap generation, otherwise FALSE.
    */
   public function getGeneratedAgo($variant = NULL) {
-    $chunks = $this->fetchSitemapChunkInfo($variant);
+    $chunks = $this->fetchSitemapVariantInfo($variant);
     if ($variant !== NULL) {
       return isset($chunks[DefaultSitemapGenerator::FIRST_CHUNK_DELTA]->sitemap_created)
         ? $this->dateFormatter
@@ -550,7 +555,7 @@ class Simplesitemap {
       ->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name");
     foreach ($settings as $setting_key => $setting) {
       if ($setting_key === 'index') {
-        $setting = intval($setting);
+        $setting = (int) $setting;
       }
       $bundle_settings->set($setting_key, $setting);
     }

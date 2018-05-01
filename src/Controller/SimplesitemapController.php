@@ -66,7 +66,7 @@ class SimplesitemapController extends ControllerBase {
    * @return object
    *  Returns an XML response.
    */
-  public function getSitemap($variant = SitemapGeneratorBase::DEFAULT_SITEMAP_VARIANT, $delta = NULL) {
+  public function getSitemap($variant = Simplesitemap::DEFAULT_SITEMAP_VARIANT, $delta = NULL) {
     $output = $this->generator->getSitemap($variant, $delta);
     if (!$output) {
       $this->cacheKillSwitch->trigger();

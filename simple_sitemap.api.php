@@ -109,7 +109,7 @@ function hook_simple_sitemap_index_attributes_alter(array &$index_attributes, $s
 }
 
 /**
- * Alter properties of and remove generator plugins.
+ * Alter properties of and remove URL generator plugins.
  *
  * @param array $url_generators
  */
@@ -120,7 +120,7 @@ function hook_simple_sitemap_url_generators_alter(array &$url_generators) {
 }
 
 /**
- * Alter properties of and remove generator plugins.
+ * Alter properties of and remove sitemap generator plugins.
  *
  * @param array $sitemap_generators
  */
