@@ -10,6 +10,10 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\system\MenuInterface;
 use Drupal\language\ConfigurableLanguageInterface;
+use Drupal\simple_sitemap\Plugin\Field\SimplesitemapIndexItem;
+use Drupal\simple_sitemap\Plugin\Field\SimplesitemapPriorityItem;
+use Drupal\simple_sitemap\Plugin\Field\SimplesitemapChangefreqItem;
+use Drupal\simple_sitemap\Plugin\Field\SimplesitemapIncludeImagesItem;
 
 /**
  *Implements hook_help.
@@ -246,3 +250,48 @@ function simple_sitemap_robotstxt() {
     'Sitemap: ' . $GLOBALS['base_url'] . '/sitemap.xml',
   ];
 }
+
+/**
+ * Implements hook_entity_base_field_info().
+ */
+function simple_sitemap_entity_base_field_info(\Drupal\Core\Entity\EntityTypeInterface $entity_type) {
+
+  /** @var \Drupal\Core\Entity\ContentEntityTypeInterface[] $entity_types */
+  $entity_types = \Drupal::service('simple_sitemap.entity_helper')->getSupportedEntityTypes();
+  $fields = [];
+  if (isset($entity_types[$entity_type->id()])) {
+    $definitions = [
+      'simple_sitemap_index' => [
+        'type' => 'boolean',
+        'name' => 'Indexed in sitemap',
+        'class' => SimplesitemapIndexItem::class,
+      ],
+      'simple_sitemap_priority' => [
+        'type' => 'decimal',
+        'name' => 'Priority in sitemap',
+        'class' => SimplesitemapPriorityItem::class,
+      ],
+      'simple_sitemap_changefreq' => [
+        'type' => 'string',
+        'name' => 'Change frequency in sitemap',
+        'class' => SimplesitemapChangefreqItem::class,
+      ],
+      'simple_sitemap_include_images' => [
+        'type' => 'boolean',
+        'name' => 'Include images in sitemap',
+        'class' => SimplesitemapIncludeImagesItem::class,
+      ],
+    ];
+
+    foreach ($definitions as $id => $definition) {
+      $fields[$id] = \Drupal\Core\Field\BaseFieldDefinition::create($definition['type'])
+        ->setCardinality(1)
+        ->setName($definition['name'])
+        ->setComputed(TRUE)
+        ->setClass($definition['class']);
+    }
+  }
+
+  return $fields;
+}
+

@@ -622,6 +622,8 @@ class Simplesitemap {
    *  Array of sitemap settings for an entity bundle, a non-bundle entity type
    *  or for all entity types and their bundles.
    *  False if entity type does not exist.
+   *
+   * @todo May want to return default settings in case bundle of enabled entity type does not have its bundle_settings.*.* configuration file.
    */
   public function getBundleSettings($entity_type_id = NULL, $bundle_name = NULL) {
     if (NULL !== $entity_type_id) {
