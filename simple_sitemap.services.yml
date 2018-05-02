@@ -7,6 +7,7 @@ services:
       - '@config.factory'
       - '@database'
       - '@entity_type.manager'
+      - '@entity_type.bundle.info'
       - '@path.validator'
       - '@date.formatter'
       - '@datetime.time'

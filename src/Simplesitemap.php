@@ -3,6 +3,7 @@
 namespace Drupal\simple_sitemap;
 
 use Drupal\Core\Database\Connection;
+use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Core\Path\PathValidator;
@@ -42,6 +43,11 @@ class Simplesitemap {
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityTypeManager;
+
+  /**
+   * @var \Drupal\Core\Entity\EntityTypeBundleInfoInterface
+   */
+  protected $entityTypeBundleInfo;
 
   /**
    * @var \Drupal\Core\Path\PathValidator
@@ -102,6 +108,7 @@ class Simplesitemap {
    * @param \Drupal\Core\Config\ConfigFactory $config_factory
    * @param \Drupal\Core\Database\Connection $database
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entity_type_bundle_info
    * @param \Drupal\Core\Path\PathValidator $path_validator
    * @param \Drupal\Core\Datetime\DateFormatter $date_formatter
    * @param \Drupal\Component\Datetime\Time $time
@@ -115,6 +122,7 @@ class Simplesitemap {
     ConfigFactory $config_factory,
     Connection $database,
     EntityTypeManagerInterface $entity_type_manager,
+    EntityTypeBundleInfoInterface $entity_type_bundle_info,
     PathValidator $path_validator,
     DateFormatter $date_formatter,
     Time $time,
@@ -127,6 +135,7 @@ class Simplesitemap {
     $this->configFactory = $config_factory;
     $this->db = $database;
     $this->entityTypeManager = $entity_type_manager;
+    $this->entityTypeBundleInfo = $entity_type_bundle_info;
     $this->pathValidator = $path_validator;
     $this->dateFormatter = $date_formatter;
     $this->time = $time;
@@ -622,25 +631,46 @@ class Simplesitemap {
    *  Array of sitemap settings for an entity bundle, a non-bundle entity type
    *  or for all entity types and their bundles.
    *  False if entity type does not exist.
-   *
-   * @todo May want to return default settings in case bundle of enabled entity type does not have its bundle_settings.*.* configuration file.
    */
   public function getBundleSettings($entity_type_id = NULL, $bundle_name = NULL) {
     if (NULL !== $entity_type_id) {
+
+      // Get bundle settings saved in simple_sitemap.bundle_settings.*.* configuration.
       $bundle_name = NULL !== $bundle_name ? $bundle_name : $entity_type_id;
       $bundle_settings = $this->configFactory
         ->get("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name")
         ->get();
-      $bundle_settings = !empty($bundle_settings) ? $bundle_settings : FALSE;
+
+      // If not found and entity type is enabled, return default bundle settings.
+      if (empty($bundle_settings)) {
+        if ($this->entityTypeIsEnabled($entity_type_id)
+          && isset($this->entityTypeBundleInfo->getBundleInfo($entity_type_id)[$bundle_name])) {
+          self::supplementDefaultSettings('entity', $bundle_settings, ['index' => 0]);
+        }
+        else {
+          $bundle_settings = FALSE;
+        }
+      }
     }
     else {
+      // Get all bundle settings saved in simple_sitemap.bundle_settings.*.* configuration.
       $config_names = $this->configFactory->listAll('simple_sitemap.bundle_settings.');
-      $all_settings = [];
+      $bundle_settings = [];
       foreach ($config_names as $config_name) {
         $config_name_parts = explode('.', $config_name);
-        $all_settings[$config_name_parts[2]][$config_name_parts[3]] = $this->configFactory->get($config_name)->get();
+        $bundle_settings[$config_name_parts[2]][$config_name_parts[3]] = $this->configFactory->get($config_name)->get();
       }
-      $bundle_settings = $all_settings;
+
+      // Supplement default bundle settings for all bundles not found in simple_sitemap.bundle_settings.*.* configuration.
+      foreach ($this->entityHelper->getSupportedEntityTypes() as $type_id => $type_definition) {
+        if ($this->entityTypeIsEnabled($type_id)) {
+          foreach($this->entityTypeBundleInfo->getBundleInfo($type_id) as $bundle => $bundle_definition) {
+            if (!isset($bundle_settings[$type_id][$bundle])) {
+              self::supplementDefaultSettings('entity', $bundle_settings[$type_id][$bundle], ['index' => 0]);
+            }
+          }
+        }
+      }
     }
     return $bundle_settings;
   }

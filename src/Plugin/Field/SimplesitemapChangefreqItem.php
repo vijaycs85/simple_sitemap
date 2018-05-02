@@ -6,6 +6,4 @@ class SimplesitemapChangefreqItem extends SimplesitemapItemBase {
 
   protected $settingName = 'changefreq';
 
-  protected $defaultValue = '';
-
 }

@@ -6,6 +6,4 @@ class SimplesitemapPriorityItem extends SimplesitemapItemBase {
 
   protected $settingName = 'priority';
 
-  protected $defaultValue = 0.5;
-
 }

@@ -8,8 +8,6 @@ abstract class SimplesitemapItemBase extends FieldItemList {
 
   protected $settingName;
 
-  protected $defaultValue;
-
   function computedListProperty() {
     $entity = $this->getEntity();
     $generator = \Drupal::service('simple_sitemap.generator');
@@ -30,7 +28,7 @@ abstract class SimplesitemapItemBase extends FieldItemList {
 
       $this->list[0] = $this->createItem(
         0,
-        isset($settings[$this->settingName]) ? $settings[$this->settingName] : $this->defaultValue
+        isset($settings[$this->settingName]) ? $settings[$this->settingName] : FALSE
       );
     }
   }

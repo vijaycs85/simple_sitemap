@@ -65,8 +65,9 @@ class EntityHelper {
    *   Objects of entity types that can be indexed by the sitemap.
    */
   public function getSupportedEntityTypes() {
-    $entity_types = $this->entityTypeManager->getDefinitions();
 
+    /** @var \Drupal\Core\Entity\ContentEntityTypeInterface[] $entity_types */
+    $entity_types = $this->entityTypeManager->getDefinitions();
     foreach ($entity_types as $entity_type_id => $entity_type) {
       if (!$entity_type instanceof ContentEntityTypeInterface
         || !method_exists($entity_type, 'getBundleEntityType')
