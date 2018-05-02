@@ -118,7 +118,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
           // Skip this bundle if it is to be generated in a different sitemap variant.
           if (NULL !== $this->sitemapVariant && isset($bundle_settings['variant'])
             && $bundle_settings['variant'] !== $this->sitemapVariant) {
-            $bundle_settings['index'] = 0;
+            $bundle_settings['index'] = FALSE;
           }
           unset($bundle_settings['variant']);
 
@@ -129,7 +129,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
           $sitemap_variant = $this->sitemapVariant;
           $this->moduleHandler->alter('simple_sitemap_bundle_settings', $bundle_settings, $bundle_context, $sitemap_variant);
 
-          if ($bundle_settings['index']) {
+          if (!empty($bundle_settings['index'])) {
             $data_sets[] = [
               'bundle_settings' => $bundle_settings,
               'bundle_name' => $bundle_name,

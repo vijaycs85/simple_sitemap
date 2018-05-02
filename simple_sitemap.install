@@ -385,12 +385,12 @@ function simple_sitemap_update_8209() {
 
   // Update existing bundle settings.
   $config_factory = \Drupal::service('config.factory');
-  $entity_types = $config_factory->listAll('simple_sitemap.bundle_settings.');
+  $all_bundle_settings = $config_factory->listAll('simple_sitemap.bundle_settings.');
 
-  foreach ($entity_types as $entity_type) {
-    $config = $config_factory->get($entity_type)->get();
+  foreach ($all_bundle_settings as $bundle_settings) {
+    $config = $config_factory->get($bundle_settings)->get();
     if (!isset($config['include_images'])) {
-      $config_factory->getEditable($entity_type)
+      $config_factory->getEditable($bundle_settings)
         ->setData($config + ['include_images' => 0])
         ->save();
     }
@@ -480,6 +480,52 @@ function simple_sitemap_update_8211() {
         'type' => 'default_hreflang',
       ]
     ])->save();
+}
+
+/**
+ * Changing storage data type of 'index' and 'include_images' from integer to boolean.
+ */
+function simple_sitemap_update_8212() {
+
+  // Update existing bundle settings.
+  $config_factory = \Drupal::service('config.factory');
+  $all_bundle_settings = $config_factory->listAll('simple_sitemap.bundle_settings.');
+
+  foreach ($all_bundle_settings as $bundle_settings) {
+    $config = $config_factory->get($bundle_settings)->get();
+
+    $config['include_images'] = isset($config['include_images'])
+      ? (bool) $config['include_images']
+      : FALSE;
+
+    $config['index'] = isset($config['index'])
+      ? (bool) $config['index']
+      : FALSE;
+
+    $config_factory->getEditable($bundle_settings)->setData($config)->save();
+  }
+
+  // Update existing entity override data.
+  $results = \Drupal::database()->select('simple_sitemap_entity_overrides', 'o')
+    ->fields('o', ['id', 'inclusion_settings'])
+    ->execute()->fetchAll(\PDO::FETCH_OBJ);
+
+  foreach ($results as $row) {
+    $settings = unserialize($row->inclusion_settings);
+
+    if (isset($settings['index'])) {
+      $settings['index'] = (bool) $settings['index'];
+    }
+
+    if (isset($settings['include_images'])) {
+      $settings['include_images'] = (bool) $settings['include_images'];
+    }
+
+    \Drupal::database()->update('simple_sitemap_entity_overrides')
+      ->fields(['inclusion_settings' => serialize($settings)])
+      ->condition('id', $row->id)
+      ->execute();
+  }
 }
 
 

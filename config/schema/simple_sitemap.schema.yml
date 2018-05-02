@@ -42,7 +42,7 @@ simple_sitemap.bundle_settings.*.*:
   mapping:
     index:
       label: 'Index'
-      type: integer
+      type: boolean
     priority:
       label: 'Priority'
       type: string
@@ -51,7 +51,7 @@ simple_sitemap.bundle_settings.*.*:
       type: string
     include_images:
       label: 'Include images'
-      type: integer
+      type: boolean
 
 simple_sitemap.custom:
   label: 'Custom links'

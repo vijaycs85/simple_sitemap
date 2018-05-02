@@ -96,10 +96,10 @@ class Simplesitemap {
    * @var array
    */
   protected static $linkSettingDefaults = [
-    'index' => 1,
+    'index' => FALSE,
     'priority' => 0.5,
     'changefreq' => '',
-    'include_images' => 0,
+    'include_images' => FALSE,
   ];
 
   /**
@@ -550,7 +550,7 @@ class Simplesitemap {
    *
    * @todo: enableEntityType automatically
    */
-  public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings = []) {
+  public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings = ['index' => TRUE]) {
     $bundle_name = NULL !== $bundle_name ? $bundle_name : $entity_type_id;
 
     if (!empty($old_settings = $this->getBundleSettings($entity_type_id, $bundle_name))) {
@@ -563,9 +563,6 @@ class Simplesitemap {
     $bundle_settings = $this->configFactory
       ->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name");
     foreach ($settings as $setting_key => $setting) {
-      if ($setting_key === 'index') {
-        $setting = (int) $setting;
-      }
       $bundle_settings->set($setting_key, $setting);
     }
     $bundle_settings->save();
@@ -645,7 +642,7 @@ class Simplesitemap {
       if (empty($bundle_settings)) {
         if ($this->entityTypeIsEnabled($entity_type_id)
           && isset($this->entityTypeBundleInfo->getBundleInfo($entity_type_id)[$bundle_name])) {
-          self::supplementDefaultSettings('entity', $bundle_settings, ['index' => 0]);
+          self::supplementDefaultSettings('entity', $bundle_settings);
         }
         else {
           $bundle_settings = FALSE;
@@ -666,7 +663,7 @@ class Simplesitemap {
         if ($this->entityTypeIsEnabled($type_id)) {
           foreach($this->entityTypeBundleInfo->getBundleInfo($type_id) as $bundle => $bundle_definition) {
             if (!isset($bundle_settings[$type_id][$bundle])) {
-              self::supplementDefaultSettings('entity', $bundle_settings[$type_id][$bundle], ['index' => 0]);
+              self::supplementDefaultSettings('entity', $bundle_settings[$type_id][$bundle]);
             }
           }
         }

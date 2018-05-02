@@ -278,19 +278,19 @@ class SimplesitemapTest extends SimplesitemapTestBase {
       ->generateSitemap('nobatch')
       ->getSitemap();
 
-    $sitemap_chunk = $this->generator->getSitemap(1);
+    $sitemap_chunk = $this->generator->getSitemap('default', 1);
 
     $sitemap_index2 = $this->generator->saveSetting('batch_process_limit', 1)
       ->generateSitemap('nobatch')
       ->getSitemap();
 
-    $sitemap_chunk2 = $this->generator->getSitemap(1);
+    $sitemap_chunk2 = $this->generator->getSitemap('default', 1);
 
     $sitemap_index3 = $this->generator->saveSetting('batch_process_limit', 10)
       ->generateSitemap('nobatch')
       ->getSitemap();
 
-    $sitemap_chunk3 = $this->generator->getSitemap(1);
+    $sitemap_chunk3 = $this->generator->getSitemap('default', 1);
 
     $this->assertSame($sitemap_index2, $sitemap_index);
     $this->assertSame($sitemap_chunk2, $sitemap_chunk);

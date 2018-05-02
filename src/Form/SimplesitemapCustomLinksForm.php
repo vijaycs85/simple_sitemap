@@ -40,7 +40,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
       '#type' => 'select',
       '#title' => $this->t('Include images'),
       '#description' => $this->t('If a custom link points to an entity, include its referenced images in the sitemap.'),
-      '#default_value' => $this->generator->getSetting('custom_links_include_images', 0),
+      '#default_value' => $this->generator->getSetting('custom_links_include_images', FALSE),
       '#options' => [0 => $this->t('No'), 1 => $this->t('Yes')],
     ];
 
@@ -95,7 +95,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
     foreach ($custom_links as $link_config) {
       $this->generator->addCustomLink($link_config['path'], $link_config);
     }
-    $this->generator->saveSetting('custom_links_include_images', $form_state->getValue('include_images'));
+    $this->generator->saveSetting('custom_links_include_images', (bool) $form_state->getValue('include_images'));
     parent::submitForm($form, $form_state);
 
     // Regenerate sitemaps according to user setting.

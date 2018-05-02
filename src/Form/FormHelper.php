@@ -237,7 +237,7 @@ class FormHelper {
     else {
       $settings = $this->generator->getBundleSettings($this->getEntityTypeId(), $this->getBundleName());
     }
-    Simplesitemap::supplementDefaultSettings('entity', $settings, ['index' => 0]);
+    Simplesitemap::supplementDefaultSettings('entity', $settings);
 
     $bundle_name = !empty($this->getBundleName()) ? $this->getBundleName() : $this->t('undefined');
 
@@ -245,7 +245,7 @@ class FormHelper {
     if (!$multiple) {
       $form_fragment[$prefix . 'simple_sitemap_index_content'] = [
         '#type' => 'radios',
-        '#default_value' => $settings['index'],
+        '#default_value' => (int) $settings['index'],
         '#options' => [
           0 => $this->getEntityCategory() === 'instance'
             ? $this->t('Do not index this @bundle entity', ['@bundle' => $bundle_name])
@@ -257,7 +257,7 @@ class FormHelper {
       ];
 
       if ($this->getEntityCategory() === 'instance' && isset($bundle_settings['index'])) {
-        $form_fragment[$prefix . 'simple_sitemap_index_content']['#options'][$bundle_settings['index']] .= ' <em>(' . $this->t('default') . ')</em>';
+        $form_fragment[$prefix . 'simple_sitemap_index_content']['#options'][(int) $bundle_settings['index']] .= ' <em>(' . $this->t('default') . ')</em>';
       }
     }
 
@@ -298,12 +298,12 @@ class FormHelper {
       '#description' => $this->getEntityCategory() === 'instance'
         ? $this->t('Determines if images referenced by this @bundle entity should be included in the sitemap.', ['@bundle' => $bundle_name])
         : $this->t('Determines if images referenced by entities of this type should be included in the sitemap.'),
-      '#default_value' => $settings['include_images'],
+      '#default_value' => (int) $settings['include_images'],
       '#options' => [0 => $this->t('No'), 1 => $this->t('Yes')],
     ];
 
     if ($this->getEntityCategory() === 'instance' && isset($bundle_settings['include_images'])) {
-      $form_fragment[$prefix . 'simple_sitemap_include_images']['#options'][$bundle_settings['include_images']] .= ' (' . $this->t('default') . ')';
+      $form_fragment[$prefix . 'simple_sitemap_include_images']['#options'][(int) $bundle_settings['include_images']] .= ' (' . $this->t('default') . ')';
     }
 
     return $this;

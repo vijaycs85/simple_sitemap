@@ -68,8 +68,8 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
 
         $bundle_info = '';
         $indexed_bundles = isset($bundle_settings[$entity_type_id])
-          ? implode(array_keys(array_filter($bundle_settings[$entity_type_id], function ($val) {return $val['index'];})), ', ') :
-          '';
+          ? implode(array_keys(array_filter($bundle_settings[$entity_type_id], function ($val) {return $val['index'];})), ', ')
+          : '';
 
         if (!$atomic_entity_type) {
           $bundle_info .= '<div id="indexed-bundles-' . $css_entity_type_id . '">'
@@ -122,7 +122,7 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
               'index' => TRUE,
               'priority' => $values[$entity_type_id . '_simple_sitemap_priority'],
               'changefreq' => $values[$entity_type_id . '_simple_sitemap_changefreq'],
-              'include_images' => $values[$entity_type_id . '_simple_sitemap_include_images'],
+              'include_images' => (bool) $values[$entity_type_id . '_simple_sitemap_include_images'],
             ]);
           }
         }
