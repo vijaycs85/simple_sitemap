@@ -299,6 +299,16 @@ class Simplesitemap {
    */
   public function removeSitemapTypeDefinition($name) {
     if ($name !== self::DEFAULT_SITEMAP_TYPE) {
+
+      // Remove variants tied to this definition.
+      $variants = $this->getSitemapVariants();
+      foreach ($variants as $variant_name => $variant_definition) {
+        if ($variant_definition['type'] === $name) {
+          $this->removeSitemapVariant($variant_name);
+        }
+      }
+
+      // Remove type definition from configuration.
       $this->configFactory->getEditable("simple_sitemap.types.$name")->delete();
     }
     else {
@@ -326,7 +336,7 @@ class Simplesitemap {
    * @todo document
    * @todo exceptions
    */
-  public function addSitemapVariant($name, $definition) {
+  public function addSitemapVariant($name, $definition = []) {
     if (empty($definition['label'])) {
       $definition['label'] = $name;
     }
@@ -349,6 +359,11 @@ class Simplesitemap {
    * @todo document
    */
   public function removeSitemapVariant($name) {
+
+    // Remove the sitemap variant instance from database.
+    $this->removeSitemap($name);
+
+    // Remove the variant definition from configuration.
     $variants = $this->getSitemapVariants();
     if (isset($variants[$name])) {
       unset($variants[$name]);
@@ -356,6 +371,37 @@ class Simplesitemap {
         ->set('variants', $variants)->save();
     }
 
+    return $this;
+  }
+
+  /**
+   * @param null $variants
+   * @return $this
+   *
+   * @todo test
+   */
+  public function removeSitemap($variants = NULL) {
+    $variant_definitions = $this->getSitemapVariants();
+    $remove_variants = [];
+    if (NULL === $variants) {
+      $remove_variants = $variant_definitions;
+    }
+    else {
+      foreach ((array) $variants as $variant) {
+        if (isset($variant_definitions[$variant])) {
+          $remove_variants[$variant] = $variant_definitions[$variant];
+        }
+      }
+    }
+    if (!empty($remove_variants)) {
+      $type_definitions = $this->getSitemapTypeDefinitions();
+      foreach ($remove_variants as $variant_name => $variant_definition) {
+        $this->sitemapGeneratorManager
+          ->createInstance($type_definitions[$variant_definition['type']]['sitemap_generator'])
+          ->setSitemapVariant($variant_name)
+          ->remove();
+      }
+    }
     return $this;
   }
 
@@ -450,16 +496,6 @@ class Simplesitemap {
     }
 
     return $from === 'nobatch' ? $this : (isset($success) ? $success : FALSE);
-  }
-
-  /**
-   * @param null $variant
-   * @return $this
-   *
-   * @todo implement
-   */
-  public function removeSitemap($variant = NULL) {
-    return $this;
   }
 
   /**
