@@ -272,6 +272,7 @@ class Simplesitemap {
   /**
    * @param $name
    * @param $definition
+   * @return $this
    *
    * @todo document
    */
@@ -286,10 +287,13 @@ class Simplesitemap {
       }
     }
     $type->save();
+
+    return $this;
   }
 
   /**
    * @param $name
+   * @return $this
    *
    * @todo document
    */
@@ -300,6 +304,8 @@ class Simplesitemap {
     else {
       //todo: exception
     }
+
+    return $this;
   }
 
   /**
@@ -447,12 +453,13 @@ class Simplesitemap {
   }
 
   /**
-   * @param null|array $variant
+   * @param null $variant
+   * @return $this
    *
-   * @todo Add removeSitemap API method.
+   * @todo implement
    */
   public function removeSitemap($variant = NULL) {
-
+    return $this;
   }
 
   /**

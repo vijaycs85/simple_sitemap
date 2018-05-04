@@ -10,7 +10,7 @@ use Drupal\Core\Cache\Cache;
  * @package Drupal\simple_sitemap\Batch
  *
  * The services of this class are not injected, as this class looses its state
- * on every method call because of how the batch APi works.
+ * on every method call because of how the batch API works.
  */
 class Batch {
 
@@ -135,13 +135,15 @@ class Batch {
   public static function finishGeneration($success, $results, $operations) {
     if ($success) {
       Cache::invalidateTags(['simple_sitemap']);
-      \Drupal::service('simple_sitemap.logger')->m(self::REGENERATION_FINISHED_MESSAGE)
+      \Drupal::service('simple_sitemap.logger')
+        ->m(self::REGENERATION_FINISHED_MESSAGE)
 //        ['@url' => $this->sitemapGenerator->getCustomBaseUrl() . '/sitemap.xml']) //todo: Use actual base URL for message.
         ->display('status')
         ->log('info');
     }
     else {
-      \Drupal::service('simple_sitemap.logger')->m(self::REGENERATION_FINISHED_ERROR_MESSAGE)
+      \Drupal::service('simple_sitemap.logger')
+        ->m(self::REGENERATION_FINISHED_ERROR_MESSAGE)
         ->display('error', 'administer sitemap settings')
         ->log('error');
     }
