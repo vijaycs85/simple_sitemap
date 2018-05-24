@@ -220,12 +220,12 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
     $this->context['results']['generate'][$this->sitemapVariant]['queued_links'][] = $result;
   }
 
-  protected function sliceFromBatchResultQueue($sitemap_type, $number_results) {
-    $this->context['results']['generate'][$sitemap_type]['queued_links'] = array_slice(
-      $this->context['results']['generate'][$sitemap_type]['queued_links'], $number_results
+  protected function sliceFromBatchResultQueue($sitemap_variant, $number_results) {
+    $this->context['results']['generate'][$sitemap_variant]['queued_links'] = array_slice(
+      $this->context['results']['generate'][$sitemap_variant]['queued_links'], $number_results
     );
-    if (empty($this->context['results']['generate'][$sitemap_type]['queued_links'])) {
-      unset($this->context['results']['generate'][$sitemap_type]);
+    if (empty($this->context['results']['generate'][$sitemap_variant]['queued_links'])) {
+      unset($this->context['results']['generate'][$sitemap_variant]);
     }
   }
 

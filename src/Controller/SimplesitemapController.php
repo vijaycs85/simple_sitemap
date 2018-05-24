@@ -8,7 +8,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Drupal\Core\Cache\CacheableResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Drupal\simple_sitemap\Simplesitemap;
-use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 
 /**
@@ -75,12 +74,11 @@ class SimplesitemapController extends ControllerBase {
 
     $response = new CacheableResponse($output, Response::HTTP_OK, [
       'content-type' => 'application/xml',
-      'X-Robots-Tag' => 'noindex', // Do not index the sitemap itself.
+      'X-Robots-Tag' => 'noindex', // Tell search engines not to index the sitemap itself.
     ]);
 
     // Cache output.
-    $meta_data = $response->getCacheableMetadata();
-    $meta_data->addCacheTags(['simple_sitemap']);
+    $response->getCacheableMetadata()->addCacheTags(["simple_sitemap:$variant"]);
 
     return $response;
   }

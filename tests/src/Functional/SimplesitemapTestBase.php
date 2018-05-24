@@ -58,6 +58,8 @@ abstract class SimplesitemapTestBase extends BrowserTestBase {
    */
   protected $node2;
 
+  protected $defaultSitemapUrl = 'sitemap.xml';
+
   /**
    * {@inheritdoc}
    */

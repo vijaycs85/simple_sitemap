@@ -12,6 +12,7 @@ use Drupal\Core\Datetime\DateFormatter;
 use Drupal\Component\Datetime\Time;
 use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\DefaultSitemapGenerator;
 use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorBase;
 use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager;
 use Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager;
 
@@ -292,24 +293,27 @@ class Simplesitemap {
   }
 
   /**
-   * @param $name
+   * @param $type_name
    * @return $this
    *
    * @todo document
    */
-  public function removeSitemapTypeDefinition($name) {
-    if ($name !== self::DEFAULT_SITEMAP_TYPE) {
+  public function removeSitemapTypeDefinition($type_name) {
+    if ($type_name !== self::DEFAULT_SITEMAP_TYPE) {
 
       // Remove variants tied to this definition.
       $variants = $this->getSitemapVariants();
       foreach ($variants as $variant_name => $variant_definition) {
-        if ($variant_definition['type'] === $name) {
-          $this->removeSitemapVariant($variant_name);
+        if ($variant_definition['type'] === $type_name) {
+          $remove_variants[] = $variant_name;
         }
+      }
+      if (!empty($remove_variants)) {
+        $this->removeSitemapVariants($remove_variants);
       }
 
       // Remove type definition from configuration.
-      $this->configFactory->getEditable("simple_sitemap.types.$name")->delete();
+      $this->configFactory->getEditable("simple_sitemap.types.$type_name")->delete();
     }
     else {
       //todo: exception
@@ -344,10 +348,18 @@ class Simplesitemap {
     if (empty($definition['type'])) {
       $definition['type'] = self::DEFAULT_SITEMAP_TYPE;
     }
+    else {
+      $types = $this->getSitemapTypeDefinitions();
+      if (!isset($types[$definition['type']])) {
+        // todo: exception
+        return $this;
+      }
+    }
 
     $variants = array_merge($this->getSitemapVariants(), [$name => ['label' => $definition['label'], 'type' => $definition['type']]]);
     $this->configFactory->getEditable('simple_sitemap.variants')
-      ->set('variants', $variants)->save();
+      ->set('variants', $variants)
+      ->save();
 
     return $this;
   }
@@ -358,15 +370,27 @@ class Simplesitemap {
    *
    * @todo document
    */
-  public function removeSitemapVariant($name) {
+  public function removeSitemapVariants($variant_names = NULL) {
+    if (NULL === $variant_names) {
+      $this->removeSitemap();
+      $variants = [];
+      $save = TRUE;
+    }
+    else {
+      $this->removeSitemap($variant_names);
 
-    // Remove the sitemap variant instance from database.
-    $this->removeSitemap($name);
+      $variants = $this->getSitemapVariants();
+      foreach ((array) $variant_names as $variant_name) {
+        foreach ($variants as $variant => $variant_definition) {
+          if (isset($variants[$variant_name])) {
+            unset($variants[$variant_name]);
+            $save = TRUE;
+          }
+        }
+      }
+    }
 
-    // Remove the variant definition from configuration.
-    $variants = $this->getSitemapVariants();
-    if (isset($variants[$name])) {
-      unset($variants[$name]);
+    if (!empty($save)) {
       $this->configFactory->getEditable('simple_sitemap.variants')
         ->set('variants', $variants)->save();
     }
@@ -377,11 +401,13 @@ class Simplesitemap {
   /**
    * @param null $variants
    * @return $this
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
    *
-   * @todo test
+   * @todo document
    */
   public function removeSitemap($variants = NULL) {
     $variant_definitions = $this->getSitemapVariants();
+    // $this->moduleHandler->alter('simple_sitemap_variants', $variant_definitions); //todo Is this necessary?
     $remove_variants = [];
     if (NULL === $variants) {
       $remove_variants = $variant_definitions;
@@ -395,12 +421,22 @@ class Simplesitemap {
     }
     if (!empty($remove_variants)) {
       $type_definitions = $this->getSitemapTypeDefinitions();
+
+      /** @var SitemapGeneratorBase[] $sitemap_generators */
+      $sitemap_generators = [];
+
       foreach ($remove_variants as $variant_name => $variant_definition) {
-        $this->sitemapGeneratorManager
-          ->createInstance($type_definitions[$variant_definition['type']]['sitemap_generator'])
+        $sitemap_generator_id = $type_definitions[$variant_definition['type']]['sitemap_generator'];
+        if (!isset($sitemap_generators[$sitemap_generator_id])) {
+          $sitemap_generators[$sitemap_generator_id] = $this->sitemapGeneratorManager
+            ->createInstance($sitemap_generator_id);
+        }
+        $sitemap_generators[$sitemap_generator_id]
           ->setSitemapVariant($variant_name)
-          ->remove();
+          ->remove()
+          ->invalidateCache();
       }
+
     }
     return $this;
   }
@@ -438,6 +474,9 @@ class Simplesitemap {
     $sitemap_variants = $this->getSitemapVariants();
     $this->moduleHandler->alter('simple_sitemap_variants', $sitemap_variants);
 
+    /** @var UrlGeneratorBase[] $url_generators */
+    $url_generators = [];
+
     foreach ($sitemap_variants as $variant_name => $variant_definition) {
 
       // Skipping unwanted sitemap variants.
@@ -458,7 +497,13 @@ class Simplesitemap {
 
       // Adding generate_sitemap operations for all data sets.
       foreach ($type_definitions[$type]['url_generators'] as $url_generator_id) {
-        foreach ($this->urlGeneratorManager->createInstance($url_generator_id)
+
+        if (!isset($url_generators[$url_generator_id])) {
+          $url_generators[$url_generator_id] = $this->urlGeneratorManager
+            ->createInstance($url_generator_id);
+        }
+
+        foreach ($url_generators[$url_generator_id]
                    ->setSitemapVariant($variant_name)
                    ->getDataSets() as $data_set) {
           if (!empty($data_set)) {
@@ -599,62 +644,65 @@ class Simplesitemap {
     if (!empty($old_settings = $this->getBundleSettings($entity_type_id, $bundle_name))) {
       $settings = array_merge($old_settings, $settings);
     }
-    else {
-      self::supplementDefaultSettings('entity', $settings);
-    }
+    self::supplementDefaultSettings('entity', $settings);
 
-    $bundle_settings = $this->configFactory
-      ->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name");
-    foreach ($settings as $setting_key => $setting) {
-      $bundle_settings->set($setting_key, $setting);
-    }
-    $bundle_settings->save();
+    if ($settings != $old_settings) {
 
-    // Delete entity overrides which are identical to new bundle setting.
-    $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
-    if (isset($sitemap_entity_types[$entity_type_id])) {
-      $entity_type = $sitemap_entity_types[$entity_type_id];
-      $keys = $entity_type->getKeys();
-
-      // Menu fix.
-      $keys['bundle'] = $entity_type_id === 'menu_link_content' ? 'menu_name' : $keys['bundle'];
-
-      $query = $this->entityTypeManager->getStorage($entity_type_id)->getQuery();
-      if (!$this->entityHelper->entityTypeIsAtomic($entity_type_id)) {
-        $query->condition($keys['bundle'], $bundle_name);
+      // Save new bundle settings to configuration.
+      $bundle_settings = $this->configFactory
+        ->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name");
+      foreach ($settings as $setting_key => $setting) {
+        $bundle_settings->set($setting_key, $setting);
       }
-      $entity_ids = $query->execute();
+      $bundle_settings->save();
 
-      $query = $this->db->select('simple_sitemap_entity_overrides', 'o')
-        ->fields('o', ['id', 'inclusion_settings'])
-        ->condition('o.entity_type', $entity_type_id);
-      if (!empty($entity_ids)) {
-        $query->condition('o.entity_id', $entity_ids, 'IN');
-      }
+      // Delete entity overrides which are identical to new bundle settings.
+      $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
+      if (isset($sitemap_entity_types[$entity_type_id])) {
+        $entity_type = $sitemap_entity_types[$entity_type_id];
+        $keys = $entity_type->getKeys();
 
-      $delete_instances = [];
-      foreach ($query->execute()->fetchAll() as $result) {
-        $delete = TRUE;
-        $instance_settings = unserialize($result->inclusion_settings);
-        foreach ($instance_settings as $setting_key => $instance_setting) {
-          if ($instance_setting != $settings[$setting_key]) {
-            $delete = FALSE;
-            break;
+        // Menu fix.
+        $keys['bundle'] = $entity_type_id === 'menu_link_content' ? 'menu_name' : $keys['bundle'];
+
+        $query = $this->entityTypeManager->getStorage($entity_type_id)->getQuery();
+        if (!$this->entityHelper->entityTypeIsAtomic($entity_type_id)) {
+          $query->condition($keys['bundle'], $bundle_name);
+        }
+        $entity_ids = $query->execute();
+
+        $query = $this->db->select('simple_sitemap_entity_overrides', 'o')
+          ->fields('o', ['id', 'inclusion_settings'])
+          ->condition('o.entity_type', $entity_type_id);
+        if (!empty($entity_ids)) {
+          $query->condition('o.entity_id', $entity_ids, 'IN');
+        }
+
+        $delete_instances = [];
+        foreach ($query->execute()->fetchAll() as $result) {
+          $delete = TRUE;
+          $instance_settings = unserialize($result->inclusion_settings);
+          foreach ($instance_settings as $setting_key => $instance_setting) {
+            if ($instance_setting != $settings[$setting_key]) {
+              $delete = FALSE;
+              break;
+            }
+          }
+          if ($delete) {
+            $delete_instances[] = $result->id;
           }
         }
-        if ($delete) {
-          $delete_instances[] = $result->id;
+        if (!empty($delete_instances)) {
+          $this->db->delete('simple_sitemap_entity_overrides')
+            ->condition('id', $delete_instances, 'IN')
+            ->execute();
         }
       }
-      if (!empty($delete_instances)) {
-        $this->db->delete('simple_sitemap_entity_overrides')
-          ->condition('id', $delete_instances, 'IN')
-          ->execute();
+      else {
+        //todo: log error
       }
     }
-    else {
-      //todo: log error
-    }
+
     return $this;
   }
 
@@ -758,6 +806,7 @@ class Simplesitemap {
           break;
         }
       }
+
       // Save overrides for this entity if something is different.
       if ($override) {
         $this->db->merge('simple_sitemap_entity_overrides')
@@ -867,7 +916,7 @@ class Simplesitemap {
    * @todo Validate $settings and throw exceptions
    */
   public function addCustomLink($path, $settings = []) {
-    if (!$this->pathValidator->isValid($path)) {
+    if (!(bool) $this->pathValidator->getUrlIfValidWithoutAccessCheck($path)) {
       // todo: log error.
       return $this;
     }
@@ -887,6 +936,7 @@ class Simplesitemap {
     $custom_links[$link_key] = ['path' => $path] + $settings;
     $this->configFactory->getEditable('simple_sitemap.custom')
       ->set('links', $custom_links)->save();
+
     return $this;
   }
 
@@ -908,7 +958,7 @@ class Simplesitemap {
       }
     }
 
-    return $custom_links !== NULL ? $custom_links : [];
+    return !empty($custom_links) ? $custom_links : [];
   }
 
   /**
@@ -928,34 +978,31 @@ class Simplesitemap {
   }
 
   /**
-   * Removes a custom path from the sitemap settings.
-   *
-   * @param string $path
-   *
-   * @return $this
-   */
-  public function removeCustomLink($path) {
-    $custom_links = $this->getCustomLinks(FALSE);
-    foreach ($custom_links as $key => $link) {
-      if ($link['path'] === $path) {
-        unset($custom_links[$key]);
-        $custom_links = array_values($custom_links);
-        $this->configFactory->getEditable('simple_sitemap.custom')
-          ->set('links', $custom_links)->save();
-        break;
-      }
-    }
-    return $this;
-  }
-
-  /**
    * Removes all custom paths from the sitemap settings.
    *
    * @return $this
    */
-  public function removeCustomLinks() {
-    $this->configFactory->getEditable('simple_sitemap.custom')
-      ->set('links', [])->save();
+  public function removeCustomLinks($paths = NULL) {
+    if (NULL === $paths) {
+      $custom_links = [];
+      $save = TRUE;
+    }
+    else {
+      $custom_links = $this->getCustomLinks(FALSE);
+      foreach ((array) $paths as $path) {
+        foreach ($custom_links as $key => $link) {
+          if ($link['path'] === $path) {
+            unset($custom_links[$key]);
+            $save = TRUE;
+          }
+        }
+      }
+    }
+    if (!empty($save)) {
+      $this->configFactory->getEditable('simple_sitemap.custom')
+        ->set('links', array_values($custom_links))->save();
+    }
+
     return $this;
   }
 }

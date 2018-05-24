@@ -3,7 +3,8 @@
 namespace Drupal\simple_sitemap;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Drupal\Core\Cache\Cache;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorBase;
 
 /**
  * Class Batch
@@ -76,8 +77,12 @@ class Batch {
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
   public static function generateSitemap(array $arguments, array $batch_meta, &$context) {
-    \Drupal::service('plugin.manager.simple_sitemap.url_generator')
-      ->createInstance($arguments['url_generator'])
+
+    /** @var UrlGeneratorBase $url_generator*/
+    $url_generator = \Drupal::service('plugin.manager.simple_sitemap.url_generator')
+      ->createInstance($arguments['url_generator']);
+
+    $url_generator
       ->setContext($context)
       ->setSettings($arguments['settings'])
       ->setBatchMeta($batch_meta)
@@ -96,8 +101,12 @@ class Batch {
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
   public static function generateIndex(array $arguments, array $batch_meta, &$context) {
-    \Drupal::service('plugin.manager.simple_sitemap.sitemap_generator')
-      ->createInstance($arguments['sitemap_generator'])
+
+    /** @var SitemapGeneratorBase $sitemap_generator*/
+    $sitemap_generator = \Drupal::service('plugin.manager.simple_sitemap.sitemap_generator')
+      ->createInstance($arguments['sitemap_generator']);
+
+    $sitemap_generator
       ->setSettings($arguments['settings'])
       ->setSitemapVariant($arguments['variant'])
       ->generateIndex();
@@ -113,10 +122,15 @@ class Batch {
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
    */
   public static function removeSitemap(array $arguments, array $batch_meta, &$context) {
-    \Drupal::service('plugin.manager.simple_sitemap.sitemap_generator')
-      ->createInstance($arguments['sitemap_generator'])
+
+    /** @var SitemapGeneratorBase $sitemap_generator*/
+    $sitemap_generator = \Drupal::service('plugin.manager.simple_sitemap.sitemap_generator')
+      ->createInstance($arguments['sitemap_generator']);
+
+    $sitemap_generator
       ->setSitemapVariant($arguments['variant'])
-      ->remove();
+      ->remove()
+      ->invalidateCache();
   }
 
   /**
@@ -134,7 +148,6 @@ class Batch {
    */
   public static function finishGeneration($success, $results, $operations) {
     if ($success) {
-      Cache::invalidateTags(['simple_sitemap']);
       \Drupal::service('simple_sitemap.logger')
         ->m(self::REGENERATION_FINISHED_MESSAGE)
 //        ['@url' => $this->sitemapGenerator->getCustomBaseUrl() . '/sitemap.xml']) //todo: Use actual base URL for message.

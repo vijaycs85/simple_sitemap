@@ -9,6 +9,7 @@ use Drupal\Core\Database\Connection;
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Component\Datetime\Time;
+use Drupal\Core\Cache\Cache;
 
 /**
  * Class SitemapGeneratorBase
@@ -175,6 +176,7 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
     $this->db->delete('simple_sitemap')
       ->condition('type',  $this->sitemapVariant)
       ->execute();
+
     return $this;
   }
 
@@ -199,6 +201,8 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
     ];
 
     $this->db->insert('simple_sitemap')->fields($values)->execute();
+
+    return $this;
   }
 
   /**
@@ -224,6 +228,14 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
         ])
         ->execute();
     }
+
+    return $this;
+  }
+
+  public function invalidateCache() {
+    Cache::invalidateTags(['simple_sitemap:' . $this->sitemapVariant]);
+
+    return $this;
   }
 
   /**
