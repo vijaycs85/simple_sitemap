@@ -12,6 +12,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Menu\MenuTreeParameters;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Menu\MenuLinkTree;
+use Drupal\Core\Menu\MenuLinkTreeElement;
 
 /**
  * Class EntityMenuLinkContentUrlGenerator
@@ -37,6 +38,13 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
    * @var \Drupal\Core\Extension\ModuleHandler
    */
   protected $moduleHandler;
+
+  /**
+   * The list of elements.
+   *
+   * @var array
+   */
+  protected $elements;
 
   /**
    * EntityMenuLinkContentUrlGenerator constructor.
@@ -78,6 +86,7 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
     );
     $this->menuLinkTree = $menu_link_tree;
     $this->moduleHandler = $module_handler;
+    $this->elements = [];
   }
 
   public static function create(
@@ -220,19 +229,36 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
     $tree = $this->menuLinkTree->load($menu_name, new MenuTreeParameters());
     $tree = $this->menuLinkTree->transform($tree, [['callable' => 'menu.default_tree_manipulators:generateIndexAndSort']]);
 
-    $elements = [];
     foreach ($tree as $i => $item) {
-      $elements[] = $item->link;
+      $this->elements[] = $item->link;
+      if ($item->hasChildren) {
+        $this->getMenuChildrenRecursively($item);
+      }
     }
-    $elements = array_values($elements);
+    $this->elements = array_values($this->elements);
 
     if ($this->batchOperationNeedsInitialization()) {
-      $this->initializeBatchOperation(count($elements));
+      $this->initializeBatchOperation(count($this->elements));
     }
 
     return $this->isDrupalBatch()
-      ? array_slice($elements, $this->context['sandbox']['progress'], $this->settings['batch_process_limit'])
-      : $elements;
+      ? array_slice($this->elements, $this->context['sandbox']['progress'], $this->settings['batch_process_limit'])
+      : $this->elements;
+  }
+
+  /**
+   * Recursively get the child menu links.
+   *
+   * @param \Drupal\Core\Menu\MenuLinkTreeElement $parent
+   *   The parent of the menu subtree.
+   */
+  protected function getMenuChildrenRecursively(MenuLinkTreeElement $parent) {
+    foreach ($parent->subtree as $i => $item) {
+      $this->elements[] = $item->link;
+      if ($item->hasChildren) {
+        $this->getMenuChildrenRecursively($item);
+      }
+    }
   }
 
 }
