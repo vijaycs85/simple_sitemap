@@ -35,6 +35,11 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
   protected $menuLinkTree;
 
   /**
+   * @var array
+   */
+  protected $elements;
+
+  /**
    * EntityMenuLinkContentUrlGenerator constructor.
    * @param array $configuration
    * @param string $plugin_id
@@ -197,19 +202,37 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
     $tree = $this->menuLinkTree->load($menu_name, new MenuTreeParameters());
     $tree = $this->menuLinkTree->transform($tree, [['callable' => 'menu.default_tree_manipulators:generateIndexAndSort']]);
 
-    $elements = [];
     foreach ($tree as $i => $item) {
-      $elements[] = $item->link;
+      $this->elements[] = $item->link;
+      if ($item->hasChildren) {
+        $this->getMenuChildrenRecursively($item);
+      }
     }
-    $elements = array_values($elements);
+    $this->elements = array_values($this->elements);
 
     if ($this->needsInitialization()) {
-      $this->initializeBatch(count($elements));
+      $this->initializeBatch(count($this->elements));
     }
 
     return $this->isBatch()
-      ? array_slice($elements, $this->context['sandbox']['progress'], $this->batchSettings['batch_process_limit'])
-      : $elements;
+      ? array_slice($this->elements, $this->context['sandbox']['progress'], $this->batchSettings['batch_process_limit'])
+      : $this->elements;
+  }
+
+  /**
+   * Recursively get the child menu links.
+   *
+   * @param \Drupal\Core\Menu\MenuLinkTreeElement $parent
+   *   The parent of the menu subtree.
+   */
+  protected function getMenuChildrenRecursively($parent) {
+    foreach ($parent->subtree as $i => $item) {
+      $this->elements[] = $item->link;
+
+      if ($item->hasChildren) {
+        $this->getMenuChildrenRecursively($item);
+      }
+    }
   }
 
 }
