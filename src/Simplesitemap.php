@@ -23,6 +23,7 @@ use Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager
 class Simplesitemap {
 
   const DEFAULT_SITEMAP_TYPE = 'default_hreflang';
+  const DEFAULT_SITEMAP_GENERATOR = 'default';
   const DEFAULT_SITEMAP_VARIANT = 'default';
 
   /**
@@ -84,6 +85,16 @@ class Simplesitemap {
    * @var \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager
    */
   protected $sitemapGeneratorManager;
+
+  /**
+   * @var UrlGeneratorBase[] $urlGenerators
+   */
+  protected $urlGenerators = [];
+
+  /**
+   * @var SitemapGeneratorBase[] $sitemapGenerators
+   */
+  protected $sitemapGenerators = [];
 
   /**
    * @var array
@@ -183,6 +194,34 @@ class Simplesitemap {
   }
 
   /**
+   * @param $sitemap_generator_id
+   * @return \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   */
+  protected function getSitemapGenerator($sitemap_generator_id) {
+    if (!isset($this->sitemapGenerators[$sitemap_generator_id])) {
+      $this->sitemapGenerators[$sitemap_generator_id]
+        = $this->sitemapGeneratorManager->createInstance($sitemap_generator_id);
+    }
+
+    return $this->sitemapGenerators[$sitemap_generator_id];
+  }
+
+  /**
+   * @param $url_generator_id
+   * @return \Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorBase
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   */
+  protected function getUrlGenerator($url_generator_id) {
+    if (!isset($this->urlGenerators[$url_generator_id])) {
+      $this->urlGenerators[$url_generator_id]
+        = $this->urlGeneratorManager->createInstance($url_generator_id);
+    }
+
+    return $this->urlGenerators[$url_generator_id];
+  }
+
+  /**
    * Returns the whole sitemap, a requested sitemap chunk,
    * or the sitemap index file.
    *
@@ -279,12 +318,30 @@ class Simplesitemap {
    */
   public function setSitemapTypeDefinition($name, $definition) {
     $type = $this->configFactory->getEditable("simple_sitemap.types.$name");
+
+    if (empty($type->get('label')) && empty($definition['label'])) {
+      $definition['label'] = $name;
+    }
+
+    if (empty($type->get('description')) && empty($definition['description'])) {
+      $definition['description'] = '';
+    }
+
+    if (empty($type->get('sitemap_generator')) && empty($definition['sitemap_generator'])) {
+      $definition['sitemap_generator'] = self::DEFAULT_SITEMAP_GENERATOR;
+    }
+
+    if (empty($type->get('url_generators')) && empty($definition['url_generators'])) {
+      //todo exception
+      return $this;
+    }
+
     foreach ($definition as $key => $value) {
       if (in_array($key, ['label', 'description', 'sitemap_generator', 'url_generators'])) {
         $type->set($key, $value);
       }
       else {
-        //todo exception
+        //todo: exception
       }
     }
     $type->save();
@@ -422,16 +479,8 @@ class Simplesitemap {
     if (!empty($remove_variants)) {
       $type_definitions = $this->getSitemapTypeDefinitions();
 
-      /** @var SitemapGeneratorBase[] $sitemap_generators */
-      $sitemap_generators = [];
-
       foreach ($remove_variants as $variant_name => $variant_definition) {
-        $sitemap_generator_id = $type_definitions[$variant_definition['type']]['sitemap_generator'];
-        if (!isset($sitemap_generators[$sitemap_generator_id])) {
-          $sitemap_generators[$sitemap_generator_id] = $this->sitemapGeneratorManager
-            ->createInstance($sitemap_generator_id);
-        }
-        $sitemap_generators[$sitemap_generator_id]
+        $this->getSitemapGenerator($type_definitions[$variant_definition['type']]['sitemap_generator'])
           ->setSitemapVariant($variant_name)
           ->remove()
           ->invalidateCache();
@@ -474,9 +523,6 @@ class Simplesitemap {
     $sitemap_variants = $this->getSitemapVariants();
     $this->moduleHandler->alter('simple_sitemap_variants', $sitemap_variants);
 
-    /** @var UrlGeneratorBase[] $url_generators */
-    $url_generators = [];
-
     foreach ($sitemap_variants as $variant_name => $variant_definition) {
 
       // Skipping unwanted sitemap variants.
@@ -498,12 +544,7 @@ class Simplesitemap {
       // Adding generate_sitemap operations for all data sets.
       foreach ($type_definitions[$type]['url_generators'] as $url_generator_id) {
 
-        if (!isset($url_generators[$url_generator_id])) {
-          $url_generators[$url_generator_id] = $this->urlGeneratorManager
-            ->createInstance($url_generator_id);
-        }
-
-        foreach ($url_generators[$url_generator_id]
+        foreach ($this->getUrlGenerator($url_generator_id)
                    ->setSitemapVariant($variant_name)
                    ->getDataSets() as $data_set) {
           if (!empty($data_set)) {
