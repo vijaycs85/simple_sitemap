@@ -58,8 +58,8 @@ simple_sitemap.custom:
   type: config_object
   mapping:
     links:
-      type: sequence
       label: 'Custom links'
+      type: sequence
       sequence:
         type: mapping
         mapping:
@@ -92,7 +92,7 @@ simple_sitemap.types.*:
       sequence:
         type: string
 
-simple_sitemap.variants:
+simple_sitemap.variants.*:
   label: 'Sitemap variants'
   type: config_object
   mapping:
@@ -104,7 +104,4 @@ simple_sitemap.variants:
         mapping:
           label:
             label: 'Variant label'
-            type: string
-          type:
-            label: 'Sitemap type'
             type: string
