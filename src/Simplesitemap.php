@@ -303,7 +303,8 @@ class Simplesitemap {
   public function getSitemapTypeDefinitions() {
     $type_definitions = [];
     foreach ($this->configFactory->listAll('simple_sitemap.types.') as $config_name) {
-      $type_definitions[explode('.', $config_name)[2]] = $this->configFactory->get($config_name)->get();
+      $config_name_parts = explode('.', $config_name);
+      $type_definitions[$config_name_parts[2]] = $this->configFactory->get($config_name)->get();
     }
 
     return $type_definitions;
@@ -333,7 +334,6 @@ class Simplesitemap {
 
     if (empty($type->get('url_generators')) && empty($definition['url_generators'])) {
       //todo exception
-      return $this;
     }
 
     foreach ($definition as $key => $value) {
@@ -358,18 +358,8 @@ class Simplesitemap {
   public function removeSitemapTypeDefinition($type_name) {
     if ($type_name !== self::DEFAULT_SITEMAP_TYPE) {
 
-      // Remove variants tied to this definition.
-      $variants = $this->getSitemapVariants();
-      foreach ($variants as $variant_name => $variant_definition) {
-        if ($variant_definition['type'] === $type_name) {
-          $remove_variants[] = $variant_name;
-        }
-      }
-      if (!empty($remove_variants)) {
-        $this->removeSitemapVariants($remove_variants);
-      }
-
-      // Remove type definition from configuration.
+      // Remove type definition and variants from configuration.
+      $this->configFactory->getEditable("simple_sitemap.variants.$type_name")->delete();
       $this->configFactory->getEditable("simple_sitemap.types.$type_name")->delete();
     }
     else {
@@ -380,13 +370,36 @@ class Simplesitemap {
   }
 
   /**
+   * @param null $sitemap_type
    * @return array
    *
    * @todo document
    * @todo translate label
    */
-  public function getSitemapVariants() {
-    return $this->configFactory->get('simple_sitemap.variants')->get('variants');
+  public function getSitemapVariants($sitemap_type = NULL, $attach_type_info = TRUE) {
+    if (NULL === $sitemap_type) {
+      $variants = [];
+      foreach ($this->configFactory->listAll('simple_sitemap.variants.') as $config_name) {
+        $config_name_parts = explode('.', $config_name);
+        $saved_variants = $this->configFactory->get($config_name)->get('variants');
+        $saved_variants = $attach_type_info ? $this->attachSitemapTypeToVariants($saved_variants, $config_name_parts[2]) : $saved_variants;
+        $variants = array_merge($variants, (is_array($saved_variants) ? $saved_variants : []));
+      }
+      return $variants;
+    }
+    else {
+      $variants = $this->configFactory->get("simple_sitemap.variants.$sitemap_type")->get('variants');
+      $variants = is_array($variants) ? $variants : [];
+      return $attach_type_info ? $this->attachSitemapTypeToVariants($variants, $sitemap_type) : $variants;
+    }
+  }
+
+  protected function attachSitemapTypeToVariants(array $variants, $type) {
+    return array_map(function($variant) use ($type) { return $variant + ['type' => $type]; }, $variants);
+  }
+
+  protected function detachSitemapTypeFromVariants(array $variants) {
+    return array_map(function($variant) { unset($variant['type']); return $variant; }, $variants);
   }
 
   /**
@@ -409,14 +422,18 @@ class Simplesitemap {
       $types = $this->getSitemapTypeDefinitions();
       if (!isset($types[$definition['type']])) {
         // todo: exception
-        return $this;
       }
     }
-
-    $variants = array_merge($this->getSitemapVariants(), [$name => ['label' => $definition['label'], 'type' => $definition['type']]]);
-    $this->configFactory->getEditable('simple_sitemap.variants')
-      ->set('variants', $variants)
-      ->save();
+    $all_variants = $this->getSitemapVariants();
+    if (isset($all_variants[$name])) {
+      //todo: exception
+    }
+    else {
+      $variants = array_merge($this->getSitemapVariants($definition['type'], FALSE), [$name => ['label' => $definition['label']]]);
+      $this->configFactory->getEditable('simple_sitemap.variants.' . $definition['type'])
+        ->set('variants', $variants)
+        ->save();
+    }
 
     return $this;
   }
@@ -427,29 +444,17 @@ class Simplesitemap {
    *
    * @todo document
    */
-  public function removeSitemapVariants($variant_names = NULL) {
-    if (NULL === $variant_names) {
-      $this->removeSitemap();
-      $variants = [];
-      $save = TRUE;
-    }
-    else {
-      $this->removeSitemap($variant_names);
-
-      $variants = $this->getSitemapVariants();
-      foreach ((array) $variant_names as $variant_name) {
-        foreach ($variants as $variant => $variant_definition) {
-          if (isset($variants[$variant_name])) {
-            unset($variants[$variant_name]);
-            $save = TRUE;
-          }
-        }
+  public function removeSitemapVariant($variant_name) {
+    $this->removeSitemap($variant_name);
+    $variants = $this->getSitemapVariants();
+    foreach($variants as $saved_variant_name => $variant_definition) {
+      if ($variant_name === $saved_variant_name) {
+        unset($variants[$variant_name]);
+        $this->configFactory->getEditable('simple_sitemap.variants.' . $variant_definition['type'])
+          ->set('variants', $this->detachSitemapTypeFromVariants($variants))
+          ->save();
+        break;
       }
-    }
-
-    if (!empty($save)) {
-      $this->configFactory->getEditable('simple_sitemap.variants')
-        ->set('variants', $variants)->save();
     }
 
     return $this;
@@ -463,30 +468,23 @@ class Simplesitemap {
    * @todo document
    */
   public function removeSitemap($variants = NULL) {
-    $variant_definitions = $this->getSitemapVariants();
-    // $this->moduleHandler->alter('simple_sitemap_variants', $variant_definitions); //todo Is this necessary?
-    $remove_variants = [];
-    if (NULL === $variants) {
-      $remove_variants = $variant_definitions;
-    }
-    else {
-      foreach ((array) $variants as $variant) {
-        if (isset($variant_definitions[$variant])) {
-          $remove_variants[$variant] = $variant_definitions[$variant];
-        }
-      }
-    }
+    $saved_variants = $this->getSitemapVariants();
+    $this->moduleHandler->alter('simple_sitemap_variants', $saved_variants);
+    $remove_variants = NULL !== $variants
+      ? array_intersect_key($saved_variants, array_flip((array) $variants))
+      : $saved_variants;
+
     if (!empty($remove_variants)) {
       $type_definitions = $this->getSitemapTypeDefinitions();
-
+      $this->moduleHandler->alter('simple_sitemap_types', $type_definitions);
       foreach ($remove_variants as $variant_name => $variant_definition) {
         $this->getSitemapGenerator($type_definitions[$variant_definition['type']]['sitemap_generator'])
           ->setSitemapVariant($variant_name)
           ->remove()
           ->invalidateCache();
       }
-
     }
+
     return $this;
   }
 

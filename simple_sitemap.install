@@ -528,4 +528,25 @@ function simple_sitemap_update_8212() {
   }
 }
 
+/**
+ * Altering the configuration storage of variants.
+ */
+function simple_sitemap_update_8213() {
+  $config_factory = \Drupal::service('config.factory');
+  $new_variants = [];
+  foreach ($config_factory->get('simple_sitemap.variants')->get('variants') as $variant_name => $variant_definition) {
+    $new_variants[$variant_definition['type']][$variant_name] = ['label' => $variant_definition['label']];
+  }
+
+  // Create new configuration objects.
+  foreach ($new_variants as $type => $variants) {
+    $config_factory
+      ->getEditable('simple_sitemap.variants.' . $type)
+      ->set('variants', $variants)
+      ->save();
+  }
+
+  // Remove old configuration object.
+  $config_factory->getEditable('simple_sitemap.variants')->delete();
+}
 
