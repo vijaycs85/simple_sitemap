@@ -38,7 +38,7 @@ abstract class SimplesitemapTestBase extends BrowserTestBase {
   protected $database;
 
   /**
-   * An user with all the permissions.
+   * A user with all the permissions.
    *
    * @var \Drupal\user\Entity\User
    */
@@ -73,7 +73,7 @@ abstract class SimplesitemapTestBase extends BrowserTestBase {
     $this->node = $this->createNode(['title' => 'Node', 'type' => 'page']);
     $this->node2 = $this->createNode(['title' => 'Node2', 'type' => 'page']);
 
-    // Create an user with all the permissions.
+    // Create a user with all the permissions.
     $permissions = array_keys($this->container->get('user.permissions')->getPermissions());
     $this->privilegedUser = $this->drupalCreateUser($permissions);
   }

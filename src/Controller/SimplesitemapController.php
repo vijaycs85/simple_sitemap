@@ -9,6 +9,7 @@ use Drupal\Core\Cache\CacheableResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Class SimplesitemapController
@@ -56,17 +57,16 @@ class SimplesitemapController extends ControllerBase {
    *  @see \hook_simple_sitemap_variants_alter()
    *  @see Simplesitemap::getSitemapVariants()
    *
-   * @param int $delta
-   *  Optional delta of the sitemap chunk. If none provided, the first chunk or
-   *  the sitemap index is fetched.
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *  The request object.
    *
    * @throws NotFoundHttpException
    *
    * @return object
    *  Returns an XML response.
    */
-  public function getSitemap($variant = Simplesitemap::DEFAULT_SITEMAP_VARIANT, $delta = NULL) {
-    $output = $this->generator->getSitemap($variant, $delta);
+  public function getSitemap(Request $request, $variant = Simplesitemap::DEFAULT_SITEMAP_VARIANT) {
+    $output = $this->generator->getSitemap($variant, $request->query->getInt('page'));
     if (!$output) {
       $this->cacheKillSwitch->trigger();
       throw new NotFoundHttpException();
@@ -78,7 +78,9 @@ class SimplesitemapController extends ControllerBase {
     ]);
 
     // Cache output.
-    $response->getCacheableMetadata()->addCacheTags(["simple_sitemap:$variant"]);
+    $response->getCacheableMetadata()
+      ->addCacheTags(["simple_sitemap:$variant"])
+      ->addCacheContexts(['url.query_args']);
 
     return $response;
   }

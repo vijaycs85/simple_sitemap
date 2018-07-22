@@ -120,6 +120,13 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
   }
 
   /**
+   * @return bool
+   */
+  protected function isDefaultVariant() {
+    return $this->sitemapVariant === Simplesitemap::DEFAULT_SITEMAP_VARIANT;
+  }
+
+  /**
    * @param array $links
    * @return string
    */
@@ -158,7 +165,7 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
     foreach ($chunk_info as $chunk_data) {
       $this->writer->startElement('sitemap');
       $this->writer->writeElement('loc', $this->getCustomBaseUrl()
-        . '/sitemaps/' . $chunk_data->type . '/' . $chunk_data->delta . '/sitemap.xml');
+        . '/' . (!$this->isDefaultVariant() ? ($chunk_data->type . '/') : '') . 'sitemap.xml?page=' . $chunk_data->delta);
       $this->writer->writeElement('lastmod', date_iso8601($chunk_data->sitemap_created));
       $this->writer->endElement();
     }

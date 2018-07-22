@@ -230,15 +230,15 @@ class SimplesitemapTest extends SimplesitemapTestBase {
       ->generateSitemap('nobatch');
 
     $this->drupalGet($this->defaultSitemapUrl);
-    $this->assertSession()->responseContains('sitemaps/default/1/sitemap.xml');
-    $this->assertSession()->responseContains('sitemaps/default/2/sitemap.xml');
+    $this->assertSession()->responseContains('sitemap.xml?page=1');
+    $this->assertSession()->responseContains('sitemap.xml?page=2');
 
-    $this->drupalGet('sitemaps/default/1/sitemap.xml');
+    $this->drupalGet('sitemap.xml?page=1');
     $this->assertSession()->responseContains('node/' . $this->node->id());
     $this->assertSession()->responseContains('0.5');
     $this->assertSession()->responseNotContains('node/' . $this->node2->id());
 
-    $this->drupalGet('sitemaps/default/2/sitemap.xml');
+    $this->drupalGet('sitemap.xml?page=2');
     $this->assertSession()->responseContains('node/' . $this->node2->id());
     $this->assertSession()->responseContains('0.5');
     $this->assertSession()->responseNotContains('node/' . $this->node->id());
@@ -312,7 +312,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
       ->generateSitemap('nobatch');
 
     $this->drupalGet($this->defaultSitemapUrl);
-    $this->assertSession()->responseContains('http://base_url_test/sitemaps/default/1/sitemap.xml');
+    $this->assertSession()->responseContains('http://base_url_test/sitemap.xml?page=1');
   }
 
   /**
@@ -468,10 +468,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->drupalGet($this->defaultSitemapUrl);
     $this->assertSession()->responseContains('node/' . $this->node->id());
 
-    $this->drupalGet('sitemaps/test');
-    $this->assertSession()->responseContains('node/' . $this->node->id());
-
-    $this->drupalGet('sitemaps/test/sitemap.xml');
+    $this->drupalGet('test/sitemap.xml');
     $this->assertSession()->responseContains('node/' . $this->node->id());
 
     $this->generator->removeSitemapVariants('test');
@@ -482,7 +479,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->generator->generateSitemap('nobatch');
 
     // Test if sitemap has been removed along with the variant.
-    $this->drupalGet('sitemaps/test/sitemap.xml');
+    $this->drupalGet('test/sitemap.xml');
 //    $this->assertSession()->responseNotContains('urlset'); //todo
 
     // Test adding a variant of new sitemap type.
@@ -505,7 +502,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
 //    $this->assertSession()->responseNotContains('urlset'); //todo
 
     // Test if custom generator has been successfully included.
-    $this->drupalGet('sitemaps/test2/sitemap.xml');
+    $this->drupalGet('test2/sitemap.xml');
     $this->assertSession()->responseContains(Url::fromRoute('<front>')->setAbsolute()->toString());
 
     // Test if entity generator has been successfully excluded.
@@ -540,7 +537,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->assertEquals('MISS', $this->drupalGetHeader('X-Drupal-Cache'));
     $this->assertSession()->responseContains('node/' . $this->node->id());
 
-    $this->drupalGet('sitemaps/test/sitemap.xml');
+    $this->drupalGet('test/sitemap.xml');
     $this->assertEquals('MISS', $this->drupalGetHeader('X-Drupal-Cache'));
     $this->assertSession()->responseContains('node/' . $this->node->id());
 
@@ -548,7 +545,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->drupalGet('sitemap.xml');
     $this->assertEquals('HIT', $this->drupalGetHeader('X-Drupal-Cache'));
 
-    $this->drupalGet('sitemaps/test/sitemap.xml');
+    $this->drupalGet('test/sitemap.xml');
     $this->assertEquals('HIT', $this->drupalGetHeader('X-Drupal-Cache'));
 
     $this->generator->generateSitemap('nobatch', 'default');
@@ -558,13 +555,13 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->assertEquals('MISS', $this->drupalGetHeader('X-Drupal-Cache'));
 
     // Verify the cache is still set for test variant.
-    $this->drupalGet('sitemaps/test/sitemap.xml');
+    $this->drupalGet('test/sitemap.xml');
 //    $this->assertEquals('HIT', $this->drupalGetHeader('X-Drupal-Cache')); //todo
 
     $this->generator->removeSitemap('test');
 
     // Verify the cache is unset for test variant after removing it explicitly.
-    $this->drupalGet('sitemaps/test/sitemap.xml');
+    $this->drupalGet('test/sitemap.xml');
 //    $this->assertEquals('MISS', $this->drupalGetHeader('X-Drupal-Cache')); //todo
   }
 
