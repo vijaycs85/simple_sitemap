@@ -131,25 +131,12 @@ function hook_simple_sitemap_sitemap_generators_alter(array &$sitemap_generators
 }
 
 /**
+ * Alter properties of and remove sitemap type plugins.
+ *
  * @param array $sitemap_types
  */
-function hook_simple_sitemap_types_alter(array &$sitemap_types) {
+function hook_simple_sitemap_sitemap_types_alter(array &$sitemap_types) {
 
-  // Remove the custom links generator from the default sitemap type definition.
-  $key = array_search('custom', $sitemap_types['default_hreflang']['url_generators']);
-  unset($sitemap_types['default_hreflang']['url_generators'][$key]);
-
-  // Define a new sitemap type to be generated with the default sitemap generator.
-  // Make it use only the custom and arbitrary link generators.
-  $sitemap_types['fight_club_sitemap_type'] = [
-    'label' => t('Fight Club Sitemap'),
-    'description' => t('The second rule of Fight Club is...'),
-    'sitemap_generator' => 'default',
-    'url_generators' => [
-      'custom',
-      'arbitrary',
-    ],
-  ];
 }
 
 /**

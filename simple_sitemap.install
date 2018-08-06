@@ -550,3 +550,15 @@ function simple_sitemap_update_8213() {
   $config_factory->getEditable('simple_sitemap.variants')->delete();
 }
 
+/**
+ * Removing sitemap types from configuration as they are to be stored as plugins in code.
+ */
+function simple_sitemap_update_8214() {
+  $config_factory = \Drupal::service('config.factory');
+  $sitemap_types = $config_factory->listAll('simple_sitemap.types.');
+
+  // Remove sitemap type configuration objects.
+  foreach ($sitemap_types as $type) {
+    $config_factory->getEditable($type)->delete();
+  }
+}

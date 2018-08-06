@@ -14,7 +14,7 @@ use Drupal\Component\Datetime\Time;
  *
  * @SitemapGenerator(
  *   id = "default",
- *   title = @Translation("Default sitemap generator"),
+ *   label = @Translation("Default sitemap generator"),
  *   description = @Translation("Generates a standard conform hreflang sitemap of your content."),
  * )
  */

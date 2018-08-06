@@ -20,7 +20,7 @@ use Drupal\Core\Menu\MenuLinkTreeElement;
  *
  * @UrlGenerator(
  *   id = "entity_menu_link_content",
- *   title = @Translation("Menu link URL generator"),
+ *   label = @Translation("Menu link URL generator"),
  *   description = @Translation("Generates menu link URLs by overriding the 'entity' URL generator."),
  *   settings = {
  *     "overrides_entity_type" = "menu_link_content",

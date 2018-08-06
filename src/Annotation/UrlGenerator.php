@@ -30,7 +30,7 @@ class UrlGenerator extends Plugin {
    *
    * @var \Drupal\Core\Annotation\Translation
    */
-  public $title;
+  public $label;
 
   /**
    * A short description of the generator.

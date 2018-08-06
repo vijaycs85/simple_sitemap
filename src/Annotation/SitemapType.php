@@ -5,26 +5,26 @@ namespace Drupal\simple_sitemap\Annotation;
 use Drupal\Component\Annotation\Plugin;
 
 /**
- * Defines a SitemapGenerator item annotation object.
+ * Defines a SitemapType item annotation object.
  *
  * @package Drupal\simple_sitemap\Annotation
  *
- * @see \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager
+ * @see \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapType\SitemapTypeManager
  * @see plugin_api
  *
  * @Annotation
  */
-class SitemapGenerator extends Plugin {
+class SitemapType extends Plugin {
 
   /**
-   * The generator ID.
+   * The sitemap type ID.
    *
    * @var string
    */
   public $id;
 
   /**
-   * The human-readable name of the generator.
+   * The human-readable name of the sitemap type.
    *
    * @ingroup plugin_translatable
    *
@@ -33,7 +33,7 @@ class SitemapGenerator extends Plugin {
   public $label;
 
   /**
-   * A short description of the generator.
+   * A short description of the sitemap type.
    *
    * @ingroup plugin_translatable
    *
@@ -42,9 +42,16 @@ class SitemapGenerator extends Plugin {
   public $description;
 
   /**
-   * Default generator settings.
+   * The ID of the sitemap generator.
    *
-   * @var array
+   * @var string
    */
-  public $settings = [];
+  public $sitemapGenerator;
+
+  /**
+   * The IDs of the URL generators.
+   *
+   * @var[] string
+   */
+  public $urlGenerators = [];
 }

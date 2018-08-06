@@ -31,7 +31,7 @@ class SimplesitemapVariantsForm extends SimplesitemapFormBase {
     ];
 
     $type_descriptions = [];
-    $sitemap_types = $this->generator->getSitemapTypeDefinitions();
+    $sitemap_types = $this->generator->getSitemapTypes();
     foreach ($sitemap_types as $sitemap_type => $definition) {
       $type_descriptions[] = $sitemap_type . (!empty($definition['description']) ? (': ' . $definition['description']) : '');
     }
@@ -54,7 +54,7 @@ class SimplesitemapVariantsForm extends SimplesitemapFormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $line = 0;
-    $sitemap_types = $this->generator->getSitemapTypeDefinitions();
+    $sitemap_types = $this->generator->getSitemapTypes();
     foreach ($this->stringToVariants($form_state->getValue('variants')) as $variant_name => $variant_definition) {
       $placeholders = [
         '@line' => ++$line,

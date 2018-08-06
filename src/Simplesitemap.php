@@ -12,9 +12,11 @@ use Drupal\Core\Datetime\DateFormatter;
 use Drupal\Component\Datetime\Time;
 use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\DefaultSitemapGenerator;
 use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
-use Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorBase;
 use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorBase;
 use Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapType\SitemapTypeBase;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapType\SitemapTypeManager;
 
 /**
  * Class Simplesitemap
@@ -87,6 +89,11 @@ class Simplesitemap {
   protected $sitemapGeneratorManager;
 
   /**
+   * @var \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapType\SitemapTypeManager
+   */
+  protected $sitemapTypeManager;
+
+  /**
    * @var UrlGeneratorBase[] $urlGenerators
    */
   protected $urlGenerators = [];
@@ -95,6 +102,11 @@ class Simplesitemap {
    * @var SitemapGeneratorBase[] $sitemapGenerators
    */
   protected $sitemapGenerators = [];
+
+  /**
+   * @var SitemapTypeBase[] $sitemapTypes
+   */
+  protected $sitemapTypes = [];
 
   /**
    * @var array
@@ -128,6 +140,7 @@ class Simplesitemap {
    * @param \Drupal\simple_sitemap\Batch $batch
    * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager $url_generator_manager
    * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager $sitemap_generator_manager
+   * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapType\SitemapTypeManager $sitemap_type_manager
    */
   public function __construct(
     EntityHelper $entity_helper,
@@ -141,7 +154,8 @@ class Simplesitemap {
     ModuleHandler $module_handler,
     Batch $batch,
     UrlGeneratorManager $url_generator_manager,
-    SitemapGeneratorManager $sitemap_generator_manager
+    SitemapGeneratorManager $sitemap_generator_manager,
+    SitemapTypeManager $sitemap_type_manager
   ) {
     $this->entityHelper = $entity_helper;
     $this->configFactory = $config_factory;
@@ -155,6 +169,7 @@ class Simplesitemap {
     $this->batch = $batch;
     $this->urlGeneratorManager = $url_generator_manager;
     $this->sitemapGeneratorManager = $sitemap_generator_manager;
+    $this->sitemapTypeManager = $sitemap_type_manager;
   }
 
   /**
@@ -219,6 +234,17 @@ class Simplesitemap {
     }
 
     return $this->urlGenerators[$url_generator_id];
+  }
+
+  /**
+   * @return array
+   */
+  public function getSitemapTypes() {
+    if (empty($this->sitemapTypes)) {
+      $this->sitemapTypes = $this->sitemapTypeManager->getDefinitions();
+    }
+
+    return $this->sitemapTypes;
   }
 
   /**
@@ -296,80 +322,6 @@ class Simplesitemap {
   }
 
   /**
-   * @return array
-   *
-   * @todo document
-   */
-  public function getSitemapTypeDefinitions() {
-    $type_definitions = [];
-    foreach ($this->configFactory->listAll('simple_sitemap.types.') as $config_name) {
-      $config_name_parts = explode('.', $config_name);
-      $type_definitions[$config_name_parts[2]] = $this->configFactory->get($config_name)->get();
-    }
-
-    return $type_definitions;
-  }
-
-  /**
-   * @param $name
-   * @param $definition
-   * @return $this
-   *
-   * @todo document
-   */
-  public function setSitemapTypeDefinition($name, $definition) {
-    $type = $this->configFactory->getEditable("simple_sitemap.types.$name");
-
-    if (empty($type->get('label')) && empty($definition['label'])) {
-      $definition['label'] = $name;
-    }
-
-    if (empty($type->get('description')) && empty($definition['description'])) {
-      $definition['description'] = '';
-    }
-
-    if (empty($type->get('sitemap_generator')) && empty($definition['sitemap_generator'])) {
-      $definition['sitemap_generator'] = self::DEFAULT_SITEMAP_GENERATOR;
-    }
-
-    if (empty($type->get('url_generators')) && empty($definition['url_generators'])) {
-      //todo exception
-    }
-
-    foreach ($definition as $key => $value) {
-      if (in_array($key, ['label', 'description', 'sitemap_generator', 'url_generators'])) {
-        $type->set($key, $value);
-      }
-      else {
-        //todo: exception
-      }
-    }
-    $type->save();
-
-    return $this;
-  }
-
-  /**
-   * @param $type_name
-   * @return $this
-   *
-   * @todo document
-   */
-  public function removeSitemapTypeDefinition($type_name) {
-    if ($type_name !== self::DEFAULT_SITEMAP_TYPE) {
-
-      // Remove type definition and variants from configuration.
-      $this->configFactory->getEditable("simple_sitemap.variants.$type_name")->delete();
-      $this->configFactory->getEditable("simple_sitemap.types.$type_name")->delete();
-    }
-    else {
-      //todo: exception
-    }
-
-    return $this;
-  }
-
-  /**
    * @param null $sitemap_type
    * @return array
    *
@@ -419,7 +371,7 @@ class Simplesitemap {
       $definition['type'] = self::DEFAULT_SITEMAP_TYPE;
     }
     else {
-      $types = $this->getSitemapTypeDefinitions();
+      $types = $this->getSitemapTypes();
       if (!isset($types[$definition['type']])) {
         // todo: exception
       }
@@ -475,10 +427,10 @@ class Simplesitemap {
       : $saved_variants;
 
     if (!empty($remove_variants)) {
-      $type_definitions = $this->getSitemapTypeDefinitions();
+      $type_definitions = $this->getSitemapTypes();
       $this->moduleHandler->alter('simple_sitemap_types', $type_definitions);
       foreach ($remove_variants as $variant_name => $variant_definition) {
-        $this->getSitemapGenerator($type_definitions[$variant_definition['type']]['sitemap_generator'])
+        $this->getSitemapGenerator($type_definitions[$variant_definition['type']]['sitemapGenerator'])
           ->setSitemapVariant($variant_name)
           ->remove()
           ->invalidateCache();
@@ -515,7 +467,7 @@ class Simplesitemap {
 
     $operations = [];
 
-    $type_definitions = $this->getSitemapTypeDefinitions();
+    $type_definitions = $this->getSitemapTypes();
     $this->moduleHandler->alter('simple_sitemap_types', $type_definitions);
 
     $sitemap_variants = $this->getSitemapVariants();
@@ -534,13 +486,13 @@ class Simplesitemap {
       $operations[] = [
         'operation' => 'removeSitemap',
         'arguments' => [
-          'sitemap_generator' => $type_definitions[$type]['sitemap_generator'],
+          'sitemap_generator' => $type_definitions[$type]['sitemapGenerator'],
           'variant' => $variant_name,
         ]
       ];
 
       // Adding generate_sitemap operations for all data sets.
-      foreach ($type_definitions[$type]['url_generators'] as $url_generator_id) {
+      foreach ($type_definitions[$type]['urlGenerators'] as $url_generator_id) {
 
         foreach ($this->getUrlGenerator($url_generator_id)
                    ->setSitemapVariant($variant_name)
@@ -552,7 +504,7 @@ class Simplesitemap {
                 'url_generator' => $url_generator_id,
                 'data_set' => $data_set,
                 'variant' => $variant_name,
-                'sitemap_generator' => $type_definitions[$type]['sitemap_generator'],
+                'sitemap_generator' => $type_definitions[$type]['sitemapGenerator'],
                 'settings' => $settings,
               ],
             ];
@@ -564,7 +516,7 @@ class Simplesitemap {
       $operations[] = [
         'operation' => 'generateIndex',
         'arguments' => [
-          'sitemap_generator' => $type_definitions[$type]['sitemap_generator'],
+          'sitemap_generator' => $type_definitions[$type]['sitemapGenerator'],
           'variant' => $variant_name,
           'settings' => $settings,
         ],

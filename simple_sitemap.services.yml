@@ -15,6 +15,7 @@ services:
       - '@simple_sitemap.batch'
       - '@plugin.manager.simple_sitemap.url_generator'
       - '@plugin.manager.simple_sitemap.sitemap_generator'
+      - '@plugin.manager.simple_sitemap.sitemap_type'
 
   simple_sitemap.sitemap_writer:
     class: Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapWriter
@@ -64,4 +65,8 @@ services:
 
   plugin.manager.simple_sitemap.sitemap_generator:
     class: Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager
+    parent: default_plugin_manager
+
+  plugin.manager.simple_sitemap.sitemap_type:
+    class: Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapType\SitemapTypeManager
     parent: default_plugin_manager

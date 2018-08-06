@@ -17,7 +17,7 @@ use Drupal\Core\Extension\ModuleHandler;
  *
  * @UrlGenerator(
  *   id = "entity",
- *   title = @Translation("Entity URL generator"),
+ *   label = @Translation("Entity URL generator"),
  *   description = @Translation("Generates URLs for entity bundles and bundle overrides."),
  * )
  */
@@ -106,6 +106,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
       if (isset($sitemap_entity_types[$entity_type_name])) {
 
         // Skip this entity type if another plugin is written to override its generation.
+        // todo needs to be adjusted for variants
         foreach ($this->urlGeneratorManager->getDefinitions() as $plugin) {
           if (!empty($plugin['settings']['overrides_entity_type'])
             && $plugin['settings']['overrides_entity_type'] === $entity_type_name) {
