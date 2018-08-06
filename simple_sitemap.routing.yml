@@ -39,3 +39,11 @@ simple_sitemap.settings_custom:
     _title: 'Simple XML Sitemap Settings'
   requirements:
     _permission: 'administer sitemap settings'
+
+simple_sitemap.settings_variants:
+  path: '/admin/config/search/simplesitemap/variants'
+  defaults:
+    _form: '\Drupal\simple_sitemap\Form\SimplesitemapVariantsForm'
+    _title: 'Simple XML Sitemap Settings'
+  requirements:
+    _permission: 'administer sitemap settings'

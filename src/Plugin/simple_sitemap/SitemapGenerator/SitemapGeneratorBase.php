@@ -259,6 +259,6 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
    */
   protected function getCustomBaseUrl() {
     $customBaseUrl = $this->settings['base_url'];
-    return !empty($customBaseUrl) ? $customBaseUrl : $GLOBALS['base_url'];
+    return !empty($customBaseUrl) ? $customBaseUrl : $GLOBALS['base_url']; //todo use service
   }
 }
