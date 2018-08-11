@@ -472,7 +472,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->drupalGet('test/sitemap.xml');
     $this->assertSession()->responseContains('node/' . $this->node->id());
 
-    $this->generator->removeSitemapVariant('test');
+    $this->generator->removeSitemapVariants('test');
 
     $variants = $this->generator->getSitemapVariants();
     $this->assertFalse(isset($variants['test']));
