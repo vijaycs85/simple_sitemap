@@ -390,22 +390,26 @@ class Simplesitemap {
     return $this;
   }
 
-  /**
-   * @param $name
-   * @return $this
-   *
-   * @todo document
-   */
-  public function removeSitemapVariant($variant_name) {
-    $this->removeSitemap($variant_name);
-    $variants = $this->getSitemapVariants();
-    foreach($variants as $saved_variant_name => $variant_definition) {
-      if ($variant_name === $saved_variant_name) {
-        unset($variants[$variant_name]);
-        $this->configFactory->getEditable('simple_sitemap.variants.' . $variant_definition['type'])
-          ->set('variants', $this->detachSitemapTypeFromVariants($variants))
+  public function removeSitemapVariants($variant_names = NULL) {
+    $this->removeSitemap($variant_names);
+    if (NULL === $variant_names) {
+      foreach ($this->configFactory->listAll('simple_sitemap.variants.') as $config_name) {
+        $this->configFactory->getEditable($config_name)->delete();
+      }
+    }
+    else {
+      $remove_variants = [];
+      $variants = $this->getSitemapVariants();
+      foreach ((array) $variant_names as $variant_name) {
+        if (isset($variants[$variant_name])) {
+          $remove_variants[$variants[$variant_name]['type']][$variant_name] = $variant_name;
+        }
+      }
+
+      foreach ($remove_variants as $type => $variants_per_type) {
+        $this->configFactory->getEditable("simple_sitemap.variants.$type")
+          ->set('variants', array_diff_key($this->getSitemapVariants($type, FALSE), $variants_per_type))
           ->save();
-        break;
       }
     }
 

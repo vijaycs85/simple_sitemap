@@ -30,17 +30,16 @@ class SimplesitemapVariantsForm extends SimplesitemapFormBase {
       '#prefix' => $this->getDonationText(),
     ];
 
-    $type_descriptions = [];
-    $sitemap_types = $this->generator->getSitemapTypes();
-    foreach ($sitemap_types as $sitemap_type => $definition) {
-      $type_descriptions[] = $sitemap_type . (!empty($definition['description']) ? (': ' . $definition['description']) : '');
-    }
     $form['simple_sitemap_variants']['variants'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Variants'),
       '#default_value' => $this->variantsToString($this->generator->getSitemapVariants(NULL, TRUE)),
-      '#description' => $this->t("Please specify sitemap variants, one per line.<br/>A variant definition consists of the variant name (used as the variant's path), the sitemap type it belongs to (optional) and the variant label (optional).<br/>These three values have to be separated by the | pipe | symbol.<br/><br/><strong>Examples:</strong><br/><em>default | default_hreflang | Default</em> -> variant of the <em>default_hreflang</em> sitemap type and <em>Default</em> as label; accessible under <em>/default/sitemap.xml</em><br/><em>test</em> -> variant of the <em>@default_sitemap_type</em> sitemap type and <em>test</em> as label; accessible under <em>/test/sitemap.xml</em><br/><br/><strong>Available sitemap types:</strong><br/>@sitemap_types", ['@default_sitemap_type' => Simplesitemap::DEFAULT_SITEMAP_TYPE, '@sitemap_types' => implode('<br/>', $type_descriptions)]),
+      '#description' => $this->t("Please specify sitemap variants, one per line.<br/>A variant definition consists of the variant name (used as the variant's path), the sitemap type it belongs to (optional) and the variant label (optional).<br/>These three values have to be separated by the | pipe | symbol.<br/><br/><strong>Examples:</strong><br/><em>default | default_hreflang | Default</em> -> variant of the <em>default_hreflang</em> sitemap type and <em>Default</em> as label; accessible under <em>/default/sitemap.xml</em><br/><em>test</em> -> variant of the <em>@default_sitemap_type</em> sitemap type and <em>test</em> as label; accessible under <em>/test/sitemap.xml</em><br/><br/><strong>Available sitemap types:</strong>", ['@default_sitemap_type' => Simplesitemap::DEFAULT_SITEMAP_TYPE]),
     ];
+
+    foreach ($this->generator->getSitemapTypes() as $sitemap_type => $definition) {
+      $form['simple_sitemap_variants']['variants']['#description'] .= '<br/>' . '<em>' . $sitemap_type . '</em>' . (!empty($definition['description']) ? (': ' . $definition['description']) : '');
+    }
 
     $this->formHelper->displayRegenerateNow($form['simple_sitemap_custom']);
 
@@ -79,15 +78,10 @@ class SimplesitemapVariantsForm extends SimplesitemapFormBase {
 
   /**
    * {@inheritdoc}
-   *
-   * @todo improve code
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    foreach ($this->generator->getSitemapVariants() as $variant_name => $variant_definition) {
-      $this->generator->removeSitemapVariant($variant_name);
-    }
-    $variants = $this->stringToVariants($form_state->getValue('variants'));
-    foreach ($variants as $variant_name => $variant_definition) {
+    $this->generator->removeSitemapVariants();
+    foreach ($this->stringToVariants($form_state->getValue('variants')) as $variant_name => $variant_definition) {
       $this->generator->addSitemapVariant($variant_name, $variant_definition);
     }
     parent::submitForm($form, $form_state);

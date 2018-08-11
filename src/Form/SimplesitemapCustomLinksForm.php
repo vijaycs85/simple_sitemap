@@ -90,9 +90,8 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $custom_links = $this->stringToCustomLinks($form_state->getValue('custom_links'));
     $this->generator->removeCustomLinks();
-    foreach ($custom_links as $link_config) {
+    foreach ($this->stringToCustomLinks($form_state->getValue('custom_links')) as $link_config) {
       $this->generator->addCustomLink($link_config['path'], $link_config);
     }
     $this->generator->saveSetting('custom_links_include_images', (bool) $form_state->getValue('include_images'));
