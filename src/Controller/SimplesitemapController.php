@@ -65,7 +65,7 @@ class SimplesitemapController extends ControllerBase {
    * @return object
    *  Returns an XML response.
    */
-  public function getSitemap(Request $request, $variant = Simplesitemap::DEFAULT_SITEMAP_VARIANT) {
+  public function getSitemap(Request $request, $variant = NULL) {
     $output = $this->generator->getSitemap($variant, $request->query->getInt('page'));
     if (!$output) {
       $this->cacheKillSwitch->trigger();

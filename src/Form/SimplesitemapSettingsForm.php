@@ -4,6 +4,7 @@ namespace Drupal\simple_sitemap\Form;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Component\Utility\UrlHelper;
+use Drupal\simple_sitemap\Simplesitemap;
 
 /**
  * Class SimplesitemapSettingsForm
@@ -82,6 +83,20 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
       '#title' => $this->t('Advanced settings'),
       '#open' => TRUE,
     ];
+
+    $variants = [];
+    foreach ($this->generator->getSitemapVariants(NULL, FALSE) as $name => $info) {
+      $variants[$name] = $this->t($info['label']);
+    }
+    $default_variant = $this->generator->getSetting('default_variant', Simplesitemap::DEFAULT_SITEMAP_VARIANT);
+
+    $form['simple_sitemap_settings']['advanced']['default_variant'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Default sitemap variant'),
+      '#description' => $this->t('This sitemap variant will be available under <em>/sitemap.xml</em> in addition to its default path <em>/variant-name/sitemap.xml</em>.<br/>Variants can be configured <a href="@url">here</a>.', ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap/variants']),
+      '#default_value' => isset($variants[$default_variant]) ? $default_variant : '',
+      '#options' => ['' => $this->t('- None -')] + $variants,
+      ];
 
     $form['simple_sitemap_settings']['advanced']['base_url'] = [
       '#type' => 'textfield',
@@ -171,7 +186,8 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
                'remove_duplicates',
                'skip_untranslated',
                'batch_process_limit',
-               'base_url',] as $setting_name) {
+               'base_url',
+               'default_variant'] as $setting_name) {
       $this->generator->saveSetting($setting_name, $form_state->getValue($setting_name));
     }
     $this->generator->saveSetting('excluded_languages', array_filter($form_state->getValue('excluded_languages')));

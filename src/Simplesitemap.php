@@ -261,7 +261,8 @@ class Simplesitemap {
    *  links setting. If a sitemap ID is provided, a sitemap chunk is returned.
    *  Returns false if the sitemap is not retrievable from the database.
    */
-  public function getSitemap($variant = self::DEFAULT_SITEMAP_VARIANT, $delta = NULL) {
+  public function getSitemap($variant = NULL, $delta = NULL) {
+    $variant = NULL !== $variant ? $variant : $this->getSetting('default_variant', self::DEFAULT_SITEMAP_VARIANT);
     $chunk_info = $this->fetchSitemapVariantInfo($variant);
 
     if (empty($delta) || !isset($chunk_info[$delta])) {
@@ -460,6 +461,7 @@ class Simplesitemap {
 
     $settings = [
       'base_url' => $this->getSetting('base_url', ''),
+      'default_variant' => $this->getSetting('default_variant', NULL),
       'batch_process_limit' => $this->getSetting('batch_process_limit', 1500),
       'max_links' => $this->getSetting('max_links', 2000),
       'skip_untranslated' => $this->getSetting('skip_untranslated', FALSE),

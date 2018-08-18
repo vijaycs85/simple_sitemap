@@ -94,7 +94,7 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
     $this->languageManager = $language_manager;
     $this->time = $time;
     $this->writer = $sitemap_writer;
-    $this->sitemapVariant = Simplesitemap::DEFAULT_SITEMAP_VARIANT;
+    $this->sitemapVariant = $this->settings['default_variant'];
   }
 
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
@@ -121,14 +121,16 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
 
   /**
    * @return bool
+   * @todo: Variant cannot be null
    */
   protected function isDefaultVariant() {
-    return $this->sitemapVariant === Simplesitemap::DEFAULT_SITEMAP_VARIANT;
+    return $this->sitemapVariant === $this->settings['default_variant'];
   }
 
   /**
    * @param array $links
    * @return string
+   * @todo: Variant cannot be null
    */
   abstract protected function getXml(array $links);
 
@@ -145,6 +147,7 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
    * Returns the sitemap index for all sitemap chunks of this type.
    *
    * @return string
+   * @todo: Variant cannot be null
    */
   protected function getIndexXml(array $chunk_info) {
     $this->writer->openMemory();
@@ -193,6 +196,8 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
    *
    * @param array $links
    *   All links with their multilingual versions and settings.
+   *
+   * @todo Variant cannot be null
    */
   public function generate(array $links) {
     $highest_id = $this->db->query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField();
@@ -214,6 +219,7 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
 
   /**
    * @throws \Exception
+   * @todo: Variant cannot be null
    */
   public function generateIndex() {
     if (!empty($chunk_info = $this->getChunkInfo()) && count($chunk_info) > 1) {
@@ -239,6 +245,10 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
     return $this;
   }
 
+  /**
+   * @return $this
+   * @todo: Variant cannot be null
+   */
   public function invalidateCache() {
     Cache::invalidateTags(['simple_sitemap:' . $this->sitemapVariant]);
 
