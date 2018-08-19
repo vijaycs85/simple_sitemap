@@ -22,6 +22,9 @@ simple_sitemap.settings:
     base_url:
       label: 'Base URL'
       type: string
+    default_variant:
+      label: 'Default variant'
+      type: string
     custom_links_include_images:
       label: 'Include images of custom links'
       type: boolean
