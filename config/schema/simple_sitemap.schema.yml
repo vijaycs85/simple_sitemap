@@ -5,10 +5,13 @@ simple_sitemap.settings:
       label: 'Max links'
       type: integer
     cron_generate:
-      label: 'Cron generate'
+      label: 'Cron generation'
       type: boolean
     cron_generate_interval:
-      label: 'Cron generate interval'
+      label: 'Cron generation interval'
+      type: integer
+    generate_duration:
+      label: 'Generation duration'
       type: integer
     remove_duplicates:
       label: 'Remove duplicates'
@@ -16,9 +19,6 @@ simple_sitemap.settings:
     skip_untranslated:
       label: 'Skip untranslated'
       type: boolean
-    batch_process_limit:
-      label: 'Batch process limit'
-      type: integer
     base_url:
       label: 'Base URL'
       type: string
@@ -89,3 +89,6 @@ simple_sitemap.variants.*:
           label:
             label: 'Variant label'
             type: string
+          weight:
+            label: 'Weight'
+            type: integer

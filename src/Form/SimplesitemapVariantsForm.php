@@ -3,7 +3,7 @@
 namespace Drupal\simple_sitemap\Form;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\simple_sitemap\Simplesitemap;
+use Drupal\simple_sitemap\SimplesitemapManager;
 
 /**
  * Class SimplesitemapVariantsForm
@@ -33,11 +33,11 @@ class SimplesitemapVariantsForm extends SimplesitemapFormBase {
     $form['simple_sitemap_variants']['variants'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Variants'),
-      '#default_value' => $this->variantsToString($this->generator->getSitemapVariants(NULL, TRUE)),
-      '#description' => $this->t("Please specify sitemap variants, one per line.<br/>A variant definition consists of the variant name (used as the variant's path), the sitemap type it belongs to (optional) and the variant label (optional).<br/>These three values have to be separated by the | pipe | symbol.<br/><br/><strong>Examples:</strong><br/><em>default | default_hreflang | Default</em> -> variant of the <em>default_hreflang</em> sitemap type and <em>Default</em> as label; accessible under <em>/default/sitemap.xml</em><br/><em>test</em> -> variant of the <em>@default_sitemap_type</em> sitemap type and <em>test</em> as label; accessible under <em>/test/sitemap.xml</em><br/><br/><strong>Available sitemap types:</strong>", ['@default_sitemap_type' => Simplesitemap::DEFAULT_SITEMAP_TYPE]),
+      '#default_value' => $this->variantsToString($this->generator->getSitemapManager()->getSitemapVariants(NULL, TRUE)),
+      '#description' => $this->t("Please specify sitemap variants, one per line.<br/>A variant definition consists of the variant name (used as the variant's path), the sitemap type it belongs to (optional) and the variant label (optional).<br/>These three values have to be separated by the | pipe | symbol.<br/><br/><strong>Examples:</strong><br/><em>default | default_hreflang | Default</em> -> variant of the <em>default_hreflang</em> sitemap type and <em>Default</em> as label; accessible under <em>/default/sitemap.xml</em><br/><em>test</em> -> variant of the <em>@default_sitemap_type</em> sitemap type and <em>test</em> as label; accessible under <em>/test/sitemap.xml</em><br/><br/><strong>Available sitemap types:</strong>", ['@default_sitemap_type' => SimplesitemapManager::DEFAULT_SITEMAP_TYPE]),
     ];
 
-    foreach ($this->generator->getSitemapTypes() as $sitemap_type => $definition) {
+    foreach ($this->generator->getSitemapManager()->getSitemapTypes() as $sitemap_type => $definition) {
       $form['simple_sitemap_variants']['variants']['#description'] .= '<br/>' . '<em>' . $sitemap_type . '</em>' . (!empty($definition['description']) ? (': ' . $definition['description']) : '');
     }
 
@@ -53,7 +53,7 @@ class SimplesitemapVariantsForm extends SimplesitemapFormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $line = 0;
-    $sitemap_types = $this->generator->getSitemapTypes();
+    $sitemap_types = $this->generator->getSitemapManager()->getSitemapTypes();
     foreach ($this->stringToVariants($form_state->getValue('variants')) as $variant_name => $variant_definition) {
       $placeholders = [
         '@line' => ++$line,
@@ -80,9 +80,11 @@ class SimplesitemapVariantsForm extends SimplesitemapFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $this->generator->removeSitemapVariants();
+    $this->generator->getSitemapManager()->removeSitemapVariants();
+    $weight = 0;
     foreach ($this->stringToVariants($form_state->getValue('variants')) as $variant_name => $variant_definition) {
-      $this->generator->addSitemapVariant($variant_name, $variant_definition);
+      $this->generator->getSitemapManager()->addSitemapVariant($variant_name, $variant_definition + ['weight' => $weight]);
+      $weight++;
     }
     parent::submitForm($form, $form_state);
 
@@ -108,7 +110,7 @@ class SimplesitemapVariantsForm extends SimplesitemapFormBase {
     foreach ($variants_string_lines as $i => &$line) {
       $variant_settings = explode('|', $line);
       $name = strtolower(trim($variant_settings[0]));
-      $variants[$name]['type'] = !empty($variant_settings[1]) ? trim($variant_settings[1]) : Simplesitemap::DEFAULT_SITEMAP_TYPE;
+      $variants[$name]['type'] = !empty($variant_settings[1]) ? trim($variant_settings[1]) : SimplesitemapManager::DEFAULT_SITEMAP_TYPE;
       $variants[$name]['label'] = !empty($variant_settings[2]) ? trim($variant_settings[2]) : $name;
     }
     return $variants;

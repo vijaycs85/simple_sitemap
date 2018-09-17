@@ -5,7 +5,6 @@ namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
 use Drupal\simple_sitemap\Simplesitemap;
-use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandler;
@@ -28,22 +27,22 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase {
   /**
    * ArbitraryUrlGenerator constructor.
    * @param array $configuration
-   * @param string $plugin_id
-   * @param mixed $plugin_definition
+   * @param $plugin_id
+   * @param $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
-   * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager $sitemap_generator_manager
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    * @param \Drupal\simple_sitemap\Logger $logger
    * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
    * @param \Drupal\Core\Extension\ModuleHandler $module_handler
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function __construct(
     array $configuration,
     $plugin_id,
     $plugin_definition,
     Simplesitemap $generator,
-    SitemapGeneratorManager $sitemap_generator_manager,
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
     Logger $logger,
@@ -55,7 +54,6 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $generator,
-      $sitemap_generator_manager,
       $language_manager,
       $entity_type_manager,
       $logger,
@@ -74,7 +72,6 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $container->get('simple_sitemap.generator'),
-      $container->get('plugin.manager.simple_sitemap.sitemap_generator'),
       $container->get('language_manager'),
       $container->get('entity_type.manager'),
       $container->get('simple_sitemap.logger'),
@@ -83,17 +80,14 @@ class ArbitraryUrlGenerator extends UrlGeneratorBase {
     );
   }
 
-
   /**
    * @inheritdoc
    */
   public function getDataSets() {
-    $data_sets = [];
     $arbitrary_links = [];
     $sitemap_variant = $this->sitemapVariant;
     $this->moduleHandler->alter('simple_sitemap_arbitrary_links', $arbitrary_links, $sitemap_variant);
-    $data_sets[] = array_values($arbitrary_links);
-    return $data_sets;
+    return array_values($arbitrary_links);
   }
 
   /**

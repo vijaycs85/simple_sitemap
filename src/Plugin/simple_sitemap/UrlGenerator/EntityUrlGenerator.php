@@ -5,7 +5,6 @@ namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
 use Drupal\simple_sitemap\Simplesitemap;
-use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -39,20 +38,20 @@ class EntityUrlGenerator extends UrlGeneratorBase {
    * @param $plugin_id
    * @param $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
-   * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager $sitemap_generator_manager
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    * @param \Drupal\simple_sitemap\Logger $logger
    * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
    * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager $url_generator_manager
    * @param \Drupal\Core\Extension\ModuleHandler $module_handler
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function __construct(
     array $configuration,
     $plugin_id,
     $plugin_definition,
     Simplesitemap $generator,
-    SitemapGeneratorManager $sitemap_generator_manager,
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
     Logger $logger,
@@ -65,7 +64,6 @@ class EntityUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $generator,
-      $sitemap_generator_manager,
       $language_manager,
       $entity_type_manager,
       $logger,
@@ -85,7 +83,6 @@ class EntityUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $container->get('simple_sitemap.generator'),
-      $container->get('plugin.manager.simple_sitemap.sitemap_generator'),
       $container->get('language_manager'),
       $container->get('entity_type.manager'),
       $container->get('simple_sitemap.logger'),
@@ -114,7 +111,11 @@ class EntityUrlGenerator extends UrlGeneratorBase {
           }
         }
 
+        $entityTypeQuery = $this->entityTypeManager->getStorage($entity_type_name)->getQuery();
+
         foreach ($bundles as $bundle_name => $bundle_settings) {
+
+          $bundleQuery = $entityTypeQuery;
 
           // Skip this bundle if it is to be generated in a different sitemap variant.
           if (NULL !== $this->sitemapVariant && isset($bundle_settings['variant'])
@@ -131,12 +132,24 @@ class EntityUrlGenerator extends UrlGeneratorBase {
           $this->moduleHandler->alter('simple_sitemap_bundle_settings', $bundle_settings, $bundle_context, $sitemap_variant);
 
           if (!empty($bundle_settings['index'])) {
-            $data_sets[] = [
-              'bundle_settings' => $bundle_settings,
-              'bundle_name' => $bundle_name,
-              'entity_type_name' => $entity_type_name,
-              'keys' => $sitemap_entity_types[$entity_type_name]->getKeys(),
-            ];
+
+            $keys = $sitemap_entity_types[$entity_type_name]->getKeys();
+            if (empty($keys['id'])) {
+              $bundleQuery->sort($keys['id'], 'ASC');
+            }
+            if (!empty($keys['bundle'])) {
+              $bundleQuery->condition($keys['bundle'], $bundle_name);
+            }
+            if (!empty($keys['status'])) {
+              $bundleQuery->condition($keys['status'], 1);
+            }
+
+            foreach ($bundleQuery->execute() as $entity_id) {
+              $data_sets[] = [
+                'entity_type' => $entity_type_name,
+                'id' => $entity_id,
+              ];
+            }
           }
         }
       }
@@ -148,7 +161,8 @@ class EntityUrlGenerator extends UrlGeneratorBase {
   /**
    * @inheritdoc
    */
-  protected function processDataSet($entity) {
+  protected function processDataSet($data_set) {
+    $entity = $this->entityTypeManager->getStorage($data_set['entity_type'])->load($data_set['id']);
 
     $entity_id = $entity->id();
     $entity_type_name = $entity->getEntityTypeId();
@@ -167,11 +181,6 @@ class EntityUrlGenerator extends UrlGeneratorBase {
     }
 
     $path = $url_object->getInternalPath();
-
-    // Do not include paths that have been already indexed.
-    if ($this->settings['remove_duplicates'] && $this->pathProcessed($path)) {
-      return FALSE;
-    }
 
     $url_object->setOption('absolute', TRUE);
 
@@ -193,35 +202,5 @@ class EntityUrlGenerator extends UrlGeneratorBase {
         ],
       ]
     ];
-  }
-
-  /**
-   * @inheritdoc
-   */
-  protected function getBatchIterationElements($entity_info) {
-    $query = $this->entityTypeManager->getStorage($entity_info['entity_type_name'])->getQuery();
-
-    if (!empty($entity_info['keys']['id'])) {
-      $query->sort($entity_info['keys']['id'], 'ASC');
-    }
-    if (!empty($entity_info['keys']['bundle'])) {
-      $query->condition($entity_info['keys']['bundle'], $entity_info['bundle_name']);
-    }
-    if (!empty($entity_info['keys']['status'])) {
-      $query->condition($entity_info['keys']['status'], 1);
-    }
-
-    if ($this->batchOperationNeedsInitialization()) {
-      $count_query = clone $query;
-      $this->initializeBatchOperation($count_query->count()->execute());
-    }
-
-    if ($this->isDrupalBatch()) {
-      $query->range($this->context['sandbox']['progress'], $this->settings['batch_process_limit']);
-    }
-
-    return $this->entityTypeManager
-      ->getStorage($entity_info['entity_type_name'])
-      ->loadMultiple($query->execute());
   }
 }

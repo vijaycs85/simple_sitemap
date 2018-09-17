@@ -6,12 +6,12 @@ use Drupal\Core\Extension\ModuleHandler;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
 use Drupal\simple_sitemap\Simplesitemap;
-use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Menu\MenuTreeParameters;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Menu\MenuLinkTree;
+use Drupal\Core\Menu\MenuLinkBase;
 
 /**
  * Class EntityMenuLinkContentUrlGenerator
@@ -25,6 +25,8 @@ use Drupal\Core\Menu\MenuLinkTree;
  *     "overrides_entity_type" = "menu_link_content",
  *   },
  * )
+ *
+ * @todo Find way of adding just a menu link item pointer to the queue instead of whole object.
  */
 class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
 
@@ -44,20 +46,20 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
    * @param $plugin_id
    * @param $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
-   * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager $sitemap_generator_manager
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    * @param \Drupal\simple_sitemap\Logger $logger
    * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
    * @param \Drupal\Core\Menu\MenuLinkTree $menu_link_tree
    * @param \Drupal\Core\Extension\ModuleHandler $module_handler
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function __construct(
     array $configuration,
     $plugin_id,
     $plugin_definition,
     Simplesitemap $generator,
-    SitemapGeneratorManager $sitemap_generator_manager,
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
     Logger $logger,
@@ -70,7 +72,6 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $generator,
-      $sitemap_generator_manager,
       $language_manager,
       $entity_type_manager,
       $logger,
@@ -90,7 +91,6 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $container->get('simple_sitemap.generator'),
-      $container->get('plugin.manager.simple_sitemap.sitemap_generator'),
       $container->get('language_manager'),
       $container->get('entity_type.manager'),
       $container->get('simple_sitemap.logger'),
@@ -124,7 +124,17 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
         $this->moduleHandler->alter('simple_sitemap_bundle_settings', $bundle_settings, $bundle_context, $sitemap_variant);
 
         if (!empty($bundle_settings['index'])) {
-          $data_sets[] = $bundle_name;
+
+          // Retrieve the expanded tree.
+          $tree = $this->menuLinkTree->load($bundle_name, new MenuTreeParameters());
+          $tree = $this->menuLinkTree->transform($tree, [
+            ['callable' => 'menu.default_tree_manipulators:generateIndexAndSort'],
+            ['callable' => 'menu.default_tree_manipulators:flatten'],
+          ]);
+
+          foreach ($tree as $i => $item) {
+            $data_sets[] = $item->link;
+          }
         }
       }
     }
@@ -135,13 +145,14 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
   /**
    * @inheritdoc
    */
-  protected function processDataSet($link) {
+  protected function processDataSet($data_set) {
 
-    if (!$link->isEnabled()) {
+    /** @var  MenuLinkBase $data_set */
+    if (!$data_set->isEnabled()) {
       return FALSE;
     }
 
-    $url_object = $link->getUrlObject();
+    $url_object = $data_set->getUrlObject();
 
     // Do not include external paths.
     if ($url_object->isExternal()) {
@@ -149,9 +160,9 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
     }
 
     // If not a menu_link_content link, use bundle settings.
-    $meta_data = $link->getMetaData();
+    $meta_data = $data_set->getMetaData();
     if (empty($meta_data['entity_id'])) {
-      $entity_settings = $this->generator->getBundleSettings('menu_link_content', $link->getMenuName());
+      $entity_settings = $this->generator->getBundleSettings('menu_link_content', $data_set->getMenuName());
     }
 
     // If menu link is of entity type menu_link_content, take under account its entity override.
@@ -165,7 +176,7 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
 
     // There can be internal paths that are not rooted, like 'base:/path'.
     if ($url_object->isRouted()) {
-     $path = $url_object->getInternalPath();
+      $path = $url_object->getInternalPath();
     }
     else { // Handle base scheme.
       if (strpos($uri = $url_object->toUriString(), 'base:/') === 0 ) {
@@ -174,11 +185,6 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
       else { // Handle unforeseen schemes.
         $path = $uri;
       }
-    }
-
-    // Do not include paths that have been already indexed.
-    if ($this->settings['remove_duplicates'] && $this->pathProcessed($path)) {
-      return FALSE;
     }
 
     $url_object->setOption('absolute', TRUE);
@@ -210,32 +216,4 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
 
     return $path_data;
   }
-
-  /**
-   * @inheritdoc
-   */
-  protected function getBatchIterationElements($menu_name) {
-
-    // Retrieve the expanded tree.
-    $tree = $this->menuLinkTree->load($menu_name, new MenuTreeParameters());
-    $tree = $this->menuLinkTree->transform($tree, [
-      ['callable' => 'menu.default_tree_manipulators:generateIndexAndSort'],
-      ['callable' => 'menu.default_tree_manipulators:flatten'],
-    ]);
-
-    $elements = [];
-    foreach ($tree as $i => $item) {
-      $elements[] = $item->link;
-    }
-    $elements = array_values($elements);
-
-    if ($this->batchOperationNeedsInitialization()) {
-      $this->initializeBatchOperation(count($elements));
-    }
-
-    return $this->isDrupalBatch()
-      ? array_slice($elements, $this->context['sandbox']['progress'], $this->settings['batch_process_limit'])
-      : $elements;
-  }
-
 }

@@ -5,8 +5,6 @@
  * Module install and update procedures.
  */
 
-use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
-
 /**
  * Implements hook_requirements().
  *
@@ -30,7 +28,7 @@ function simple_sitemap_requirements($phase) {
     case 'runtime':
 
       $generator = \Drupal::service('simple_sitemap.generator');
-      $generated_ago = $generator->getGeneratedAgo(\Drupal\simple_sitemap\Simplesitemap::DEFAULT_SITEMAP_VARIANT); //todo
+      $generated_ago = $generator->getGeneratedAgo(\Drupal\simple_sitemap\SimplesitemapManager::DEFAULT_SITEMAP_VARIANT); //todo
       $cron_generation = $generator->getSetting('cron_generate');
 
       if (!$generated_ago) {
@@ -104,9 +102,17 @@ function simple_sitemap_schema() {
       'sitemap_created' => [
         'description' => 'Timestamp of sitemap chunk generation.',
         'type' => 'int',
-        'default' => 0,
         'not null' => TRUE,
         'unsigned' => TRUE,
+        'default' => 0,
+      ],
+      'status' => [
+        'description' => "Flag indicating the publishing status of the chunk.",
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
       ],
     ],
     'primary key' => ['id'],
@@ -118,8 +124,8 @@ function simple_sitemap_schema() {
       'id' => [
         'description' => 'Override unique identifier.',
         'type' => 'serial',
-        'unsigned' => TRUE,
         'not null' => TRUE,
+        'unsigned' => TRUE,
       ],
       'entity_type' => [
         'description' => 'Entity type of the overriding entity.',
@@ -562,3 +568,39 @@ function simple_sitemap_update_8214() {
     $config_factory->getEditable($type)->delete();
   }
 }
+
+/**
+ * Adding 'status' field to simple_sitemap table and weight to variants.
+ */
+function simple_sitemap_update_8215() {
+  $database = \Drupal::database();
+  $database->truncate('simple_sitemap')->execute();
+
+  if (!$database->schema()->fieldExists('simple_sitemap', 'status')) {
+    $database->schema()->addField(
+      'simple_sitemap',
+      'status', [
+        'description' => "Flag indicating the publishing status of the chunk.",
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+      ]
+    );
+  }
+
+  $config_factory = \Drupal::service('config.factory');
+  foreach ($config_factory->listAll('simple_sitemap.variants.') as $type) {
+    /** @var \Drupal\Core\Config\Config $type */
+    $type = $config_factory->getEditable($type);
+    $variants = $type->get('variants');
+    foreach($variants as $i => $variant) {
+      $variants[$i]['weight'] = 0;
+    }
+    $type->set('variants', $variants)->save();
+  }
+
+  return t('The XML sitemaps need to be regenerated.');
+}
+

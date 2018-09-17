@@ -55,7 +55,7 @@ class SimplesitemapController extends ControllerBase {
    * @param string $variant
    *  Optional name of sitemap variant.
    *  @see \hook_simple_sitemap_variants_alter()
-   *  @see Simplesitemap::getSitemapVariants()
+   *  @see SimplesitemapManager::getSitemapVariants()
    *
    * @param \Symfony\Component\HttpFoundation\Request $request
    *  The request object.

@@ -148,7 +148,7 @@ function simple_sitemap_cron() {
     $requestTime = \Drupal::service('datetime.time')->getRequestTime();
     if ($interval === 0 || ((\Drupal::state()->get('simple_sitemap.last_cron_generate', 0) + $interval) <= $requestTime)) {
       \Drupal::state()->set('simple_sitemap.last_cron_generate', $requestTime);
-      $generator->generateSitemap('backend');
+      $generator->generateSitemap('cron');
     }
   }
 }

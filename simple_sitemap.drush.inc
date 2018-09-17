@@ -14,6 +14,13 @@ function simple_sitemap_drush_command() {
     'callback' => 'drush_simple_sitemap_generate',
     'drupal dependencies' => ['simple_sitemap'],
   ];
+
+  $items['simple_sitemap-rebuild-queue'] = [
+    'description' => 'Rebuild the sitemap queue for all sitemap variants.',
+    'callback' => 'drush_simple_sitemap_rebuild_queue',
+    'drupal dependencies' => ['simple_sitemap'],
+  ];
+
   return $items;
 }
 
@@ -24,4 +31,13 @@ function simple_sitemap_drush_command() {
  */
 function drush_simple_sitemap_generate() {
   \Drupal::service('simple_sitemap.generator')->generateSitemap('drush');
+}
+
+/**
+ * Callback function for hook_drush_command().
+ *
+ * Rebuild the sitemap queue for all sitemap variants.
+ */
+function drush_simple_sitemap_rebuild_queue() {
+  \Drupal::service('simple_sitemap.generator')->rebuildQueue();
 }

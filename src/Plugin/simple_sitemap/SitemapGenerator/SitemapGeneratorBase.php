@@ -139,6 +139,7 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
       ->fields('s', ['delta', 'sitemap_created', 'type'])
       ->condition('s.type', $this->sitemapVariant)
       ->condition('s.delta', self::INDEX_DELTA, '<>')
+      ->condition('s.status', 0)
       ->execute()
       ->fetchAllAssoc('delta');
   }
@@ -182,10 +183,23 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
   /**
    * @return $this
    */
-  public function remove() {
-    $this->db->delete('simple_sitemap')
-      ->condition('type',  $this->sitemapVariant)
-      ->execute();
+  public function remove($mode = 'all') {
+    $query = $this->db->delete('simple_sitemap')
+      ->condition('type',  $this->sitemapVariant);
+
+    switch($mode) {
+      case 'published':
+        $query->condition('status', 1);
+        break;
+      case 'unpublished':
+        $query->condition('status', 0);
+        break;
+      case 'all':
+        break;
+      default:
+        //todo: throw error
+    }
+    $query->execute();
 
     return $this;
   }
@@ -201,18 +215,17 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
    */
   public function generate(array $links) {
     $highest_id = $this->db->query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField();
-    $highest_delta = $this->db->query('SELECT MAX(delta) FROM {simple_sitemap} WHERE type = :type', [':type' => $this->sitemapVariant])
+    $highest_delta = $this->db->query('SELECT MAX(delta) FROM {simple_sitemap} WHERE type = :type AND status = :status', [':type' => $this->sitemapVariant, ':status' => 0])
       ->fetchField();
 
-    $values = [
+    $this->db->insert('simple_sitemap')->fields([
       'id' => NULL === $highest_id ? 0 : $highest_id + 1,
       'delta' => NULL === $highest_delta ? self::FIRST_CHUNK_DELTA : $highest_delta + 1,
       'type' =>  $this->sitemapVariant,
       'sitemap_string' => $this->getXml($links),
       'sitemap_created' => $this->time->getRequestTime(),
-    ];
-
-    $this->db->insert('simple_sitemap')->fields($values)->execute();
+      'status' => 0,
+    ])->execute();
 
     return $this;
   }
@@ -226,20 +239,39 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
       $index_xml = $this->getIndexXml($chunk_info);
       $highest_id = $this->db->query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField();
       $this->db->merge('simple_sitemap')
-        ->key(['delta' => self::INDEX_DELTA, 'type' => $this->sitemapVariant])
+        ->keys([
+          'delta' => self::INDEX_DELTA,
+          'type' => $this->sitemapVariant,
+          'status' => 0
+        ])
         ->insertFields([
           'id' => NULL === $highest_id ? 0 : $highest_id + 1,
           'delta' => self::INDEX_DELTA,
           'type' =>  $this->sitemapVariant,
           'sitemap_string' => $index_xml,
           'sitemap_created' => $this->time->getRequestTime(),
+          'status' => 0,
         ])
         ->updateFields([
-          'type' =>  $this->sitemapVariant,
           'sitemap_string' => $index_xml,
           'sitemap_created' => $this->time->getRequestTime(),
         ])
         ->execute();
+    }
+
+    return $this;
+  }
+
+  public function publish() {
+    $unpublished_chunk = $this->db->query('SELECT MAX(id) FROM {simple_sitemap} WHERE type = :type AND status = :status', [':type' => $this->sitemapVariant, ':status' => 0])
+      ->fetchField();
+
+    // Only allow publishing a sitemap variant if there is an unpublished
+    // sitemap variant, as publishing involves deleting the currently published
+    // variant.
+    if (FALSE !== $unpublished_chunk) {
+      $this->remove('published');
+      $this->db->query('UPDATE {simple_sitemap} SET status = :status WHERE type = :type', [':type' => $this->sitemapVariant, ':status' => 1]);
     }
 
     return $this;

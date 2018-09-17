@@ -7,7 +7,6 @@ use Drupal\simple_sitemap\Annotation\UrlGenerator;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
 use Drupal\simple_sitemap\Simplesitemap;
-use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Path\PathValidator;
@@ -42,22 +41,22 @@ class CustomUrlGenerator extends UrlGeneratorBase {
   /**
    * CustomUrlGenerator constructor.
    * @param array $configuration
-   * @param string $plugin_id
-   * @param mixed $plugin_definition
+   * @param $plugin_id
+   * @param $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
-   * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager $sitemap_generator_manager
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    * @param \Drupal\simple_sitemap\Logger $logger
    * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
    * @param \Drupal\Core\Path\PathValidator $path_validator
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function __construct(
     array $configuration,
     $plugin_id,
     $plugin_definition,
     Simplesitemap $generator,
-    SitemapGeneratorManager $sitemap_generator_manager,
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
     Logger $logger,
@@ -68,7 +67,6 @@ class CustomUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $generator,
-      $sitemap_generator_manager,
       $language_manager,
       $entity_type_manager,
       $logger,
@@ -87,7 +85,6 @@ class CustomUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $container->get('simple_sitemap.generator'),
-      $container->get('plugin.manager.simple_sitemap.sitemap_generator'),
       $container->get('language_manager'),
       $container->get('entity_type.manager'),
       $container->get('simple_sitemap.logger'),
@@ -103,8 +100,7 @@ class CustomUrlGenerator extends UrlGeneratorBase {
    */
   public function getDataSets() {
     $this->includeImages = $this->generator->getSetting('custom_links_include_images', FALSE);
-    $data_sets[] = array_values($this->generator->getCustomLinks());
-    return $data_sets;
+    return array_values($this->generator->getCustomLinks());
   }
 
   /**
@@ -121,10 +117,6 @@ class CustomUrlGenerator extends UrlGeneratorBase {
 
     $url_object = Url::fromUserInput($data_set['path'], ['absolute' => TRUE]);
     $path = $url_object->getInternalPath();
-
-    if ($this->settings['remove_duplicates'] && $this->pathProcessed($path)) {
-      return FALSE;
-    }
 
     $entity = $this->entityHelper->getEntityFromUrlObject($url_object);
 

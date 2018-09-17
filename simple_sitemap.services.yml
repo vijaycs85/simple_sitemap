@@ -4,6 +4,8 @@ services:
     public: true
     arguments:
       - '@simple_sitemap.entity_helper'
+      - '@simple_sitemap.settings'
+      - '@simple_sitemap.manager'
       - '@config.factory'
       - '@database'
       - '@entity_type.manager'
@@ -12,10 +14,40 @@ services:
       - '@date.formatter'
       - '@datetime.time'
       - '@module_handler'
-      - '@simple_sitemap.batch'
-      - '@plugin.manager.simple_sitemap.url_generator'
-      - '@plugin.manager.simple_sitemap.sitemap_generator'
-      - '@plugin.manager.simple_sitemap.sitemap_type'
+      - '@simple_sitemap.queue_worker'
+
+  simple_sitemap.manager:
+    class: Drupal\simple_sitemap\SimplesitemapManager
+    public: true
+    arguments:
+    - '@config.factory'
+    - '@plugin.manager.simple_sitemap.sitemap_type'
+    - '@plugin.manager.simple_sitemap.url_generator'
+    - '@plugin.manager.simple_sitemap.sitemap_generator'
+
+  simple_sitemap.settings:
+    class: Drupal\simple_sitemap\SimplesitemapSettings
+    public: true
+    arguments:
+    - '@config.factory'
+
+  simple_sitemap.queue_worker:
+    class: Drupal\simple_sitemap\Queue\QueueWorker
+    public: true
+    arguments:
+    - '@simple_sitemap.settings'
+    - '@simple_sitemap.manager'
+    - '@state'
+    - '@module_handler'
+    - '@simple_sitemap.element_queue'
+    - '@lock'
+
+  simple_sitemap.element_queue:
+    class: Drupal\simple_sitemap\Queue\ElementQueue
+    public: false
+    arguments:
+    - 'simple_sitemap_elements'
+    - '@database'
 
   simple_sitemap.sitemap_writer:
     class: Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapWriter
@@ -35,10 +67,6 @@ services:
       - '@simple_sitemap.generator'
       - '@simple_sitemap.entity_helper'
       - '@current_user'
-
-  simple_sitemap.batch:
-    class: Drupal\simple_sitemap\Batch
-    public: false
 
   simple_sitemap.logger:
     class: Drupal\simple_sitemap\Logger

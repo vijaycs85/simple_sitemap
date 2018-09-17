@@ -1,0 +1,344 @@
+<?php
+
+namespace Drupal\simple_sitemap\Queue;
+
+use Drupal\Component\Utility\Timer;
+use Drupal\simple_sitemap\SimplesitemapSettings;
+use Drupal\Core\Extension\ModuleHandler;
+use Drupal\simple_sitemap\SimplesitemapManager;
+use Drupal\Core\State\State;
+use Drupal\Core\ProxyClass\Lock\DatabaseLockBackend;
+
+
+class QueueWorker {
+
+  use BatchTrait;
+
+  const REBUILD_QUEUE_CHUNK_ITEM_SIZE = 5000;
+
+  /**
+   * @var \Drupal\simple_sitemap\SimplesitemapSettings
+   */
+  protected $settings;
+
+  /**
+   * @var \Drupal\simple_sitemap\SimplesitemapManager
+   */
+  protected $manager;
+
+  /**
+   * @var \Drupal\Core\State\State
+   */
+  protected $state;
+
+  /**
+   * @var \Drupal\Core\Extension\ModuleHandler
+   */
+  protected $moduleHandler;
+
+  /**
+   * @var \Drupal\Core\ProxyClass\Lock\DatabaseLockBackend
+   */
+  protected $lock;
+
+  /**
+   * @var array|\Drupal\simple_sitemap\Queue\ElementQueue
+   */
+  protected $elementQueue = [];
+
+  /**
+   * @var string|null
+   */
+  protected $variantProcessedNow;
+
+  /**
+   * @var string|null
+   */
+  protected $generatorProcessedNow;
+
+  /**
+   * @var array
+   */
+  protected $results = [];
+
+  /**
+   * @var array
+   */
+  protected $generatorSettings;
+
+  /**
+   * @var int|null
+   */
+  protected $maxLinks;
+
+  /**
+   * @var int|null
+   */
+  protected $elementsRemaining;
+
+  /**
+   * @var int|null
+   */
+  protected $elementsTotal;
+
+  /**
+   * QueueWorker constructor.
+   * @param \Drupal\simple_sitemap\SimplesitemapSettings $settings
+   * @param \Drupal\simple_sitemap\SimplesitemapManager $manager
+   * @param \Drupal\Core\State\State $state
+   * @param \Drupal\Core\Extension\ModuleHandler $module_handler
+   * @param \Drupal\simple_sitemap\Queue\ElementQueue $element_queue
+   * @param \Drupal\Core\ProxyClass\Lock\DatabaseLockBackend $lock
+   */
+  public function __construct(SimplesitemapSettings $settings,
+                              SimplesitemapManager $manager,
+                              State $state,
+                              ModuleHandler $module_handler,
+                              ElementQueue $element_queue,
+                              DatabaseLockBackend $lock) {
+    $this->settings = $settings;
+    $this->manager = $manager;
+    $this->state = $state;
+    $this->moduleHandler = $module_handler;
+    $this->elementQueue = $element_queue;
+    $this->lock = $lock;
+  }
+
+  public function deleteQueue() {
+    $this->elementQueue->deleteQueue();
+    $this->variantProcessedNow = NULL;
+    $this->generatorProcessedNow = NULL;
+    $this->results = [];
+    $this->state->set('simple_sitemap.queue_items_initial_amount', 0);
+    $this->state->delete('simple_sitemap.queue_stashed_results');
+    $this->elementsTotal = NULL;
+    $this->elementsRemaining = NULL;
+
+    return $this;
+  }
+
+  public function getElementQueue() {
+    return $this->elementQueue;
+  }
+
+  /**
+   * @param null $variants
+   * @return $this
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   *
+   * @todo Lock functionality
+   */
+  public function rebuildQueue($variants = NULL) {
+    $variants = NULL === $variants ? NULL : (array) $variants;
+
+    $data_sets = [];
+
+    $sitemap_variants = $this->manager->getSitemapVariants();
+    $this->moduleHandler->alter('simple_sitemap_variants', $sitemap_variants);
+
+    $type_definitions = $this->manager->getSitemapTypes();
+    $this->deleteQueue();
+
+    foreach ($sitemap_variants as $variant_name => $variant_definition) {
+
+      // Skipping unwanted sitemap variants.
+      if (NULL !== $variants && !in_array($variant_name, $variants)) {
+        continue;
+      }
+
+      $type = $variant_definition['type'];
+
+      // Adding generate_sitemap operations for all data sets.
+      foreach ($type_definitions[$type]['urlGenerators'] as $url_generator_id) {
+
+        foreach ($this->manager->getUrlGenerator($url_generator_id)
+                   ->setSitemapVariant($variant_name)
+                   ->getDataSets() as $data_set) {
+
+          $data_sets[] = [
+            'data' => $data_set,
+            'sitemap_variant' => $variant_name,
+            'url_generator' => $url_generator_id,
+            'sitemap_generator' => $type_definitions[$type]['sitemapGenerator'],
+          ];
+
+          if (count($data_sets) === self::REBUILD_QUEUE_CHUNK_ITEM_SIZE) {
+            $this->queueElements($data_sets);
+            $data_sets = [];
+          }
+        }
+      }
+    }
+
+    if (!empty($data_sets)) {
+      $this->queueElements($data_sets);
+    }
+    $this->getRemainingElementCount(TRUE);
+
+    return $this;
+  }
+
+  protected function queueElements($elements) {
+    $this->elementQueue->createItems($elements);
+    $this->state->set('simple_sitemap.queue_items_initial_amount', ($this->state->get('simple_sitemap.queue_items_initial_amount') + count($elements)));
+  }
+
+  /**
+   * @param null $variants
+   * @return $this
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   *
+   * @todo Lock functionality
+   */
+  public function generateSitemap($variants = NULL) {
+    $variants = NULL === $variants ? NULL : (array) $variants;
+
+    $this->generatorSettings = [
+      'base_url' => $this->settings->getSetting('base_url', ''),
+      'default_variant' => $this->settings->getSetting('default_variant', NULL),
+      'skip_untranslated' => $this->settings->getSetting('skip_untranslated', FALSE),
+      'remove_duplicates' => $this->settings->getSetting('remove_duplicates', TRUE), //todo
+      'excluded_languages' => $this->settings->getSetting('excluded_languages', []),
+    ];
+    $this->maxLinks = $this->settings->getSetting('max_links');
+    $max_execution_time = $this->settings->getSetting('generate_duration', 10000);
+    $elements_processed = 0;
+    Timer::start('simple_sitemap_generator');
+
+    $this->unstashResults();
+
+    if ($this->getRemainingElementCount() === 0 && empty($this->results)) {
+      $this->rebuildQueue($variants);
+    }
+
+    while ($element = $this->elementQueue->claimItem()) {
+
+      if (!empty($max_execution_time) && Timer::read('simple_sitemap_generator') >= $max_execution_time) {
+        break;
+      }
+
+      try {
+        if ($element->data['sitemap_variant'] !== $this->variantProcessedNow) {
+
+          if (NULL !== $this->variantProcessedNow) {
+            $this->generateVariantChunksFromResults(TRUE);
+            $this->publishCurrentVariant();
+          }
+
+          $this->variantProcessedNow = $element->data['sitemap_variant'];
+          $this->generatorProcessedNow = $element->data['sitemap_generator'];
+        }
+
+        $this->generateResultsFromElement($element);
+
+        if (!empty($this->maxLinks) && count($this->results) >= $this->maxLinks) {
+          $this->generateVariantChunksFromResults();
+        }
+      }
+      catch (\Exception $e) {
+        watchdog_exception('simple_sitemap', $e);
+      }
+
+      $this->elementQueue->deleteItem($element); //todo May want to use deleteItems() instead.
+      $elements_processed++;
+      $this->elementsRemaining--;
+    }
+
+    if ($this->getRemainingElementCount() === 0) {
+      $this->generateVariantChunksFromResults(TRUE);
+      $this->publishCurrentVariant();
+    }
+    else {
+      $this->stashResults();
+    }
+
+    return $this;
+  }
+
+  protected function generateResultsFromElement($element) {
+    $this->results = array_merge(
+      $this->results,
+      $this->manager->getUrlGenerator($element->data['url_generator'])
+        ->setSitemapVariant($this->variantProcessedNow)
+        ->setSettings($this->generatorSettings)
+        ->generate($element->data['data']));
+  }
+
+  protected function generateVariantChunksFromResults($complete = FALSE) {
+    if (!empty($this->results)) {
+      $generator = $this->manager->getSitemapGenerator($this->generatorProcessedNow)
+        ->setSitemapVariant($this->variantProcessedNow)
+        ->setSettings($this->generatorSettings);
+
+      if (empty($this->maxLinks) || $complete) {
+        $generator->generate($this->results);
+        $this->results = [];
+      }
+      else {
+        foreach (array_chunk($this->results, $this->maxLinks, TRUE) as $chunk_links) {
+          if (count($chunk_links) === $this->maxLinks || $complete) {
+            $generator->generate($chunk_links);
+            $this->results = array_diff_key($this->results, $chunk_links);
+          }
+        }
+      }
+    };
+  }
+
+  protected function publishCurrentVariant() {
+    if ($this->variantProcessedNow !== NULL) {
+      $this->manager->getSitemapGenerator($this->generatorProcessedNow)
+        ->setSitemapVariant($this->variantProcessedNow)
+        ->setSettings($this->generatorSettings)
+        ->generateIndex()
+        ->publish();
+    }
+  }
+
+  protected function stashResults() {
+    $this->state->set('simple_sitemap.queue_stashed_results', [
+      'variant' => $this->variantProcessedNow,
+      'generator' => $this->generatorProcessedNow,
+      'results' => $this->results
+    ]);
+    $this->results = [];
+    $this->generatorProcessedNow = NULL;
+    $this->variantProcessedNow = NULL;
+  }
+
+  protected function unstashResults() {
+    if ($this->state->has('simple_sitemap.queue_stashed_results')) {
+      $results = $this->state->get('simple_sitemap.queue_stashed_results');
+      $this->state->delete('simple_sitemap.queue_stashed_results');
+      $this->results = is_array($results['results']) ? $results['results'] : [];
+      $this->variantProcessedNow = $results['variant'];
+      $this->generatorProcessedNow = $results['generator'];
+    }
+  }
+
+  public function getOriginalElementCount() {
+    if (NULL === $this->elementsTotal) {
+      $this->elementsTotal = !empty($original = $this->state->get('simple_sitemap.queue_items_initial_amount'))
+        ? (int) $original
+        : 0;
+    }
+
+    return $this->elementsTotal;
+  }
+
+  public function getRemainingElementCount($force_recount = FALSE) {
+    if ($force_recount || NULL === $this->elementsRemaining) {
+      $this->elementsRemaining = $this->elementQueue->numberOfItems();
+    }
+
+    return $this->elementsRemaining;
+  }
+
+  public function getProcessedElementCount() {
+    $original = $this->getOriginalElementCount();
+    $remaining = $this->getRemainingElementCount();
+
+    return $remaining <= $original ? ($original - $remaining) : 0;
+  }
+}
+
