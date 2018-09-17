@@ -7,7 +7,7 @@ use Drupal\simple_sitemap\SimplesitemapSettings;
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\simple_sitemap\SimplesitemapManager;
 use Drupal\Core\State\State;
-use Drupal\Core\ProxyClass\Lock\DatabaseLockBackend;
+use Drupal\Core\Lock\LockBackendInterface;
 
 
 class QueueWorker {
@@ -88,14 +88,14 @@ class QueueWorker {
    * @param \Drupal\Core\State\State $state
    * @param \Drupal\Core\Extension\ModuleHandler $module_handler
    * @param \Drupal\simple_sitemap\Queue\ElementQueue $element_queue
-   * @param \Drupal\Core\ProxyClass\Lock\DatabaseLockBackend $lock
+   * @param \Drupal\Core\Lock\LockBackendInterface $lock
    */
   public function __construct(SimplesitemapSettings $settings,
                               SimplesitemapManager $manager,
                               State $state,
                               ModuleHandler $module_handler,
                               ElementQueue $element_queue,
-                              DatabaseLockBackend $lock) {
+                              LockBackendInterface $lock) {
     $this->settings = $settings;
     $this->manager = $manager;
     $this->state = $state;
