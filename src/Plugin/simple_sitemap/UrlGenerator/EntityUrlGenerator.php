@@ -111,11 +111,10 @@ class EntityUrlGenerator extends UrlGeneratorBase {
           }
         }
 
-        $entityTypeQuery = $this->entityTypeManager->getStorage($entity_type_name)->getQuery();
+        $entityTypeStorage = $this->entityTypeManager->getStorage($entity_type_name);
+        $keys = $sitemap_entity_types[$entity_type_name]->getKeys();
 
         foreach ($bundles as $bundle_name => $bundle_settings) {
-
-          $bundleQuery = $entityTypeQuery;
 
           // Skip this bundle if it is to be generated in a different sitemap variant.
           if (NULL !== $this->sitemapVariant && isset($bundle_settings['variant'])
@@ -132,19 +131,19 @@ class EntityUrlGenerator extends UrlGeneratorBase {
           $this->moduleHandler->alter('simple_sitemap_bundle_settings', $bundle_settings, $bundle_context, $sitemap_variant);
 
           if (!empty($bundle_settings['index'])) {
+            $query = $entityTypeStorage->getQuery();
 
-            $keys = $sitemap_entity_types[$entity_type_name]->getKeys();
             if (empty($keys['id'])) {
-              $bundleQuery->sort($keys['id'], 'ASC');
+              $query->sort($keys['id'], 'ASC');
             }
             if (!empty($keys['bundle'])) {
-              $bundleQuery->condition($keys['bundle'], $bundle_name);
+              $query->condition($keys['bundle'], $bundle_name);
             }
             if (!empty($keys['status'])) {
-              $bundleQuery->condition($keys['status'], 1);
+              $query->condition($keys['status'], 1);
             }
 
-            foreach ($bundleQuery->execute() as $entity_id) {
+            foreach ($query->execute() as $entity_id) {
               $data_sets[] = [
                 'entity_type' => $entity_type_name,
                 'id' => $entity_id,
