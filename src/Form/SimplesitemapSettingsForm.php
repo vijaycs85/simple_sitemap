@@ -58,11 +58,13 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     $total_count = $queue_worker->getOriginalElementCount();
     $index_progress = [
       '#theme' => 'progress_bar',
-      '#percent' => $total_count ? (int) (100 * $indexed_count / $total_count) : 100,
+      '#percent' => $total_count ? (100 * $indexed_count / $total_count) : 100,
       '#message' => t('@indexed out of @total items have been indexed.', ['@indexed' => $indexed_count, '@total' => $total_count]),
     ];
     $form['simple_sitemap_settings']['progress'] = [
       '#markup' => render($index_progress),
+      '#prefix' => '<div class="simple-sitemap-progress clearfix">',
+      '#suffix' => '</div>',
     ];
 
     $form['simple_sitemap_settings']['settings'] = [
@@ -222,7 +224,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
 
     // Regenerate sitemaps according to user setting.
     if ($form_state->getValue('simple_sitemap_regenerate_now')) {
-      $this->generator->generateSitemap();
+      $this->generator->rebuildQueue()->generateSitemap();
     }
   }
 

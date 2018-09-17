@@ -295,6 +295,8 @@ class Simplesitemap {
   /**
    * @param string $from
    * @param null $variants
+   * @return $this
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
   public function generateSitemap($from = 'form', $variants = NULL) {
     switch($from) {
@@ -308,10 +310,14 @@ class Simplesitemap {
         $this->queueWorker->generateSitemap($variants);
         break;
     }
+
+    return $this;
   }
 
   public function rebuildQueue($variants = NULL) {
     $this->queueWorker->rebuildQueue($variants);
+
+    return $this;
   }
 
   /**

@@ -212,7 +212,7 @@ class FormHelper {
     $form_fragment['simple_sitemap_regenerate_now'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Regenerate sitemap after hitting <em>Save</em>'),
-      '#description' => $this->t('This setting will regenerate the whole sitemap including the above changes.'),
+      '#description' => $this->t('This setting will regenerate all sitemaps including the above changes.'),
       '#default_value' => FALSE,
     ];
     if ($this->generator->getSetting('cron_generate')) {

@@ -104,6 +104,11 @@ class QueueWorker {
     $this->lock = $lock;
   }
 
+  /**
+   * @return $this
+   *
+   * @todo Should remove all unpublished variants from db.
+   */
   public function deleteQueue() {
     $this->elementQueue->deleteQueue();
     $this->variantProcessedNow = NULL;
