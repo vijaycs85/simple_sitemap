@@ -3,6 +3,7 @@
 namespace Drupal\simple_sitemap\Queue;
 
 use Drupal\Component\Utility\Timer;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
 use Drupal\simple_sitemap\SimplesitemapSettings;
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\simple_sitemap\SimplesitemapManager;
@@ -106,11 +107,10 @@ class QueueWorker {
 
   /**
    * @return $this
-   *
-   * @todo Should remove all unpublished variants from db.
    */
   public function deleteQueue() {
     $this->queue->deleteQueue();
+    SitemapGeneratorBase::removeSitemapVariant(NULL, 'unpublished');
     $this->variantProcessedNow = NULL;
     $this->generatorProcessedNow = NULL;
     $this->results = [];
