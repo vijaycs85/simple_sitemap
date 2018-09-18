@@ -39,11 +39,11 @@ services:
     - '@simple_sitemap.manager'
     - '@state'
     - '@module_handler'
-    - '@simple_sitemap.element_queue'
+    - '@simple_sitemap.queue'
     - '@lock'
 
-  simple_sitemap.element_queue:
-    class: Drupal\simple_sitemap\Queue\ElementQueue
+  simple_sitemap.queue:
+    class: Drupal\simple_sitemap\Queue\SimplesitemapQueue
     public: false
     arguments:
     - 'simple_sitemap_elements'

@@ -5,12 +5,10 @@ namespace Drupal\simple_sitemap\Queue;
 use Drupal\Core\Queue\DatabaseQueue;
 
 /**
- * Class ElementQueue
+ * Class SimplesitemapQueue
  * @package Drupal\simple_sitemap\Queue
- *
- * @todo Need to override claimItem() to what Batch queue uses.
  */
-class ElementQueue extends DatabaseQueue {
+class SimplesitemapQueue extends DatabaseQueue {
 
   /**
    * Overrides \Drupal\Core\Queue\DatabaseQueue::claimItem().

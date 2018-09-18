@@ -42,9 +42,9 @@ class QueueWorker {
   protected $lock;
 
   /**
-   * @var array|\Drupal\simple_sitemap\Queue\ElementQueue
+   * @var \Drupal\simple_sitemap\Queue\SimplesitemapQueue
    */
-  protected $elementQueue = [];
+  protected $queue;
 
   /**
    * @var string|null
@@ -87,20 +87,20 @@ class QueueWorker {
    * @param \Drupal\simple_sitemap\SimplesitemapManager $manager
    * @param \Drupal\Core\State\State $state
    * @param \Drupal\Core\Extension\ModuleHandler $module_handler
-   * @param \Drupal\simple_sitemap\Queue\ElementQueue $element_queue
+   * @param \Drupal\simple_sitemap\Queue\SimplesitemapQueue $element_queue
    * @param \Drupal\Core\Lock\LockBackendInterface $lock
    */
   public function __construct(SimplesitemapSettings $settings,
                               SimplesitemapManager $manager,
                               State $state,
                               ModuleHandler $module_handler,
-                              ElementQueue $element_queue,
+                              SimplesitemapQueue $element_queue,
                               LockBackendInterface $lock) {
     $this->settings = $settings;
     $this->manager = $manager;
     $this->state = $state;
     $this->moduleHandler = $module_handler;
-    $this->elementQueue = $element_queue;
+    $this->queue = $element_queue;
     $this->lock = $lock;
   }
 
@@ -110,7 +110,7 @@ class QueueWorker {
    * @todo Should remove all unpublished variants from db.
    */
   public function deleteQueue() {
-    $this->elementQueue->deleteQueue();
+    $this->queue->deleteQueue();
     $this->variantProcessedNow = NULL;
     $this->generatorProcessedNow = NULL;
     $this->results = [];
@@ -122,8 +122,8 @@ class QueueWorker {
     return $this;
   }
 
-  public function getElementQueue() {
-    return $this->elementQueue;
+  public function getQueue() {
+    return $this->queue;
   }
 
   /**
@@ -184,7 +184,7 @@ class QueueWorker {
   }
 
   protected function queueElements($elements) {
-    $this->elementQueue->createItems($elements);
+    $this->queue->createItems($elements);
     $this->state->set('simple_sitemap.queue_items_initial_amount', ($this->state->get('simple_sitemap.queue_items_initial_amount') + count($elements)));
   }
 
@@ -216,7 +216,7 @@ class QueueWorker {
       $this->rebuildQueue($variants);
     }
 
-    while ($element = $this->elementQueue->claimItem()) {
+    while ($element = $this->queue->claimItem()) {
 
       if (!empty($max_execution_time) && Timer::read('simple_sitemap_generator') >= $max_execution_time) {
         break;
@@ -244,7 +244,7 @@ class QueueWorker {
         watchdog_exception('simple_sitemap', $e);
       }
 
-      $this->elementQueue->deleteItem($element); //todo May want to use deleteItems() instead.
+      $this->queue->deleteItem($element); //todo May want to use deleteItems() instead.
       $elements_processed++;
       $this->elementsRemaining--;
     }
@@ -333,7 +333,7 @@ class QueueWorker {
 
   public function getRemainingElementCount($force_recount = FALSE) {
     if ($force_recount || NULL === $this->elementsRemaining) {
-      $this->elementsRemaining = $this->elementQueue->numberOfItems();
+      $this->elementsRemaining = $this->queue->numberOfItems();
     }
 
     return $this->elementsRemaining;
