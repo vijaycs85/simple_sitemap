@@ -178,7 +178,7 @@ class QueueWorker {
     if (!empty($data_sets)) {
       $this->queueElements($data_sets);
     }
-    $this->getRemainingElementCount(TRUE);
+    $this->getQueuedElementCount(TRUE);
 
     return $this;
   }
@@ -207,12 +207,11 @@ class QueueWorker {
     ];
     $this->maxLinks = $this->settings->getSetting('max_links');
     $max_execution_time = $this->settings->getSetting('generate_duration', 10000);
-    $elements_processed = 0;
     Timer::start('simple_sitemap_generator');
 
     $this->unstashResults();
 
-    if ($this->getRemainingElementCount() === 0 && empty($this->results)) {
+    if (!$this->generationInProgress()) {
       $this->rebuildQueue($variants);
     }
 
@@ -245,11 +244,10 @@ class QueueWorker {
       }
 
       $this->queue->deleteItem($element); //todo May want to use deleteItems() instead.
-      $elements_processed++;
       $this->elementsRemaining--;
     }
 
-    if ($this->getRemainingElementCount() === 0) {
+    if ($this->getQueuedElementCount() === 0) {
       $this->generateVariantChunksFromResults(TRUE);
       $this->publishCurrentVariant();
     }
@@ -331,7 +329,7 @@ class QueueWorker {
     return $this->elementsTotal;
   }
 
-  public function getRemainingElementCount($force_recount = FALSE) {
+  public function getQueuedElementCount($force_recount = FALSE) {
     if ($force_recount || NULL === $this->elementsRemaining) {
       $this->elementsRemaining = $this->queue->numberOfItems();
     }
@@ -339,11 +337,22 @@ class QueueWorker {
     return $this->elementsRemaining;
   }
 
+  public function getStashedResultCount() {
+    return ($this->state->has('simple_sitemap.queue_stashed_results')
+      && !empty($results = $this->state->get('simple_sitemap.queue_stashed_results')['results']))
+      ? count($results)
+      : 0;
+  }
+
   public function getProcessedElementCount() {
     $original = $this->getInitialElementCount();
-    $remaining = $this->getRemainingElementCount();
+    $remaining = $this->getQueuedElementCount();
 
     return $remaining <= $original ? ($original - $remaining) : 0;
+  }
+
+  public function generationInProgress() {
+    return 0 < ($this->getQueuedElementCount() + $this->getStashedResultCount());
   }
 }
 

@@ -12,7 +12,7 @@ use Drupal\system\MenuInterface;
 use Drupal\language\ConfigurableLanguageInterface;
 
 /**
- *Implements hook_help.
+ *Implements hook_help().
  *
  * @param $route_name
  * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
@@ -24,7 +24,7 @@ function simple_sitemap_help($route_name, RouteMatchInterface $route_match) {
 }
 
 /**
- * Implements hook_form_alter.
+ * Implements hook_form_alter().
  *
  * Adds sitemap settings to entity types that are supported via plugins.
  *
@@ -137,17 +137,27 @@ function simple_sitemap_entity_form_submit($form, FormStateInterface &$form_stat
 }
 
 /**
- * Implements hook_cron.
+ * Implements hook_cron().
  */
 function simple_sitemap_cron() {
 
   /** @var \Drupal\simple_sitemap\Simplesitemap $generator */
   $generator = \Drupal::service('simple_sitemap.generator');
+
   if ($generator->getSetting('cron_generate')) {
     $interval = (int) $generator->getSetting('cron_generate_interval', 0) * 60 * 60;
-    $requestTime = \Drupal::service('datetime.time')->getRequestTime();
-    if ($interval === 0 || ((\Drupal::state()->get('simple_sitemap.last_cron_generate', 0) + $interval) <= $requestTime)) {
-      \Drupal::state()->set('simple_sitemap.last_cron_generate', $requestTime);
+    $request_time = \Drupal::service('datetime.time')->getRequestTime();
+    $generation_in_progress = $generator->getQueueWorker()->generationInProgress();
+    $state = \Drupal::state();
+
+    if ($interval === 0
+      || $generation_in_progress
+      || (($state->get('simple_sitemap.last_cron_generate', 0) + $interval) <= $request_time)) {
+
+      if (!$generation_in_progress) {
+        $state->set('simple_sitemap.last_cron_generate', $request_time);
+      }
+
       $generator->generateSitemap('cron');
     }
   }
