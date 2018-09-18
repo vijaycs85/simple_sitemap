@@ -313,7 +313,7 @@ class QueueWorker {
     if ($this->state->has('simple_sitemap.queue_stashed_results')) {
       $results = $this->state->get('simple_sitemap.queue_stashed_results');
       $this->state->delete('simple_sitemap.queue_stashed_results');
-      $this->results = is_array($results['results']) ? $results['results'] : [];
+      $this->results = !empty($results['results']) ? $results['results'] : [];
       $this->variantProcessedNow = $results['variant'];
       $this->generatorProcessedNow = $results['generator'];
     }
