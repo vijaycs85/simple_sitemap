@@ -55,7 +55,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
 
     $queue_worker = $this->generator->getQueueWorker();
     $indexed_count = $queue_worker->getProcessedElementCount();
-    $total_count = $queue_worker->getOriginalElementCount();
+    $total_count = $queue_worker->getInitialElementCount();
     $index_progress = [
       '#theme' => 'progress_bar',
       '#percent' => $total_count ? (100 * $indexed_count / $total_count) : 100,

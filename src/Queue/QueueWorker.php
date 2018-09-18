@@ -321,7 +321,7 @@ class QueueWorker {
     }
   }
 
-  public function getOriginalElementCount() {
+  public function getInitialElementCount() {
     if (NULL === $this->elementsTotal) {
       $this->elementsTotal = !empty($original = $this->state->get('simple_sitemap.queue_items_initial_amount'))
         ? (int) $original
@@ -340,7 +340,7 @@ class QueueWorker {
   }
 
   public function getProcessedElementCount() {
-    $original = $this->getOriginalElementCount();
+    $original = $this->getInitialElementCount();
     $remaining = $this->getRemainingElementCount();
 
     return $remaining <= $original ? ($original - $remaining) : 0;

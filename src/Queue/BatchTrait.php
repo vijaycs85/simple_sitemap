@@ -67,7 +67,7 @@ trait BatchTrait {
 
     $queue_worker->generateSitemap();
     $processed_element_count = $queue_worker->getProcessedElementCount();
-    $original_element_count = $queue_worker->getOriginalElementCount();
+    $original_element_count = $queue_worker->getInitialElementCount();
 
     $context['message'] = t('@indexed out of @total total items have been indexed.', [
       '@indexed' => $processed_element_count, '@total' => $original_element_count]);

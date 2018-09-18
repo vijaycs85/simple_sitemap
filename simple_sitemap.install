@@ -66,6 +66,17 @@ function simple_sitemap_requirements($phase) {
 }
 
 /**
+ * Implements hook_uninstall().
+ */
+function simple_sitemap_uninstall() {
+  \Drupal::service('state')->deleteMultiple([
+    'simple_sitemap.last_cron_generate',
+    'simple_sitemap.queue_items_initial_amount',
+    'simple_sitemap.queue_stashed_results',
+  ]);
+}
+
+/**
  * Implements hook_schema().
  */
 function simple_sitemap_schema() {
