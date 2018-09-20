@@ -321,9 +321,7 @@ class QueueWorker {
 
   public function getInitialElementCount() {
     if (NULL === $this->elementsTotal) {
-      $this->elementsTotal = !empty($original = $this->state->get('simple_sitemap.queue_items_initial_amount'))
-        ? (int) $original
-        : 0;
+      $this->elementsTotal = (int) $this->state->get('simple_sitemap.queue_items_initial_amount', 0);
     }
 
     return $this->elementsTotal;
@@ -339,16 +337,15 @@ class QueueWorker {
 
   public function getStashedResultCount() {
     return ($this->state->has('simple_sitemap.queue_stashed_results')
-      && !empty($results = $this->state->get('simple_sitemap.queue_stashed_results')['results']))
-      ? count($results)
-      : 0;
+      ? count($this->state->get('simple_sitemap.queue_stashed_results')['results'])
+      : 0);
   }
 
   public function getProcessedElementCount() {
-    $original = $this->getInitialElementCount();
+    $initial = $this->getInitialElementCount();
     $remaining = $this->getQueuedElementCount();
 
-    return $remaining <= $original ? ($original - $remaining) : 0;
+    return $initial > $remaining ? ($initial - $remaining) : 0;
   }
 
   public function generationInProgress() {

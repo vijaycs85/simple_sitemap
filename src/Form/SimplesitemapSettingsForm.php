@@ -54,18 +54,25 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     ];
 
     $queue_worker = $this->generator->getQueueWorker();
-    $indexed_count = $queue_worker->getProcessedElementCount();
     $total_count = $queue_worker->getInitialElementCount();
-    $index_progress = [
-      '#theme' => 'progress_bar',
-      '#percent' => round(100 * $indexed_count / $total_count),
-      '#message' => t('@indexed out of @total items have been indexed.', ['@indexed' => $indexed_count, '@total' => $total_count]),
-    ];
-    $form['simple_sitemap_settings']['progress'] = [
-      '#markup' => render($index_progress),
-      '#prefix' => '<div class="simple-sitemap-progress clearfix">',
-      '#suffix' => '</div>',
-    ];
+    if (!empty($total_count)) {
+      $indexed_count = $queue_worker->getProcessedElementCount();
+      $percent = round(100 * $indexed_count / $total_count);
+
+      // With all results processed, there still may be some stashed results to be indexed.
+      $percent = $percent === 100 && $queue_worker->generationInProgress() ? 99 : $percent;
+
+      $index_progress = [
+        '#theme' => 'progress_bar',
+        '#percent' => $percent,
+        '#message' => t('@indexed out of @total items have been processed.', ['@indexed' => $indexed_count, '@total' => $total_count]),
+      ];
+      $form['simple_sitemap_settings']['progress'] = [
+        '#markup' => render($index_progress),
+        '#prefix' => '<div class="simple-sitemap-progress clearfix">',
+        '#suffix' => '</div>',
+      ];
+    }
 
     $form['simple_sitemap_settings']['settings'] = [
       '#type' => 'fieldset',
