@@ -10,6 +10,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Symfony\Component\HttpFoundation\Request;
+use Drupal\simple_sitemap\SimplesitemapManager;
 
 /**
  * Class SimplesitemapController
@@ -66,6 +67,10 @@ class SimplesitemapController extends ControllerBase {
    *  Returns an XML response.
    */
   public function getSitemap(Request $request, $variant = NULL) {
+    $variant = NULL !== $variant
+      ? $variant
+      : $this->generator->getSetting('default_variant', SimplesitemapManager::DEFAULT_SITEMAP_VARIANT);
+
     $output = $this->generator->getSitemap($variant, $request->query->getInt('page'));
     if (!$output) {
       $this->cacheKillSwitch->trigger();

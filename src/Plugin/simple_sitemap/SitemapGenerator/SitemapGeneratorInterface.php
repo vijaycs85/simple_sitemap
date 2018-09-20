@@ -19,6 +19,4 @@ interface SitemapGeneratorInterface {
   function publish();
 
   function remove();
-
-  function invalidateCache();
 }

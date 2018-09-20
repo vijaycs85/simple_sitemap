@@ -181,6 +181,7 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
   }
 
   /**
+   * @param string $mode
    * @return $this
    */
   public function remove($mode = 'all') {
@@ -190,25 +191,57 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
   }
 
   public static function removeSitemapVariant($variant = NULL, $mode = 'all') {
-    $query = \Drupal::database()->delete('simple_sitemap');
-
-    if (NULL !== $variant) {
-      $query->condition('type', $variant);
-    }
+    $connection = \Drupal::database();
+    $delete_query = $connection->delete('simple_sitemap');
 
     switch($mode) {
       case 'published':
-        $query->condition('status', 1);
+        $status = 1;
         break;
+
       case 'unpublished':
-        $query->condition('status', 0);
+        $status = 0;
         break;
+
       case 'all':
+        $status = NULL;
         break;
+
       default:
         //todo: throw error
     }
-    $query->execute();
+
+    if (NULL !== $status) {
+      $delete_query->condition('status', $status);
+    }
+
+    if (NULL !== $variant) {
+      $delete_query->condition('type', $variant);
+    }
+    elseif ($status !== 0) {
+      $variant = $connection->query('SELECT DISTINCT type from {simple_sitemap} WHERE status = :status', [':status' => 1])->fetchCol();
+    }
+
+    $delete_query->execute();
+
+    if (NULL !== $variant) {
+      self::invalidateCache($variant);
+    }
+  }
+
+
+  /**
+   * @param string|array $variants
+   */
+  protected static function invalidateCache($variants) {
+
+    $variants = is_array($variants) ? $variants : [$variants];
+
+    $tags = array_map(function($variant) {
+      return 'simple_sitemap:' . $variant;
+    }, $variants);
+
+    Cache::invalidateTags($tags);
   }
 
   /**
@@ -280,16 +313,6 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
       $this->remove('published');
       $this->db->query('UPDATE {simple_sitemap} SET status = :status WHERE type = :type', [':type' => $this->sitemapVariant, ':status' => 1]);
     }
-
-    return $this;
-  }
-
-  /**
-   * @return $this
-   * @todo: Variant cannot be null
-   */
-  public function invalidateCache() {
-    Cache::invalidateTags(['simple_sitemap:' . $this->sitemapVariant]);
 
     return $this;
   }

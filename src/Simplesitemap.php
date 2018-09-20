@@ -201,7 +201,10 @@ class Simplesitemap {
    *  Returns false if the sitemap is not retrievable from the database.
    */
   public function getSitemap($variant = NULL, $delta = NULL) {
-    $variant = NULL !== $variant ? $variant : $this->getSetting('default_variant', SimplesitemapManager::DEFAULT_SITEMAP_VARIANT);
+    $variant = NULL !== $variant
+      ? $variant
+      : $this->getSetting('default_variant', SimplesitemapManager::DEFAULT_SITEMAP_VARIANT);
+
     $chunk_info = $this->fetchSitemapVariantInfo($variant);
 
     if (empty($delta) || !isset($chunk_info[$delta])) {
@@ -283,8 +286,7 @@ class Simplesitemap {
       foreach ($remove_variants as $variant_name => $variant_definition) {
         $this->manager->getSitemapGenerator($type_definitions[$variant_definition['type']]['sitemapGenerator'])
           ->setSitemapVariant($variant_name)
-          ->remove()
-          ->invalidateCache();
+          ->remove();
       }
     }
 
