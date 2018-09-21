@@ -191,57 +191,29 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
   }
 
   public static function removeSitemapVariant($variant = NULL, $mode = 'all') {
-    $connection = \Drupal::database();
-    $delete_query = $connection->delete('simple_sitemap');
+    $delete_query = \Drupal::database()->delete('simple_sitemap');
 
     switch($mode) {
       case 'published':
-        $status = 1;
+        $delete_query->condition('status', 1);
         break;
 
       case 'unpublished':
-        $status = 0;
+        $delete_query->condition('status', 0);
         break;
 
       case 'all':
-        $status = NULL;
         break;
 
       default:
         //todo: throw error
     }
 
-    if (NULL !== $status) {
-      $delete_query->condition('status', $status);
-    }
-
     if (NULL !== $variant) {
       $delete_query->condition('type', $variant);
     }
-    elseif ($status !== 0) {
-      $variant = $connection->query('SELECT DISTINCT type from {simple_sitemap} WHERE status = :status', [':status' => 1])->fetchCol();
-    }
 
     $delete_query->execute();
-
-    if (NULL !== $variant) {
-      self::invalidateCache($variant);
-    }
-  }
-
-
-  /**
-   * @param string|array $variants
-   */
-  protected static function invalidateCache($variants) {
-
-    $variants = is_array($variants) ? $variants : [$variants];
-
-    $tags = array_map(function($variant) {
-      return 'simple_sitemap:' . $variant;
-    }, $variants);
-
-    Cache::invalidateTags($tags);
   }
 
   /**

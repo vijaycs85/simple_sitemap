@@ -5,10 +5,8 @@ namespace Drupal\simple_sitemap\Controller;
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Response;
-use Drupal\Core\Cache\CacheableResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Drupal\simple_sitemap\Simplesitemap;
-use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\simple_sitemap\SimplesitemapManager;
 
@@ -24,18 +22,11 @@ class SimplesitemapController extends ControllerBase {
   protected $generator;
 
   /**
-   * @var \Drupal\Core\PageCache\ResponsePolicy\KillSwitch
-   */
-  protected $cacheKillSwitch;
-
-  /**
    * SimplesitemapController constructor.
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
-   * @param \Drupal\Core\PageCache\ResponsePolicy\KillSwitch $cache_kill_switch
    */
-  public function __construct(Simplesitemap $generator, KillSwitch $cache_kill_switch) {
+  public function __construct(Simplesitemap $generator) {
     $this->generator = $generator;
-    $this->cacheKillSwitch = $cache_kill_switch;
   }
 
   /**
@@ -43,8 +34,7 @@ class SimplesitemapController extends ControllerBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('simple_sitemap.generator'),
-      $container->get('page_cache_kill_switch')
+      $container->get('simple_sitemap.generator')
     );
   }
 
@@ -73,20 +63,12 @@ class SimplesitemapController extends ControllerBase {
 
     $output = $this->generator->getSitemap($variant, $request->query->getInt('page'));
     if (!$output) {
-      $this->cacheKillSwitch->trigger();
       throw new NotFoundHttpException();
     }
 
-    $response = new CacheableResponse($output, Response::HTTP_OK, [
+    return new Response($output, Response::HTTP_OK, [
       'content-type' => 'application/xml',
       'X-Robots-Tag' => 'noindex', // Tell search engines not to index the sitemap itself.
     ]);
-
-    // Cache output.
-    $response->getCacheableMetadata()
-      ->addCacheTags(["simple_sitemap:$variant"])
-      ->addCacheContexts(['url.query_args']);
-
-    return $response;
   }
 }
