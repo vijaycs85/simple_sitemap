@@ -3,13 +3,11 @@
 namespace Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator;
 
 use Drupal\simple_sitemap\Plugin\simple_sitemap\SimplesitemapPluginBase;
-use Drupal\simple_sitemap\Simplesitemap;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Component\Datetime\Time;
-use Drupal\Core\Cache\Cache;
 
 /**
  * Class SitemapGeneratorBase

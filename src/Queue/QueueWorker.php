@@ -337,7 +337,7 @@ class QueueWorker {
 
   public function getStashedResultCount() {
     return ($this->state->has('simple_sitemap.queue_stashed_results')
-      ? count($this->state->get('simple_sitemap.queue_stashed_results')['results'])
+      ? count($this->state->get('simple_sitemap.queue_stashed_results', ['results' => []])['results'])
       : 0);
   }
 
