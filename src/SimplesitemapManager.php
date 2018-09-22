@@ -190,7 +190,8 @@ class SimplesitemapManager {
   }
 
   public function removeSitemapVariants($variant_names = NULL) {
-//    $this->removeSitemap($variant_names); // todo
+    SitemapGeneratorBase::removeSitemapVariants($variant_names); //todo should call the remove() method of every plugin instead?
+
     if (NULL === $variant_names) {
       foreach ($this->configFactory->listAll('simple_sitemap.variants.') as $config_name) {
         $this->configFactory->getEditable($config_name)->delete();

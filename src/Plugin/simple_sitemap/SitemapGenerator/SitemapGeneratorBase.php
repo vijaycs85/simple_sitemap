@@ -183,12 +183,13 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
    * @return $this
    */
   public function remove($mode = 'all') {
-    self::removeSitemapVariant($this->sitemapVariant, $mode);
+    self::removeSitemapVariants($this->sitemapVariant, $mode);
 
     return $this;
   }
 
-  public static function removeSitemapVariant($variant = NULL, $mode = 'all') {
+  public static function removeSitemapVariants($variants = NULL, $mode = 'all') {
+    $variants = is_array($variants) || NULL === $variants ? $variants : [$variants];
     $delete_query = \Drupal::database()->delete('simple_sitemap');
 
     switch($mode) {
@@ -207,8 +208,8 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
         //todo: throw error
     }
 
-    if (NULL !== $variant) {
-      $delete_query->condition('type', $variant);
+    if (NULL !== $variants) {
+      $delete_query->condition('type', $variants, 'IN');
     }
 
     $delete_query->execute();

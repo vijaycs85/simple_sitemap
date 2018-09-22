@@ -110,7 +110,7 @@ class QueueWorker {
    */
   public function deleteQueue() {
     $this->queue->deleteQueue();
-    SitemapGeneratorBase::removeSitemapVariant(NULL, 'unpublished');
+    SitemapGeneratorBase::removeSitemapVariants(NULL, 'unpublished'); //todo should call the remove() method of every plugin instead?
     $this->variantProcessedNow = NULL;
     $this->generatorProcessedNow = NULL;
     $this->results = [];
