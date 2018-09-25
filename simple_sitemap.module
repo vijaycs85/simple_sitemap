@@ -45,6 +45,7 @@ function simple_sitemap_form_alter(&$form, FormStateInterface $form_state, $form
     '#group' => isset($form['additional_settings']) ? 'additional_settings' : 'advanced',
     '#title' => t('Simple XML sitemap'),
     '#description' => $f->getEntityCategory() === 'instance' ? t('Settings for this entity can be overridden here.') : '',
+    '#weight' => 10,
   ];
 
   // Attach some js magic to forms.
