@@ -246,16 +246,3 @@ function simple_sitemap_delete_bundle_config($entity_type_id, $bundle) {
   }
 }
 
-/**
- * Implements hook_robotstxt().
- *
- * @todo Use sitemap base URL setting?
- * @todo include non-default sitemaps as well?
- */
-function simple_sitemap_robotstxt() {
-  return [
-    '# XML sitemaps',
-    'Sitemap: ' . $GLOBALS['base_url'] . '/sitemap.xml',
-  ];
-}
-
