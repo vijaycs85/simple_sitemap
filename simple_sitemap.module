@@ -172,6 +172,7 @@ function simple_sitemap_configurable_language_delete(ConfigurableLanguageInterfa
 
   /** @var \Drupal\simple_sitemap\Simplesitemap $generator */
   $generator = \Drupal::service('simple_sitemap.generator');
+
   $excluded_languages = $generator->getSetting('excluded_languages');
   if (isset($excluded_languages[$language->id()])) {
     unset($excluded_languages[$language->id()]);
@@ -230,17 +231,17 @@ function simple_sitemap_delete_bundle_config($entity_type_id, $bundle) {
 
   /** @var \Drupal\simple_sitemap\Simplesitemap $generator */
   $generator = \Drupal::service('simple_sitemap.generator');
-  $deleted_bundle_settings = $generator->getBundleSettings($entity_type_id, $bundle);
-  if (!empty($deleted_bundle_settings['index'])) {
 
-    // Delete bundle settings.
+  if (!empty($deleted_bundle_settings = $generator->getBundleSettings($entity_type_id, $bundle))) {
     \Drupal::service('config.factory')->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle")->delete();
 
-    $message = 'You may want to <a href="@url">regenerate</a> your XML sitemaps now.';
-    if ($generator->getSetting('cron_generate')) {
-      $message .= ' Otherwise the sitemaps will be regenerated during a future cron run.';
+    if (!empty($deleted_bundle_settings['index'])) {
+      $message = 'You may want to <a href="@url">regenerate</a> your XML sitemaps now.';
+      if ($generator->getSetting('cron_generate')) {
+        $message .= ' Otherwise the sitemaps will be regenerated during a future cron run.';
+      }
+      \Drupal::messenger()->addMessage(t($message, ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']));
     }
-    \Drupal::messenger()->addMessage(t($message, ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']));
   }
 }
 

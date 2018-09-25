@@ -17,7 +17,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    * @throws \Behat\Mink\Exception\ExpectationException
    */
-  public function testInitialGenerationtestInitialGeneration() {
+  public function testInitialGeneration() {
     $this->generator->generateSitemap('backend');
     $this->drupalGet($this->defaultSitemapUrl);
     $this->assertSession()->responseContains('urlset');

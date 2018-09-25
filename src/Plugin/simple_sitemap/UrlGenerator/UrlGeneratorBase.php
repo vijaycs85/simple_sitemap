@@ -16,8 +16,6 @@ use Drupal\Core\Language\Language;
 /**
  * Class UrlGeneratorBase
  * @package Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator
- *
- * @todo Remove queue services from this and its children.
  */
 abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGeneratorInterface {
 
@@ -139,7 +137,6 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
    * @return array
    */
   protected function getUrlVariants(array $path_data, Url $url_object) {
-
     $url_variants = [];
 
     if (!$url_object->isRouted()) {
@@ -237,12 +234,16 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
    */
   abstract protected function processDataSet($data_set);
 
+  /**
+   * @param $data_set
+   * @return array
+   */
   public function generate($data_set) {
     $path_data = $this->processDataSet($data_set);
     if (!$path_data) {
       return [];
     }
-    if ($path_data['url'] instanceof Url) {
+    if (isset($path_data['url']) && $path_data['url'] instanceof Url) {
       $url_object = $path_data['url'];
       unset($path_data['url']);
       return $this->getUrlVariants($path_data, $url_object);
