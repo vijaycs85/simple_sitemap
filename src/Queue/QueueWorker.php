@@ -134,10 +134,7 @@ class QueueWorker {
    * @todo Lock functionality
    */
   public function rebuildQueue($variants = NULL) {
-    $variants = NULL === $variants ? NULL : (array) $variants;
-
     $data_sets = [];
-
     $sitemap_variants = $this->manager->getSitemapVariants();
     $this->moduleHandler->alter('simple_sitemap_variants', $sitemap_variants);
 
@@ -147,7 +144,7 @@ class QueueWorker {
     foreach ($sitemap_variants as $variant_name => $variant_definition) {
 
       // Skipping unwanted sitemap variants.
-      if (NULL !== $variants && !in_array($variant_name, $variants)) {
+      if (NULL !== $variants && !in_array($variant_name, (array) $variants)) {
         continue;
       }
 
@@ -196,7 +193,6 @@ class QueueWorker {
    * @todo Lock functionality
    */
   public function generateSitemap($variants = NULL) {
-    $variants = NULL === $variants ? NULL : (array) $variants;
 
     $this->generatorSettings = [
       'base_url' => $this->settings->getSetting('base_url', ''),

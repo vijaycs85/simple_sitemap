@@ -210,7 +210,7 @@ class Simplesitemap {
         $this->manager->getSitemapVariants(NULL, FALSE));
     }
     else {
-      $this->variants = is_array($variants) ? $variants : [$variants];
+      $this->variants = (array) $variants;
     }
 
     return $this;
