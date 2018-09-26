@@ -475,6 +475,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->generator->getSitemapManager()->addSitemapVariant('test');
 
     $this->generator
+      ->setVariants(TRUE)
       ->setBundleSettings('node', 'page')
       ->generateSitemap('backend');
 
@@ -492,9 +493,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $variants = $this->generator->getSitemapManager()->getSitemapVariants();
     $this->assertFalse(isset($variants['test']));
 
-    //todo Implement removing sitemaps from database upon removing variants first.
     // Test if sitemap has been removed along with the variant.
-    $this->generator->generateSitemap('backend');
     $this->drupalGet('test/sitemap.xml');
     $this->assertSession()->statusCodeEquals(404);
   }

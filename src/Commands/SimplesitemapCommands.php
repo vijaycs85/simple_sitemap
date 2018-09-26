@@ -32,7 +32,7 @@ class SimplesitemapCommands extends DrushCommands {
    * @aliases ss:generate, ssg, simple_sitemap:generate, simple_sitemap-generate
    */
   public function generate() {
-    $this->generator->generateSitemap('drush');
+    $this->generator->setVariants(TRUE)->generateSitemap('drush');
   }
 
   /**

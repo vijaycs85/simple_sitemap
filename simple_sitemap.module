@@ -132,7 +132,7 @@ function simple_sitemap_entity_form_submit($form, FormStateInterface &$form_stat
 
     // Regenerate sitemaps according to user setting.
     if ($values['simple_sitemap_regenerate_now']) {
-      $generator->rebuildQueue()->generateSitemap();
+      $generator->setVariants(TRUE)->rebuildQueue()->generateSitemap();
     }
   }
 }
@@ -159,7 +159,7 @@ function simple_sitemap_cron() {
         $state->set('simple_sitemap.last_cron_generate', $request_time);
       }
 
-      $generator->generateSitemap('cron');
+      $generator->setVariants(TRUE)->generateSitemap('cron');
     }
   }
 }

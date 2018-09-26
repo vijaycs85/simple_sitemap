@@ -82,6 +82,11 @@ class Simplesitemap {
   /**
    * @var array
    */
+  protected $variants;
+
+  /**
+   * @var array
+   */
   protected static $allowedLinkSettings = [
     'entity' => ['index', 'priority', 'changefreq', 'include_images'],
     'custom' => ['priority', 'changefreq'],
@@ -187,10 +192,44 @@ class Simplesitemap {
   }
 
   /**
+   * @param array|string|true|null $variants
+   *  array: Array of variants to be set.
+   *  string: A particular variant will be set.
+   *  null: Default variant will be set.
+   *  true: All existing variants will be set.
+   *
+   * @return $this
+   */
+  public function setVariants($variants = NULL) {
+    if (NULL === $variants) {
+      $this->variants = [$this->getSetting('default_variant',
+        SimplesitemapManager::DEFAULT_SITEMAP_VARIANT)];
+    }
+    elseif ($variants === TRUE) {
+      $this->variants = array_keys(
+        $this->manager->getSitemapVariants(NULL, FALSE));
+    }
+    else {
+      $this->variants = is_array($variants) ? $variants : [$variants];
+    }
+
+    return $this;
+  }
+
+  /**
+   * @return array
+   */
+  protected function getVariants() {
+    if (NULL === $this->variants) {
+      $this->setVariants();
+    }
+
+    return $this->variants;
+  }
+
+  /**
    * Returns the whole sitemap, a requested sitemap chunk,
    * or the sitemap index file.
-   *
-   * @param string $variant
    *
    * @param int $delta
    *
@@ -200,12 +239,8 @@ class Simplesitemap {
    *  links setting. If a sitemap ID is provided, a sitemap chunk is returned.
    *  Returns false if the sitemap is not retrievable from the database.
    */
-  public function getSitemap($variant = NULL, $delta = NULL) {
-    $variant = NULL !== $variant
-      ? $variant
-      : $this->getSetting('default_variant', SimplesitemapManager::DEFAULT_SITEMAP_VARIANT);
-
-    $chunk_info = $this->fetchSitemapVariantInfo($variant);
+  public function getSitemap($delta = NULL) {
+    $chunk_info = $this->fetchSitemapVariantInfo();
 
     if (empty($delta) || !isset($chunk_info[$delta])) {
 
@@ -231,24 +266,20 @@ class Simplesitemap {
   /**
    * Fetches info about all published sitemap variants and their chunks.
    *
-   * @param string|null $variant
-   *
    * @return array
    *  An array containing all published sitemap chunk IDs, deltas and creation
    * timestamps keyed by their variant ID.
    */
-  protected function fetchSitemapVariantInfo($variant = NULL) {
-    $query = $this->db->select('simple_sitemap', 's')
+  protected function fetchSitemapVariantInfo() {
+    $result = $this->db->select('simple_sitemap', 's')
       ->fields('s', ['id', 'delta', 'sitemap_created', 'type'])
-      ->condition('s.status', 1);
+      ->condition('s.status', 1)
+      ->condition('s.type', $this->getVariants(), 'IN')
+      ->execute();
 
-    if (NULL !== $variant) {
-      $query->condition('s.type', $variant);
-    }
-
-    $result = $query->execute();
-
-    return NULL === $variant ? $result->fetchAllAssoc('type') : $result->fetchAllAssoc('delta');
+    return count($this->getVariants()) > 1
+      ? $result->fetchAllAssoc('type')
+      : $result->fetchAllAssoc('delta');
   }
 
   /**
@@ -267,13 +298,13 @@ class Simplesitemap {
 
 
   /**
-   * @param null $variants
    * @return $this
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    *
    * @todo document
    */
-  public function removeSitemap($variants = NULL) {
+  public function removeSitemap() {
+    $variants = $this->getVariants();
     $saved_variants = $this->manager->getSitemapVariants();
     $this->moduleHandler->alter('simple_sitemap_variants', $saved_variants);
     $remove_variants = NULL !== $variants
@@ -296,28 +327,27 @@ class Simplesitemap {
 
   /**
    * @param string $from
-   * @param null $variants
    * @return $this
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
-  public function generateSitemap($from = 'form', $variants = NULL) {
+  public function generateSitemap($from = 'form') {
     switch($from) {
       case 'form':
       case 'drush':
-        $this->queueWorker->batchGenerateSitemap($from, $variants);
+        $this->queueWorker->batchGenerateSitemap($from, $this->getVariants());
         break;
 
       case 'cron':
       case 'backend':
-        $this->queueWorker->generateSitemap($variants);
+        $this->queueWorker->generateSitemap($this->getVariants());
         break;
     }
 
     return $this;
   }
 
-  public function rebuildQueue($variants = NULL) {
-    $this->queueWorker->rebuildQueue($variants);
+  public function rebuildQueue() {
+    $this->queueWorker->rebuildQueue($this->getVariants());
 
     return $this;
   }
@@ -329,26 +359,16 @@ class Simplesitemap {
    *
    * @return string|array|false
    *  Formatted timestamp of last sitemap generation, otherwise FALSE.
+   *
+   * @todo: variants
    */
-  public function getGeneratedAgo($variant = NULL) {
-    $chunks = $this->fetchSitemapVariantInfo($variant);
-    if ($variant !== NULL) {
-      return isset($chunks[DefaultSitemapGenerator::FIRST_CHUNK_DELTA]->sitemap_created)
-        ? $this->dateFormatter
-          ->formatInterval($this->time->getRequestTime() - $chunks[DefaultSitemapGenerator::FIRST_CHUNK_DELTA]
-              ->sitemap_created)
-        : FALSE;
-    }
-    else {
-      $time_strings = [];
-//      foreach ($chunks as $sitemap_type => $type_chunks) {
-//        $time_strings[$sitemap_type] = isset($type_chunks[DefaultSitemapGenerator::FIRST_DELTA_INDEX]->sitemap_created)
-//          ? $type_chunks[DefaultSitemapGenerator::FIRST_DELTA_INDEX]->sitemap_created
-//          : FALSE;
-//    }
-      // todo: Implement.
-      return $time_strings;
-    }
+  public function getGeneratedAgo() {
+    $chunks = $this->fetchSitemapVariantInfo();
+    return isset($chunks[DefaultSitemapGenerator::FIRST_CHUNK_DELTA]->sitemap_created)
+      ? $this->dateFormatter
+        ->formatInterval($this->time->getRequestTime() - $chunks[DefaultSitemapGenerator::FIRST_CHUNK_DELTA]
+            ->sitemap_created)
+      : FALSE;
   }
 
   /**
@@ -416,6 +436,7 @@ class Simplesitemap {
    * @return $this
    *
    * @todo: enableEntityType automatically
+   * @todo: variants
    */
   public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings = ['index' => TRUE]) {
     $bundle_name = NULL !== $bundle_name ? $bundle_name : $entity_type_id;
@@ -498,6 +519,8 @@ class Simplesitemap {
    *  Array of sitemap settings for an entity bundle, a non-bundle entity type
    *  or for all entity types and their bundles.
    *  False if entity type does not exist.
+   *
+   * @todo: variants
    */
   public function getBundleSettings($entity_type_id = NULL, $bundle_name = NULL) {
     if (NULL !== $entity_type_id) {
@@ -569,6 +592,8 @@ class Simplesitemap {
    * @param array $settings
    *
    * @return $this
+   *
+   * @todo: variants
    */
   public function setEntityInstanceSettings($entity_type_id, $id, $settings) {
     $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($id);
@@ -617,6 +642,8 @@ class Simplesitemap {
    * @param int $id
    *
    * @return array|false
+   *
+   * @todo: variants
    */
   public function getEntityInstanceSettings($entity_type_id, $id) {
     $results = $this->db->select('simple_sitemap_entity_overrides', 'o')
@@ -647,6 +674,8 @@ class Simplesitemap {
    * @param string|null $entity_ids
    *
    * @return $this
+   *
+   * @todo: variants
    */
   public function removeEntityInstanceSettings($entity_type_id, $entity_ids = NULL) {
     $query = $this->db->delete('simple_sitemap_entity_overrides')
@@ -693,6 +722,7 @@ class Simplesitemap {
    * @return $this
    *
    * @todo Validate $settings and throw exceptions
+   * @todo: variants
    */
   public function addCustomLink($path, $settings = []) {
     if (!(bool) $this->pathValidator->getUrlIfValidWithoutAccessCheck($path)) {
@@ -724,6 +754,8 @@ class Simplesitemap {
    *
    * @param bool $supplement_default_settings
    * @return array
+   *
+   * @todo: variants
    */
   public function getCustomLinks($supplement_default_settings = TRUE) {
     $custom_links = $this->configFactory
@@ -746,6 +778,8 @@ class Simplesitemap {
    * @param string $path
    *
    * @return array|false
+   *
+   * @todo: variants
    */
   public function getCustomLink($path) {
     foreach ($this->getCustomLinks() as $key => $link) {
@@ -760,6 +794,8 @@ class Simplesitemap {
    * Removes all custom paths from the sitemap settings.
    *
    * @return $this
+   *
+   * @todo: variants
    */
   public function removeCustomLinks($paths = NULL) {
     if (NULL === $paths) {
