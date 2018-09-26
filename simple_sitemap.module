@@ -246,3 +246,9 @@ function simple_sitemap_delete_bundle_config($entity_type_id, $bundle) {
   }
 }
 
+/**
+ * Implements hook_language_negotiation_info_alter().
+ */
+function simple_sitemap_language_negotiation_info_alter(&$negotiation_info) {
+  $negotiation_info['language-url']['class'] = 'Drupal\simple_sitemap\Plugin\LanguageNegotiation\SimplesitemapLanguageNegotiationUrl';
+}

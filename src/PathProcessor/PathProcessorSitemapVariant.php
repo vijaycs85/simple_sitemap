@@ -16,7 +16,7 @@ class PathProcessorSitemapVariant implements InboundPathProcessorInterface {
    */
   public function processInbound($path, Request $request) {
     $args = explode('/', $path);
-    if (count($args) === 3 && $args[0] === '' && !empty($args[1]) && $args[2] === 'sitemap.xml') {
+    if (count($args) === 3 && $args[2] === 'sitemap.xml') {
       $path = '/sitemaps/' . $args[1] . '/sitemap.xml';
     }
 

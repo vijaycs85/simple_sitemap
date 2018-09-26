@@ -194,7 +194,7 @@ class Simplesitemap {
   /**
    * @param array|string|true|null $variants
    *  array: Array of variants to be set.
-   *  string: A particular variant will be set.
+   *  string: A particular variant to be set.
    *  null: Default variant will be set.
    *  true: All existing variants will be set.
    *
