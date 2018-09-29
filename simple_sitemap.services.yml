@@ -24,6 +24,7 @@ services:
     - '@plugin.manager.simple_sitemap.sitemap_type'
     - '@plugin.manager.simple_sitemap.url_generator'
     - '@plugin.manager.simple_sitemap.sitemap_generator'
+    - '@simple_sitemap.settings'
 
   simple_sitemap.settings:
     class: Drupal\simple_sitemap\SimplesitemapSettings

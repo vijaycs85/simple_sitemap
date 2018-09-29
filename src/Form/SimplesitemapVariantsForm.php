@@ -80,17 +80,31 @@ class SimplesitemapVariantsForm extends SimplesitemapFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+
+    // Removing all variants will clear the default variant setting, may need to
+    // restore this setting later.
+    $default_variant = $this->generator->getSetting('default_variant');
+
     $this->generator->getSitemapManager()->removeSitemapVariants();
+    $new_variants = $this->stringToVariants($form_state->getValue('variants'));
     $weight = 0;
-    foreach ($this->stringToVariants($form_state->getValue('variants')) as $variant_name => $variant_definition) {
+
+    foreach ($new_variants as $variant_name => $variant_definition) {
       $this->generator->getSitemapManager()->addSitemapVariant($variant_name, $variant_definition + ['weight' => $weight]);
       $weight++;
     }
+
+    // Restoring the default variant setting in case the default variant has
+    // not been deleted.
+    if (isset($new_variants[$default_variant])) {
+      $this->generator->saveSetting('default_variant', $default_variant);
+    }
+
     parent::submitForm($form, $form_state);
 
     // Regenerate sitemaps according to user setting.
     if ($form_state->getValue('simple_sitemap_regenerate_now')) {
-      $this->generator->setVariants(TRUE)->rebuildQueue()->generateSitemap();
+      $this->generator->rebuildQueue()->generateSitemap();
     }
   }
 

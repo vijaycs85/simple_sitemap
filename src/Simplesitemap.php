@@ -221,7 +221,7 @@ class Simplesitemap {
    */
   protected function getVariants() {
     if (NULL === $this->variants) {
-      $this->setVariants();
+      $this->setVariants(TRUE);
     }
 
     return $this->variants;

@@ -475,7 +475,6 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->generator->getSitemapManager()->addSitemapVariant('test');
 
     $this->generator
-      ->setVariants(TRUE)
       ->setBundleSettings('node', 'page')
       ->generateSitemap('backend');
 

@@ -122,10 +122,6 @@ class QueueWorker {
     return $this;
   }
 
-  public function getQueue() {
-    return $this->queue;
-  }
-
   /**
    * @param null $variants
    * @return $this

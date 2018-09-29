@@ -231,7 +231,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
 
     // Regenerate sitemaps according to user setting.
     if ($form_state->getValue('simple_sitemap_regenerate_now')) {
-      $this->generator->setVariants(TRUE)->rebuildQueue()->generateSitemap();
+      $this->generator->rebuildQueue()->generateSitemap();
     }
   }
 
@@ -240,7 +240,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    */
   public function generateSitemap(array &$form, FormStateInterface $form_state) {
-    $this->generator->setVariants(TRUE)->generateSitemap();
+    $this->generator->generateSitemap();
   }
 
   /**
@@ -248,7 +248,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    */
   public function generateSitemapBackend (array &$form, FormStateInterface $form_state) {
-    $this->generator->setVariants(TRUE)->generateSitemap('backend');
+    $this->generator->generateSitemap('backend');
   }
 
 

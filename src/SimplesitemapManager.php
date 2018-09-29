@@ -41,6 +41,11 @@ class SimplesitemapManager {
   protected $sitemapGeneratorManager;
 
   /**
+   * @var \Drupal\simple_sitemap\SimplesitemapSettings
+   */
+  protected $settings;
+
+  /**
    * @var SitemapTypeBase[] $sitemapTypes
    */
   protected $sitemapTypes = [];
@@ -55,24 +60,26 @@ class SimplesitemapManager {
    */
   protected $sitemapGenerators = [];
 
-
   /**
    * SimplesitemapManager constructor.
    * @param \Drupal\Core\Config\ConfigFactory $config_factory
    * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapType\SitemapTypeManager $sitemap_type_manager
    * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager $url_generator_manager
    * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorManager $sitemap_generator_manager
+   * @param \Drupal\simple_sitemap\SimplesitemapSettings $settings
    */
   public function __construct(
     ConfigFactory $config_factory,
     SitemapTypeManager $sitemap_type_manager,
     UrlGeneratorManager $url_generator_manager,
-    SitemapGeneratorManager $sitemap_generator_manager
+    SitemapGeneratorManager $sitemap_generator_manager,
+    SimplesitemapSettings $settings
   ) {
     $this->configFactory = $config_factory;
     $this->sitemapTypeManager = $sitemap_type_manager;
     $this->urlGeneratorManager = $url_generator_manager;
     $this->sitemapGeneratorManager = $sitemap_generator_manager;
+    $this->settings = $settings;
   }
 
   /**
@@ -196,6 +203,7 @@ class SimplesitemapManager {
       foreach ($this->configFactory->listAll('simple_sitemap.variants.') as $config_name) {
         $this->configFactory->getEditable($config_name)->delete();
       }
+      $this->settings->saveSetting('default_variant', '');
     }
     else {
       $remove_variants = [];
@@ -210,6 +218,9 @@ class SimplesitemapManager {
         $this->configFactory->getEditable("simple_sitemap.variants.$type")
           ->set('variants', array_diff_key($this->getSitemapVariants($type, FALSE), $variants_per_type))
           ->save();
+      }
+      if (in_array($this->settings->getSetting('default_variant', ''), $variant_names)) {
+        $this->settings->saveSetting('default_variant', '');
       }
     }
 
