@@ -219,7 +219,7 @@ class SimplesitemapManager {
           ->set('variants', array_diff_key($this->getSitemapVariants($type, FALSE), $variants_per_type))
           ->save();
       }
-      if (in_array($this->settings->getSetting('default_variant', ''), $variant_names)) {
+      if (in_array($this->settings->getSetting('default_variant', ''), (array) $variant_names)) {
         $this->settings->saveSetting('default_variant', '');
       }
     }
