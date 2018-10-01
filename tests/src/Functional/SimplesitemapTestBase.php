@@ -4,6 +4,7 @@ namespace Drupal\Tests\simple_sitemap\Functional;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Tests\BrowserTestBase;
+use Drupal\language\Entity\ConfigurableLanguage;
 
 /**
  * Provides the base class for web tests for Simple sitemap.
@@ -110,6 +111,13 @@ abstract class SimplesitemapTestBase extends BrowserTestBase {
     $page_text = $this->getSession()->getPage()->getContent();
     $nr_found = substr_count($page_text, $text);
     $this->assertGreaterThan(1, $nr_found);
+  }
+
+  protected function addLanguages($langcodes = 'de') {
+    foreach ((array) $langcodes as $langcode) {
+      ConfigurableLanguage::createFromLangcode($langcode)
+        ->save();
+    }
   }
 
 }

@@ -315,14 +315,6 @@ class SimplesitemapTest extends SimplesitemapTestBase {
   }
 
   /**
-   * @todo testSkipUntranslatedSetting
-   */
-
-  /**
-   * @todo testSkipNonExistentTranslations
-   */
-
-  /**
    * Test overriding of bundle settings for a single entity.
    *
    * @throws \Drupal\Component\Plugin\Exception\PluginException
@@ -464,6 +456,10 @@ class SimplesitemapTest extends SimplesitemapTestBase {
   }
 
   /**
+   * @todo testSitemapLanguages
+   */
+
+  /**
    * Test adding and removing sitemap variants.
    *
    * @throws \Behat\Mink\Exception\ExpectationException
@@ -500,4 +496,63 @@ class SimplesitemapTest extends SimplesitemapTestBase {
   /**
    * @todo Test removeSitemap().
    */
+
+  /**
+   * Test cases for ::testGenerationResume.
+   */
+  public function generationResumeProvider() {
+    return [
+      [1000, 500, 1],
+      [1000, 500, 3, ['de']],
+      [1000, 500, 5, ['de', 'es']],
+      [10, 10000, 10],
+    ];
+  }
+
+  /**
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   *
+   * @dataProvider generationResumeProvider
+   */
+  public function testGenerationResume($element_count, $generate_duration, $max_links, $langcodes = []) {
+
+    $this->addLanguages($langcodes);
+
+    $expected_sitemap_count = (int) ceil(($element_count * (count($langcodes) + 1)) / $max_links);
+
+    $this->drupalCreateContentType(['type' => 'blog']);
+    for ($i = 1; $i <= $element_count; $i++) {
+      $this->createNode(['title' => 'node-' . $i, 'type' => 'blog']);
+    }
+
+    $this->generator
+      ->removeCustomLinks()
+      ->saveSetting('generate_duration', $generate_duration)
+      ->saveSetting('max_links', $max_links)
+      ->saveSetting('skip_untranslated', FALSE)
+      ->setBundleSettings('node', 'blog');
+
+    $queue = $this->generator->getQueueWorker()->rebuildQueue();
+    $generate_count = 0;
+    while ($queue->generationInProgress()) {
+      $generate_count++;
+      $this->generator->generateSitemap('backend');
+    }
+
+    // Test if sitemap generation has been resumed when time limit is very low.
+    $this->assertTrue($generate_duration > $element_count || $generate_count > 1, 'This assertion tests if the sitemap generation is split up into batches due to a low generation time limit setting. The failing of this assertion can mean that the sitemap was wrongfully generated in one go, but it can also mean that the assumed low time setting is still high enough for a one pass generation.');
+
+    // Test if correct number of sitemaps have been created.
+    $chunks = $this->database->query('SELECT id FROM {simple_sitemap} WHERE delta != 0 AND status = 1');
+    $chunks->allowRowCount = TRUE;
+    $chunk_count = $chunks->rowCount();
+    $this->assertTrue($chunk_count === $expected_sitemap_count);
+
+    // Test if index has been created when necessary.
+    $index = $this->database->query('SELECT id FROM {simple_sitemap} WHERE delta = 0 AND status = 1')
+      ->fetchField();
+    $this->assertTrue($chunk_count > 1 ? (FALSE !== $index) : !$index);
+  }
+
 }
+
