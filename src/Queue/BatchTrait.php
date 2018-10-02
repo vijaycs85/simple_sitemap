@@ -71,7 +71,7 @@ trait BatchTrait {
 
     $context['message'] = t('@indexed out of @total total items have been processed.', [
       '@indexed' => $processed_element_count, '@total' => $original_element_count]);
-    $context['finished'] = $processed_element_count / $original_element_count;
+    $context['finished'] = $original_element_count > 0 ? ($processed_element_count / $original_element_count) : 1;
   }
 
   /**
