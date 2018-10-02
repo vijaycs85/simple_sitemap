@@ -242,24 +242,22 @@ class SimplesitemapTest extends SimplesitemapTestBase {
    * Tests the duplicate setting.
    *
    * @throws \Drupal\Component\Plugin\Exception\PluginException
-   *
-   * @todo Reimplement duplicate functionality for this test to work.
    */
-//  public function testRemoveDuplicatesSetting() {
-//    $this->generator->setBundleSettings('node', 'page', ['index' => TRUE])
-//      ->addCustomLink('/node/1')
-//      ->saveSetting('remove_duplicates', TRUE)
-//      ->generateSitemap('backend');
-//
-//    $this->drupalGet($this->defaultSitemapUrl);
-//    $this->assertUniqueTextWorkaround('node/' . $this->node->id());
-//
-//    $this->generator->saveSetting('remove_duplicates', FALSE)
-//      ->generateSitemap('backend');
-//
-//    $this->drupalGet($this->defaultSitemapUrl);
-//    $this->assertNoUniqueTextWorkaround('node/' . $this->node->id());
-//  }
+  public function testRemoveDuplicatesSetting() {
+    $this->generator->setBundleSettings('node', 'page')
+      ->addCustomLink('/node/1')
+      ->saveSetting('remove_duplicates', TRUE)
+      ->generateSitemap('backend');
+
+    $this->drupalGet($this->defaultSitemapUrl);
+    $this->assertUniqueTextWorkaround('node/' . $this->node->id());
+
+    $this->generator->saveSetting('remove_duplicates', FALSE)
+      ->generateSitemap('backend');
+
+    $this->drupalGet($this->defaultSitemapUrl);
+    $this->assertNoUniqueTextWorkaround('node/' . $this->node->id());
+  }
 
   /**
    * Test max links setting and the sitemap index.

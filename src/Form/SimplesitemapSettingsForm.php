@@ -175,7 +175,6 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
       '#title' => $this->t('Exclude duplicate links'),
       '#description' => $this->t('Uncheck this to significantly speed up the sitemap generation process on a huge site (more than 20 000 indexed entities).'),
       '#default_value' => $this->generator->getSetting('remove_duplicates', TRUE),
-      '#access' => FALSE,
     ];
 
     $form['simple_sitemap_settings']['advanced']['max_links'] = [

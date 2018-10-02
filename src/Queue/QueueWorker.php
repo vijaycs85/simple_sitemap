@@ -65,6 +65,11 @@ class QueueWorker {
   /**
    * @var array
    */
+  protected $processedPaths = [];
+
+  /**
+   * @var array
+   */
   protected $generatorSettings;
 
   /**
@@ -114,6 +119,7 @@ class QueueWorker {
     $this->variantProcessedNow = NULL;
     $this->generatorProcessedNow = NULL;
     $this->results = [];
+    $this->processedPaths = [];
     $this->state->set('simple_sitemap.queue_items_initial_amount', 0);
     $this->state->delete('simple_sitemap.queue_stashed_results');
     $this->elementsTotal = NULL;
@@ -194,7 +200,7 @@ class QueueWorker {
       'base_url' => $this->settings->getSetting('base_url', ''),
       'default_variant' => $this->settings->getSetting('default_variant', NULL),
       'skip_untranslated' => $this->settings->getSetting('skip_untranslated', FALSE),
-      'remove_duplicates' => $this->settings->getSetting('remove_duplicates', TRUE), //todo
+      'remove_duplicates' => $this->settings->getSetting('remove_duplicates', TRUE),
       'excluded_languages' => $this->settings->getSetting('excluded_languages', []),
     ];
     $this->maxLinks = $this->settings->getSetting('max_links');
@@ -223,6 +229,7 @@ class QueueWorker {
 
           $this->variantProcessedNow = $element->data['sitemap_variant'];
           $this->generatorProcessedNow = $element->data['sitemap_generator'];
+          $this->processedPaths = [];
         }
 
         $this->generateResultsFromElement($element);
@@ -251,12 +258,25 @@ class QueueWorker {
   }
 
   protected function generateResultsFromElement($element) {
-    $this->results = array_merge(
-      $this->results,
-      $this->manager->getUrlGenerator($element->data['url_generator'])
-        ->setSitemapVariant($this->variantProcessedNow)
-        ->setSettings($this->generatorSettings)
-        ->generate($element->data['data']));
+    $results = $this->manager->getUrlGenerator($element->data['url_generator'])
+      ->setSitemapVariant($this->variantProcessedNow)
+      ->setSettings($this->generatorSettings)
+      ->generate($element->data['data']);
+
+    $this->removeDuplicates($results);
+    $this->results = array_merge($this->results, $results);
+  }
+
+  protected function removeDuplicates(&$results) {
+    if ($this->generatorSettings['remove_duplicates']
+      && !empty($path = $results[key($results)]['meta']['path'])) {
+      if (in_array($path, $this->processedPaths)) {
+        $results = [];
+      }
+      else {
+        $this->processedPaths[] = $path;
+      }
+    }
   }
 
   protected function generateVariantChunksFromResults($complete = FALSE) {
@@ -294,9 +314,11 @@ class QueueWorker {
     $this->state->set('simple_sitemap.queue_stashed_results', [
       'variant' => $this->variantProcessedNow,
       'generator' => $this->generatorProcessedNow,
-      'results' => $this->results
+      'results' => $this->results,
+      'processed_paths' => $this->processedPaths,
     ]);
     $this->results = [];
+    $this->processedPaths = [];
     $this->generatorProcessedNow = NULL;
     $this->variantProcessedNow = NULL;
   }
@@ -306,6 +328,7 @@ class QueueWorker {
       $results = $this->state->get('simple_sitemap.queue_stashed_results');
       $this->state->delete('simple_sitemap.queue_stashed_results');
       $this->results = !empty($results['results']) ? $results['results'] : [];
+      $this->processedPaths = !empty($results['processed_paths']) ? $results['processed_paths'] : [];
       $this->variantProcessedNow = $results['variant'];
       $this->generatorProcessedNow = $results['generator'];
     }
