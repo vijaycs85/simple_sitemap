@@ -178,22 +178,23 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
   protected function getAlternateUrlsForDefaultLanguage(Url $url_object) {
     $alternate_urls = [];
     if ($url_object->access($this->anonUser)) {
-      $url_object->setOption('language', $this->languages[$this->defaultLanguageId]);
-      $alternate_urls[$this->defaultLanguageId] = $this->replaceBaseUrlWithCustom($url_object->toString());
+      $alternate_urls[$this->defaultLanguageId] = $this->replaceBaseUrlWithCustom($url_object
+        ->setOption('language', $this->languages[$this->defaultLanguageId])->toString()
+      );
     }
     return $alternate_urls;
   }
 
   protected function getAlternateUrlsForTranslatedLanguages(ContentEntityBase $entity, Url $url_object) {
     $alternate_urls = [];
-    foreach ($entity->getTranslationLanguages() as $language) {
 
-      /** @var Language $language */
+    /** @var Language $language */
+    foreach ($entity->getTranslationLanguages() as $language) {
       if (!isset($this->settings['excluded_languages'][$language->getId()]) || $language->isDefault()) {
-        $translation = $entity->getTranslation($language->getId());
-        if ($translation->access('view', $this->anonUser)) {
-          $url_object->setOption('language', $language);
-          $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object->toString());
+        if ($entity->getTranslation($language->getId())->access('view', $this->anonUser)) {
+          $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object
+            ->setOption('language', $language)->toString()
+          );
         }
       }
     }
@@ -205,8 +206,9 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
     if ($url_object->access($this->anonUser)) {
       foreach ($this->languages as $language) {
         if (!isset($this->settings['excluded_languages'][$language->getId()]) || $language->isDefault()) {
-          $url_object->setOption('language', $language);
-          $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object->toString());
+          $alternate_urls[$language->getId()] = $this->replaceBaseUrlWithCustom($url_object
+            ->setOption('language', $language)->toString()
+          );
         }
       }
     }

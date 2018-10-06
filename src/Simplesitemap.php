@@ -234,9 +234,9 @@ class Simplesitemap {
    * @param int $delta
    *
    * @return string|false
-   *  If no sitemap ID provided, either a sitemap index is returned, or the
+   *  If no sitemap delta is provided, either a sitemap index is returned, or the
    *  whole sitemap variant, if the amount of links does not exceed the max
-   *  links setting. If a sitemap ID is provided, a sitemap chunk is returned.
+   *  links setting. If a sitemap delta is provided, a sitemap chunk is returned.
    *  Returns false if the sitemap is not retrievable from the database.
    */
   public function getSitemap($delta = NULL) {
@@ -334,12 +334,12 @@ class Simplesitemap {
     switch($from) {
       case 'form':
       case 'drush':
-        $this->queueWorker->batchGenerateSitemap($from, $this->getVariants());
+        $this->queueWorker->batchGenerateSitemap($from);
         break;
 
       case 'cron':
       case 'backend':
-        $this->queueWorker->generateSitemap($this->getVariants());
+        $this->queueWorker->generateSitemap($from);
         break;
     }
 

@@ -188,13 +188,13 @@ class QueueWorker {
   }
 
   /**
-   * @param null $variants
+   * @param string $from
    * @return $this
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    *
    * @todo Lock functionality
    */
-  public function generateSitemap($variants = NULL) {
+  public function generateSitemap($from = 'form') {
 
     $this->generatorSettings = [
       'base_url' => $this->settings->getSetting('base_url', ''),
@@ -210,7 +210,7 @@ class QueueWorker {
     $this->unstashResults();
 
     if (!$this->generationInProgress()) {
-      $this->rebuildQueue($variants);
+      $this->rebuildQueue();
     }
 
     while ($element = $this->queue->claimItem()) {

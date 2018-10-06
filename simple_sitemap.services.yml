@@ -18,7 +18,7 @@ services:
 
   simple_sitemap.manager:
     class: Drupal\simple_sitemap\SimplesitemapManager
-    public: true
+    public: false
     arguments:
     - '@config.factory'
     - '@plugin.manager.simple_sitemap.sitemap_type'
@@ -28,7 +28,7 @@ services:
 
   simple_sitemap.settings:
     class: Drupal\simple_sitemap\SimplesitemapSettings
-    public: true
+    public: false
     arguments:
     - '@config.factory'
 
