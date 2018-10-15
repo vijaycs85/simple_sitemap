@@ -144,6 +144,8 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
 
   /**
    * @inheritdoc
+   *
+   * @todo Check if menu link has not been deleted after the queue has been built.
    */
   protected function processDataSet($data_set) {
 

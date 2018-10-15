@@ -161,7 +161,9 @@ class EntityUrlGenerator extends UrlGeneratorBase {
    * @inheritdoc
    */
   protected function processDataSet($data_set) {
-    $entity = $this->entityTypeManager->getStorage($data_set['entity_type'])->load($data_set['id']);
+    if (empty($entity = $this->entityTypeManager->getStorage($data_set['entity_type'])->load($data_set['id']))) {
+      return FALSE;
+    }
 
     $entity_id = $entity->id();
     $entity_type_name = $entity->getEntityTypeId();
