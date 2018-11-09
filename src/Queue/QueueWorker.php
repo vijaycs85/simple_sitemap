@@ -324,8 +324,7 @@ class QueueWorker {
   }
 
   protected function unstashResults() {
-    if ($this->state->has('simple_sitemap.queue_stashed_results')) {
-      $results = $this->state->get('simple_sitemap.queue_stashed_results');
+    if (NULL !== $results = $this->state->get('simple_sitemap.queue_stashed_results')) {
       $this->state->delete('simple_sitemap.queue_stashed_results');
       $this->results = !empty($results['results']) ? $results['results'] : [];
       $this->processedPaths = !empty($results['processed_paths']) ? $results['processed_paths'] : [];
@@ -351,9 +350,7 @@ class QueueWorker {
   }
 
   public function getStashedResultCount() {
-    return ($this->state->has('simple_sitemap.queue_stashed_results')
-      ? count($this->state->get('simple_sitemap.queue_stashed_results', ['results' => []])['results'])
-      : 0);
+    return count($this->state->get('simple_sitemap.queue_stashed_results', ['results' => []])['results']);
   }
 
   public function getProcessedElementCount() {
