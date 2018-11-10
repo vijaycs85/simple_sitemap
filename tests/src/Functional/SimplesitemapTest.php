@@ -465,7 +465,7 @@ class SimplesitemapTest extends SimplesitemapTestBase {
    */
   public function testSitemapVariants() {
 
-    // Test adding a default variant.
+    // Test adding a variant.
     $this->generator->getSitemapManager()->addSitemapVariant('test');
 
     $this->generator
@@ -478,7 +478,17 @@ class SimplesitemapTest extends SimplesitemapTestBase {
     $this->drupalGet($this->defaultSitemapUrl);
     $this->assertSession()->responseContains('node/' . $this->node->id());
 
+    // Test if generation affected the default variant only.
     $this->drupalGet('test/sitemap.xml');
+    $this->assertSession()->responseNotContains('node/' . $this->node->id());
+
+    $this->generator
+      ->setVariants('test')
+      ->setBundleSettings('node', 'page')
+      ->generateSitemap('backend');
+
+    // Test if bundle settings have been set for correct variant.
+    $this->drupalGet($this->defaultSitemapUrl);
     $this->assertSession()->responseContains('node/' . $this->node->id());
 
     $this->generator->getSitemapManager()->removeSitemapVariants('test');

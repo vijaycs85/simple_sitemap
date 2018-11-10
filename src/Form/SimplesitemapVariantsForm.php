@@ -49,7 +49,8 @@ class SimplesitemapVariantsForm extends SimplesitemapFormBase {
   /**
    * {@inheritdoc}
    *
-   * @todo show multiple errors at once
+   * @todo Show multiple errors at once.
+   * @todo Allow numeric variant names, but bear in mind that they are stored as integer array keys due to how php arrays work.
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $line = 0;
@@ -70,6 +71,10 @@ class SimplesitemapVariantsForm extends SimplesitemapFormBase {
         $form_state->setErrorByName('', $this->t("<strong>Line @line</strong>: The variant name <em>@name</em> can only include alphanumeric characters, dashes and underscores.", $placeholders));
       }
 
+      if (is_numeric($variant_name)) {
+        $form_state->setErrorByName('', $this->t("<strong>Line @line</strong>: The variant name cannot be numeric.", $placeholders));
+      }
+
       if (!isset($sitemap_types[$variant_definition['type']])) {
         $form_state->setErrorByName('', $this->t("<strong>Line @line</strong>: The variant <em>@name</em> is of a sitemap type <em>@type</em> that does not exist.", $placeholders));
       }
@@ -80,24 +85,17 @@ class SimplesitemapVariantsForm extends SimplesitemapFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-
-    // Removing all variants will clear the default variant setting, may need to
-    // restore this setting later.
-    $default_variant = $this->generator->getSetting('default_variant');
-
-    $this->generator->getSitemapManager()->removeSitemapVariants();
+    $manager = $this->generator->getSitemapManager();
     $new_variants = $this->stringToVariants($form_state->getValue('variants'));
+    $remove_variants = array_values(array_diff(
+      array_keys($manager->getSitemapVariants(NULL, FALSE)),
+      array_keys($new_variants)
+    ));
+    $manager->removeSitemapVariants($remove_variants);
     $weight = 0;
-
     foreach ($new_variants as $variant_name => $variant_definition) {
-      $this->generator->getSitemapManager()->addSitemapVariant($variant_name, $variant_definition + ['weight' => $weight]);
+      $manager->addSitemapVariant($variant_name, $variant_definition + ['weight' => $weight]);
       $weight++;
-    }
-
-    // Restoring the default variant setting in case the default variant has
-    // not been deleted.
-    if (isset($new_variants[$default_variant])) {
-      $this->generator->saveSetting('default_variant', $default_variant);
     }
 
     parent::submitForm($form, $form_state);

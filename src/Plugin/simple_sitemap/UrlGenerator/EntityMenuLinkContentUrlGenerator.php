@@ -105,7 +105,9 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
    */
   public function getDataSets() {
     $data_sets = [];
-    $bundle_settings = $this->generator->getBundleSettings();
+    $bundle_settings = $this->generator
+      ->setVariants($this->sitemapVariant)
+      ->getBundleSettings();
     if (!empty($bundle_settings['menu_link_content'])) {
       foreach ($bundle_settings['menu_link_content'] as $bundle_name => $bundle_settings) {
 
@@ -164,7 +166,9 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
     // If not a menu_link_content link, use bundle settings.
     $meta_data = $data_set->getMetaData();
     if (empty($meta_data['entity_id'])) {
-      $entity_settings = $this->generator->getBundleSettings('menu_link_content', $data_set->getMenuName());
+      $entity_settings = $this->generator
+        ->setVariants($this->sitemapVariant)
+        ->getBundleSettings('menu_link_content', $data_set->getMenuName());
     }
 
     // If menu link is of entity type menu_link_content, take under account its entity override.

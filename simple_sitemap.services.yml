@@ -21,6 +21,7 @@ services:
     public: false
     arguments:
     - '@config.factory'
+    - '@database'
     - '@plugin.manager.simple_sitemap.sitemap_type'
     - '@plugin.manager.simple_sitemap.url_generator'
     - '@plugin.manager.simple_sitemap.sitemap_generator'

@@ -27,39 +27,41 @@ function simple_sitemap_requirements($phase) {
 
     case 'runtime':
 
-      $generator = \Drupal::service('simple_sitemap.generator');
-      $generated_ago = $generator->getGeneratedAgo(\Drupal\simple_sitemap\SimplesitemapManager::DEFAULT_SITEMAP_VARIANT); //todo
-      $cron_generation = $generator->getSetting('cron_generate');
-
-      if (!$generated_ago) {
-        $value = t('Not available');
-        $description = t($cron_generation
-          ? 'Run cron, or <a href="@generate">generate</a> the sitemap manually.'
-          : 'Generation on cron run is disabled. <a href="@generate">Generate</a> the sitemap manually.', [
-            '@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'
-          ]
-        );
-        $severity = REQUIREMENT_WARNING;
-      }
-      else {
-        $value = t('XML sitemaps are available');
-        $description = t('The last generation finished @ago ago.'
-          . ' ' . ($cron_generation
-            ? 'Run cron, or <a href="@generate">regenerate</a> the sitemaps manually.'
-            : 'Generation on cron run is disabled. <a href="@generate">Regenerate</a> the sitemaps manually.'), [
-              '@ago' => $generated_ago,
-              '@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'
-            ]
-          );
-        $severity = REQUIREMENT_INFO;
-      }
-
-      $requirements['simple_sitemap_generated'] = [
-        'title' => 'Simple XML sitemap',
-        'value' => $value,
-        'description' => $description,
-        'severity' => $severity,
-      ];
+      // todo Implement for 3.x
+//      /** @var \Drupal\simple_sitemap\Simplesitemap $generator */
+//      $generator = \Drupal::service('simple_sitemap.generator');
+//      $generated_ago = $generator->getGeneratedAgo();
+//      $cron_generation = $generator->getSetting('cron_generate');
+//
+//      if (!$generated_ago) {
+//        $value = t('Not available');
+//        $description = t($cron_generation
+//          ? 'Run cron, or <a href="@generate">generate</a> the sitemap manually.'
+//          : 'Generation on cron run is disabled. <a href="@generate">Generate</a> the sitemap manually.', [
+//            '@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'
+//          ]
+//        );
+//        $severity = REQUIREMENT_WARNING;
+//      }
+//      else {
+//        $value = t('XML sitemaps are available');
+//        $description = t('The last generation finished @ago ago.'
+//          . ' ' . ($cron_generation
+//            ? 'Run cron, or <a href="@generate">regenerate</a> the sitemaps manually.'
+//            : 'Generation on cron run is disabled. <a href="@generate">Regenerate</a> the sitemaps manually.'), [
+//              '@ago' => $generated_ago,
+//              '@generate' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap'
+//            ]
+//          );
+//        $severity = REQUIREMENT_INFO;
+//      }
+//
+//      $requirements['simple_sitemap_generated'] = [
+//        'title' => 'Simple XML sitemap',
+//        'value' => $value,
+//        'description' => $description,
+//        'severity' => $severity,
+//      ];
       break;
   }
   return $requirements;
@@ -141,6 +143,12 @@ function simple_sitemap_schema() {
         'type' => 'serial',
         'not null' => TRUE,
         'unsigned' => TRUE,
+      ],
+      'type' => [
+        'description' => 'Type of sitemap this override belongs to.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
       ],
       'entity_type' => [
         'description' => 'Entity type of the overriding entity.',
@@ -459,8 +467,6 @@ function simple_sitemap_update_8210() {
       ]
     );
   }
-
-  return t('The XML sitemap needs to be regenerated.');
 }
 
 /**
@@ -607,7 +613,52 @@ function simple_sitemap_update_8215() {
     }
     $type->set('variants', $variants)->save();
   }
+}
+
+/**
+ * Adding per-variant bundle and entity override configuration.
+ */
+function simple_sitemap_update_8216() {
+  $config_factory = \Drupal::service('config.factory');
+  $default_variant = $config_factory->get('simple_sitemap.settings')->get('default_variant');
+  if (empty($default_variant)) {
+    $default_variant = 'default';
+    $config_factory->getEditable('simple_sitemap.settings')
+      ->set('default_variant', $default_variant)
+      ->save();
+  }
+
+  /** @var \Drupal\simple_sitemap\SimplesitemapManager $manager */
+  $manager = \Drupal::service('simple_sitemap.manager');
+  $variants = $manager->getSitemapVariants();
+  if (!isset($variants[$default_variant])) {
+    $manager->addSitemapVariant($default_variant);
+  }
+
+  foreach ($config_factory->listAll('simple_sitemap.bundle_settings.') as $bundle_config_name) {
+    /** @var \Drupal\Core\Config\Config $config */
+    $config = $config_factory->getEditable($bundle_config_name);
+    $config_name_parts = explode('.', $bundle_config_name);
+    $config_factory->getEditable($config_name_parts[0] . '.' . $config_name_parts[1]
+      . '.' . $default_variant . '.' . $config_name_parts[2] . '.' . $config_name_parts[3])
+      ->setData($config->get())->save();
+
+    $config->delete();
+  }
+
+  $database = \Drupal::database();
+  if (!$database->schema()->fieldExists('simple_sitemap_entity_overrides', 'type')) {
+    $database->schema()->addField(
+      'simple_sitemap_entity_overrides',
+      'type', [
+        'description' => 'Type of sitemap this override belongs to.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'initial' => 'default',
+      ]
+    );
+  }
 
   return t('The XML sitemaps need to be regenerated.');
 }
-

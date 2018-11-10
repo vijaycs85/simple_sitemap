@@ -99,7 +99,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
     $data_sets = [];
     $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
 
-    foreach ($this->generator->getBundleSettings() as $entity_type_name => $bundles) {
+    foreach ($this->generator->setVariants($this->sitemapVariant)->getBundleSettings() as $entity_type_name => $bundles) {
       if (isset($sitemap_entity_types[$entity_type_name])) {
 
         // Skip this entity type if another plugin is written to override its generation.
@@ -168,7 +168,9 @@ class EntityUrlGenerator extends UrlGeneratorBase {
     $entity_id = $entity->id();
     $entity_type_name = $entity->getEntityTypeId();
 
-    $entity_settings = $this->generator->getEntityInstanceSettings($entity_type_name, $entity_id);
+    $entity_settings = $this->generator
+      ->setVariants($this->sitemapVariant)
+      ->getEntityInstanceSettings($entity_type_name, $entity_id);
 
     if (empty($entity_settings['index'])) {
       return FALSE;

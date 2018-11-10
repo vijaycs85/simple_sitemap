@@ -97,7 +97,7 @@ class Simplesitemap {
    */
   protected static $linkSettingDefaults = [
     'index' => FALSE,
-    'priority' => 0.5,
+    'priority' => '0.5',
     'changefreq' => '',
     'include_images' => FALSE,
   ];
@@ -202,8 +202,7 @@ class Simplesitemap {
    */
   public function setVariants($variants = NULL) {
     if (NULL === $variants) {
-      $this->variants = [$this->getSetting('default_variant',
-        SimplesitemapManager::DEFAULT_SITEMAP_VARIANT)];
+      $this->variants = FALSE !== ($default_variant = $this->getSetting('default_variant')) ? [$default_variant] : [];
     }
     elseif ($variants === TRUE) {
       $this->variants = array_keys(
@@ -217,11 +216,12 @@ class Simplesitemap {
   }
 
   /**
+   * @param bool $default_get_all
    * @return array
    */
-  protected function getVariants() {
+  protected function getVariants($default_get_all = TRUE) {
     if (NULL === $this->variants) {
-      $this->setVariants(TRUE);
+      $this->setVariants($default_get_all ? TRUE : NULL);
     }
 
     return $this->variants;
@@ -411,13 +411,17 @@ class Simplesitemap {
     }
 
     // Deleting inclusion settings.
-    $config_names = $this->configFactory->listAll("simple_sitemap.bundle_settings.$entity_type_id.");
+    $config_names = $this->configFactory->listAll('simple_sitemap.bundle_settings.');
     foreach ($config_names as $config_name) {
-      $this->configFactory->getEditable($config_name)->delete();
+      $config_name_parts = explode('.', $config_name);
+      if ($config_name_parts[3] === $entity_type_id) {
+        $this->configFactory->getEditable($config_name)->delete();
+      }
     }
 
     // Deleting entity overrides.
-    $this->removeEntityInstanceSettings($entity_type_id);
+    $this->setVariants(TRUE)->removeEntityInstanceSettings($entity_type_id);
+
     return $this;
   }
 
@@ -436,9 +440,13 @@ class Simplesitemap {
    * @return $this
    *
    * @todo: enableEntityType automatically
-   * @todo: variants
+   * @todo multiple variants
    */
   public function setBundleSettings($entity_type_id, $bundle_name = NULL, $settings = ['index' => TRUE]) {
+    if (empty($variants = $this->getVariants(FALSE))) {
+      return $this;
+    }
+
     $bundle_name = NULL !== $bundle_name ? $bundle_name : $entity_type_id;
 
     if (!empty($old_settings = $this->getBundleSettings($entity_type_id, $bundle_name))) {
@@ -450,60 +458,66 @@ class Simplesitemap {
 
       // Save new bundle settings to configuration.
       $bundle_settings = $this->configFactory
-        ->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name");
+        ->getEditable("simple_sitemap.bundle_settings.$variants[0].$entity_type_id.$bundle_name");
       foreach ($settings as $setting_key => $setting) {
         $bundle_settings->set($setting_key, $setting);
       }
       $bundle_settings->save();
 
       // Delete entity overrides which are identical to new bundle settings.
-      $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
-      if (isset($sitemap_entity_types[$entity_type_id])) {
-        $entity_type = $sitemap_entity_types[$entity_type_id];
-        $keys = $entity_type->getKeys();
+      $entity_ids = $this->getEntityInstanceIds($entity_type_id, $bundle_name);
+      $query = $this->db->select('simple_sitemap_entity_overrides', 'o')
+        ->fields('o', ['id', 'inclusion_settings'])
+        ->condition('o.entity_type', $entity_type_id)
+        ->condition('o.type', $variants[0]);
+      if (!empty($entity_ids)) {
+        $query->condition('o.entity_id', $entity_ids, 'IN');
+      }
 
-        // Menu fix.
-        $keys['bundle'] = $entity_type_id === 'menu_link_content' ? 'menu_name' : $keys['bundle'];
-
-        $query = $this->entityTypeManager->getStorage($entity_type_id)->getQuery();
-        if (!$this->entityHelper->entityTypeIsAtomic($entity_type_id)) {
-          $query->condition($keys['bundle'], $bundle_name);
-        }
-        $entity_ids = $query->execute();
-
-        $query = $this->db->select('simple_sitemap_entity_overrides', 'o')
-          ->fields('o', ['id', 'inclusion_settings'])
-          ->condition('o.entity_type', $entity_type_id);
-        if (!empty($entity_ids)) {
-          $query->condition('o.entity_id', $entity_ids, 'IN');
-        }
-
-        $delete_instances = [];
-        foreach ($query->execute()->fetchAll() as $result) {
-          $delete = TRUE;
-          $instance_settings = unserialize($result->inclusion_settings);
-          foreach ($instance_settings as $setting_key => $instance_setting) {
-            if ($instance_setting != $settings[$setting_key]) {
-              $delete = FALSE;
-              break;
-            }
-          }
-          if ($delete) {
-            $delete_instances[] = $result->id;
+      $delete_instances = [];
+      foreach ($query->execute()->fetchAll() as $result) {
+        $delete = TRUE;
+        $instance_settings = unserialize($result->inclusion_settings);
+        foreach ($instance_settings as $setting_key => $instance_setting) {
+          if ($instance_setting != $settings[$setting_key]) {
+            $delete = FALSE;
+            break;
           }
         }
-        if (!empty($delete_instances)) {
-          $this->db->delete('simple_sitemap_entity_overrides')
-            ->condition('id', $delete_instances, 'IN')
-            ->execute();
+        if ($delete) {
+          $delete_instances[] = $result->id;
         }
       }
-      else {
-        //todo: log error
+      if (!empty($delete_instances)) {
+        $this->db->delete('simple_sitemap_entity_overrides')
+          ->condition('id', $delete_instances, 'IN')
+          ->execute();
       }
     }
 
     return $this;
+  }
+
+  /**
+   * @todo Possibly move to EntityHelper
+   */
+  protected function getEntityInstanceIds($entity_type_id, $bundle_name = NULL) {
+    $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
+    if (!isset($sitemap_entity_types[$entity_type_id])) {
+      return [];
+    }
+
+    $entity_query = $this->entityTypeManager->getStorage($entity_type_id)->getQuery();
+    if (!$this->entityHelper->entityTypeIsAtomic($entity_type_id) && NULL !== $bundle_name) {
+      $keys = $sitemap_entity_types[$entity_type_id]->getKeys();
+
+      // Menu fix.
+      $keys['bundle'] = $entity_type_id === 'menu_link_content' ? 'menu_name' : $keys['bundle'];
+
+      $entity_query->condition($keys['bundle'], $bundle_name);
+    }
+
+    return $entity_query->execute();
   }
 
   /**
@@ -519,50 +533,96 @@ class Simplesitemap {
    *  Array of sitemap settings for an entity bundle, a non-bundle entity type
    *  or for all entity types and their bundles.
    *  False if entity type does not exist.
-   *
-   * @todo: variants
    */
-  public function getBundleSettings($entity_type_id = NULL, $bundle_name = NULL) {
-    if (NULL !== $entity_type_id) {
+  public function getBundleSettings($entity_type_id = NULL, $bundle_name = NULL, $supplement_defaults = TRUE, $multipleVariants = FALSE) {
 
-      // Get bundle settings saved in simple_sitemap.bundle_settings.*.* configuration.
-      $bundle_name = NULL !== $bundle_name ? $bundle_name : $entity_type_id;
-      $bundle_settings = $this->configFactory
-        ->get("simple_sitemap.bundle_settings.$entity_type_id.$bundle_name")
-        ->get();
+    $all_bundle_settings = [];
 
-      // If not found and entity type is enabled, return default bundle settings.
-      if (empty($bundle_settings)) {
-        if ($this->entityTypeIsEnabled($entity_type_id)
-          && isset($this->entityTypeBundleInfo->getBundleInfo($entity_type_id)[$bundle_name])) {
-          self::supplementDefaultSettings('entity', $bundle_settings);
-        }
-        else {
-          $bundle_settings = FALSE;
+    foreach ($variants = $this->getVariants(FALSE) as $variant) {
+      if (NULL !== $entity_type_id) {
+        $bundle_name = NULL !== $bundle_name ? $bundle_name : $entity_type_id;
+
+        $bundle_settings = $this->configFactory
+          ->get("simple_sitemap.bundle_settings.$variant.$entity_type_id.$bundle_name")
+          ->get();
+
+        // If not found and entity type is enabled, return default bundle settings.
+        if (empty($bundle_settings) && $supplement_defaults) {
+          if ($this->entityTypeIsEnabled($entity_type_id)
+            && isset($this->entityTypeBundleInfo->getBundleInfo($entity_type_id)[$bundle_name])) {
+            self::supplementDefaultSettings('entity', $bundle_settings);
+          }
+          else {
+            $bundle_settings = NULL;
+          }
         }
       }
-    }
-    else {
-      // Get all bundle settings saved in simple_sitemap.bundle_settings.*.* configuration.
-      $config_names = $this->configFactory->listAll('simple_sitemap.bundle_settings.');
-      $bundle_settings = [];
-      foreach ($config_names as $config_name) {
-        $config_name_parts = explode('.', $config_name);
-        $bundle_settings[$config_name_parts[2]][$config_name_parts[3]] = $this->configFactory->get($config_name)->get();
-      }
+      else {
+        $config_names = $this->configFactory->listAll("simple_sitemap.bundle_settings.$variant.");
+        $bundle_settings = [];
+        foreach ($config_names as $config_name) {
+          $config_name_parts = explode('.', $config_name);
+          $bundle_settings[$config_name_parts[3]][$config_name_parts[4]] = $this->configFactory->get($config_name)->get();
+        }
 
-      // Supplement default bundle settings for all bundles not found in simple_sitemap.bundle_settings.*.* configuration.
-      foreach ($this->entityHelper->getSupportedEntityTypes() as $type_id => $type_definition) {
-        if ($this->entityTypeIsEnabled($type_id)) {
-          foreach($this->entityTypeBundleInfo->getBundleInfo($type_id) as $bundle => $bundle_definition) {
-            if (!isset($bundle_settings[$type_id][$bundle])) {
-              self::supplementDefaultSettings('entity', $bundle_settings[$type_id][$bundle]);
+        // Supplement default bundle settings for all bundles not found in simple_sitemap.bundle_settings.*.* configuration.
+        if ($supplement_defaults) {
+          foreach ($this->entityHelper->getSupportedEntityTypes() as $type_id => $type_definition) {
+            if ($this->entityTypeIsEnabled($type_id)) {
+              foreach($this->entityTypeBundleInfo->getBundleInfo($type_id) as $bundle => $bundle_definition) {
+                if (!isset($bundle_settings[$type_id][$bundle])) {
+                  self::supplementDefaultSettings('entity', $bundle_settings[$type_id][$bundle]);
+                }
+              }
             }
           }
         }
       }
+      if ($multipleVariants) {
+        if (!empty($bundle_settings)) {
+          $all_bundle_settings[$variant] = $bundle_settings;
+        }
+      }
+      else {
+        return $bundle_settings;
+      }
     }
-    return $bundle_settings;
+
+    return $all_bundle_settings;
+  }
+
+  /**
+   * @param string|null $entity_type_id
+   * @param string|null $bundle_name
+   * @return $this
+   */
+  public function removeBundleSettings($entity_type_id = NULL, $bundle_name = NULL) {
+    if (empty($variants = $this->getVariants(FALSE))) {
+      return $this;
+    }
+
+    if (NULL !== $entity_type_id) {
+      $bundle_name = NULL !== $bundle_name ? $bundle_name : $entity_type_id;
+
+      foreach ($variants as $variant) {
+        $this->configFactory
+          ->getEditable("simple_sitemap.bundle_settings.$variant.$entity_type_id.$bundle_name")->delete();
+      }
+
+      $ids = $this->getEntityInstanceIds($entity_type_id, $bundle_name);
+      $this->removeEntityInstanceSettings($entity_type_id, (empty($ids) ? NULL : $ids));
+    }
+    else {
+      foreach ($variants as $variant) {
+        $config_names = $this->configFactory->listAll("simple_sitemap.bundle_settings.$variant.");
+        foreach ($config_names as $config_name) {
+          $this->configFactory->getEditable($config_name)->delete();
+        }
+        $this->removeEntityInstanceSettings();
+      }
+    }
+
+    return $this;
   }
 
   /**
@@ -592,45 +652,51 @@ class Simplesitemap {
    * @param array $settings
    *
    * @return $this
-   *
-   * @todo: variants
    */
   public function setEntityInstanceSettings($entity_type_id, $id, $settings) {
-    $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($id);
-    $bundle_settings = $this->getBundleSettings(
-      $entity_type_id, $this->entityHelper->getEntityInstanceBundleName($entity)
-    );
-    if (!empty($bundle_settings)) {
+    if (empty($variants = $this->getVariants(FALSE))) {
+      return $this;
+    }
 
-      // Check if overrides are different from bundle setting before saving.
-      $override = FALSE;
-      foreach ($settings as $key => $setting) {
-        if (!isset($bundle_settings[$key]) || $setting != $bundle_settings[$key]) {
-          $override = TRUE;
-          break;
+    $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($id);
+
+    $all_bundle_settings = $this->getBundleSettings(
+      $entity_type_id, $this->entityHelper->getEntityInstanceBundleName($entity), TRUE, TRUE
+    );
+
+    foreach ($all_bundle_settings as $variant => $bundle_settings) {
+      if (!empty($bundle_settings)) {
+
+        // Check if overrides are different from bundle setting before saving.
+        $override = FALSE;
+        foreach ($settings as $key => $setting) {
+          if (!isset($bundle_settings[$key]) || $setting != $bundle_settings[$key]) {
+            $override = TRUE;
+            break;
+          }
+        }
+
+        // Save overrides for this entity if something is different.
+        if ($override) {
+          $this->db->merge('simple_sitemap_entity_overrides')
+            ->keys([
+              'type' => $variant,
+              'entity_type' => $entity_type_id,
+              'entity_id' => $id])
+            ->fields([
+              'type' => $variant,
+              'entity_type' => $entity_type_id,
+              'entity_id' => $id,
+              'inclusion_settings' => serialize(array_merge($bundle_settings, $settings))])
+            ->execute();
+        }
+        // Else unset override.
+        else {
+          $this->removeEntityInstanceSettings($entity_type_id, $id);
         }
       }
+    }
 
-      // Save overrides for this entity if something is different.
-      if ($override) {
-        $this->db->merge('simple_sitemap_entity_overrides')
-          ->keys([
-            'entity_type' => $entity_type_id,
-            'entity_id' => $id])
-          ->fields([
-            'entity_type' => $entity_type_id,
-            'entity_id' => $id,
-            'inclusion_settings' => serialize(array_merge($bundle_settings, $settings)),])
-          ->execute();
-      }
-      // Else unset override.
-      else {
-        $this->removeEntityInstanceSettings($entity_type_id, $id);
-      }
-    }
-    else {
-      //todo: log error
-    }
     return $this;
   }
 
@@ -643,11 +709,16 @@ class Simplesitemap {
    *
    * @return array|false
    *
-   * @todo: variants
+   * @todo multiple variants
    */
   public function getEntityInstanceSettings($entity_type_id, $id) {
+    if (empty($variants = $this->getVariants(FALSE))) {
+      return FALSE;
+    }
+
     $results = $this->db->select('simple_sitemap_entity_overrides', 'o')
       ->fields('o', ['inclusion_settings'])
+      ->condition('o.type', $variants[0])
       ->condition('o.entity_type', $entity_type_id)
       ->condition('o.entity_id', $id)
       ->execute()
@@ -674,17 +745,25 @@ class Simplesitemap {
    * @param string|null $entity_ids
    *
    * @return $this
-   *
-   * @todo: variants
    */
-  public function removeEntityInstanceSettings($entity_type_id, $entity_ids = NULL) {
-    $query = $this->db->delete('simple_sitemap_entity_overrides')
-      ->condition('entity_type', $entity_type_id);
-    if (NULL !== $entity_ids) {
-      $entity_ids = !is_array($entity_ids) ? [$entity_ids] : $entity_ids;
-      $query->condition('entity_id', $entity_ids, 'IN');
+  public function removeEntityInstanceSettings($entity_type_id = NULL, $entity_ids = NULL) {
+    if (empty($variants = $this->getVariants())) {
+      return $this;
     }
+
+    $query = $this->db->delete('simple_sitemap_entity_overrides')
+      ->condition('type', $variants, 'IN');
+
+    if (NULL !== $entity_type_id) {
+      $query->condition('entity_type', $entity_type_id);
+
+      if (NULL !== $entity_ids) {
+        $query->condition('entity_id', (array) $entity_ids, 'IN');
+      }
+    }
+
     $query->execute();
+
     return $this;
   }
 

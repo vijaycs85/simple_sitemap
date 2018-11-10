@@ -118,11 +118,24 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
         if ($value) {
           $this->generator->enableEntityType($entity_type_id);
           if ($this->entityHelper->entityTypeIsAtomic($entity_type_id)) {
-            $this->generator->setBundleSettings($entity_type_id, $entity_type_id, [
-              'index' => TRUE,
-              'priority' => $values[$entity_type_id . '_simple_sitemap_priority'],
-              'changefreq' => $values[$entity_type_id . '_simple_sitemap_changefreq'],
-              'include_images' => (bool) $values[$entity_type_id . '_simple_sitemap_include_images'],
+
+            // Deleting bundle settings for old bundle.
+            // See simple_sitemap.module::simple_sitemap_entity_form_submit().
+            // todo: This will not be necessary if "multiple variants pro bundle" is implemented.
+            if (isset($form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_settings'][$entity_type_id . '_simple_sitemap_variant']['#default_value'])) {
+              $old_variant = $form['simple_sitemap_entities']['entities'][$entity_type_id][$entity_type_id . '_settings'][$entity_type_id . '_simple_sitemap_variant']['#default_value'];
+              if ($old_variant !== $values[$entity_type_id . '_simple_sitemap_variant']) {
+                $this->generator->setVariants($old_variant)->removeBundleSettings($entity_type_id);
+              }
+            }
+
+            $this->generator
+              ->setVariants($values[$entity_type_id . '_simple_sitemap_variant'])
+              ->setBundleSettings($entity_type_id, $entity_type_id, [
+                'index' => TRUE,
+                'priority' => $values[$entity_type_id . '_simple_sitemap_priority'],
+                'changefreq' => $values[$entity_type_id . '_simple_sitemap_changefreq'],
+                'include_images' => (bool) $values[$entity_type_id . '_simple_sitemap_include_images'],
             ]);
           }
         }

@@ -49,8 +49,7 @@ function simple_sitemap_form_alter(&$form, FormStateInterface $form_state, $form
   ];
 
   // Attach some js magic to forms.
-  // todo: JS not working on comment entity form, hence disabling.
-  if ($f->getEntityTypeId() !== 'comment' || $f->getEntityCategory() !== 'instance') {
+  if ($f->getEntityCategory() !== 'instance') {
     $form['#attached']['library'][] = 'simple_sitemap/form';
   }
 
@@ -111,21 +110,31 @@ function simple_sitemap_entity_form_submit($form, FormStateInterface &$form_stat
       'include_images' => (bool) $values['simple_sitemap_include_images'],
     ];
 
+    // Deleting bundle settings for old bundle.
+    // See SimplesitemapEntitiesForm::submitForm().
+    // todo: This will not be necessary if "multiple variants pro bundle" is implemented.
+    if (isset($form['simple_sitemap']['simple_sitemap_variant']['#default_value'])) {
+      $old_variant = $form['simple_sitemap']['simple_sitemap_variant']['#default_value'];
+      if ($old_variant !== $values['simple_sitemap_variant']) {
+        $generator->setVariants($old_variant)->removeBundleSettings($f->getEntityTypeId(), $f->getBundleName());
+      }
+    }
+
     switch ($f->getEntityCategory()) {
 
       case 'bundle':
-        $generator->setBundleSettings(
-          $f->getEntityTypeId(),
-          !empty($f->getBundleName()) ? $f->getBundleName() : $f->getFormEntityId(),
+        $generator->setVariants([$values['simple_sitemap_variant']])
+          ->setBundleSettings($f->getEntityTypeId(),
+            !empty($f->getBundleName()) ? $f->getBundleName() : $f->getFormEntityId(),
           $settings
         );
         break;
 
       case 'instance':
-        $generator->setEntityInstanceSettings(
-          $f->getEntityTypeId(),
-          !empty($f->getInstanceId()) ? $f->getInstanceId() : $f->getFormEntityId(),
-          $settings
+        $generator->setVariants([$values['simple_sitemap_variant']])
+          ->setEntityInstanceSettings($f->getEntityTypeId(),
+            !empty($f->getInstanceId()) ? $f->getInstanceId() : $f->getFormEntityId(),
+            $settings
         );
         break;
     }
@@ -192,7 +201,7 @@ function simple_sitemap_entity_delete(EntityInterface $entity) {
 
   /** @var \Drupal\simple_sitemap\Simplesitemap $generator */
   $generator = \Drupal::service('simple_sitemap.generator');
-  $generator->removeEntityInstanceSettings(
+  $generator->setVariants(TRUE)->removeEntityInstanceSettings(
     $entity->getEntityTypeId(), $entity->id()
   );
 }
@@ -206,7 +215,10 @@ function simple_sitemap_entity_delete(EntityInterface $entity) {
  * @param string $bundle
  */
 function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
-  simple_sitemap_delete_bundle_config($entity_type_id, $bundle);
+
+  /** @var \Drupal\simple_sitemap\Simplesitemap $generator */
+  $generator = \Drupal::service('simple_sitemap.generator');
+  $generator->setVariants(TRUE)->removeBundleSettings($entity_type_id, $bundle);
 }
 
 /**
@@ -217,33 +229,10 @@ function simple_sitemap_entity_bundle_delete($entity_type_id, $bundle) {
  * @param \Drupal\system\MenuInterface $menu
  */
 function simple_sitemap_menu_delete(MenuInterface $menu) {
-  simple_sitemap_delete_bundle_config('menu_link_content', $menu->id());
-}
-
-/**
- * Helper function used by simple_sitemap_entity_bundle_delete() and
- * simple_sitemap_menu_delete() hooks. This is needed, as menus are technically
- * not bundles.
- *
- * @param string $entity_type_id
- * @param string $bundle
- */
-function simple_sitemap_delete_bundle_config($entity_type_id, $bundle) {
 
   /** @var \Drupal\simple_sitemap\Simplesitemap $generator */
   $generator = \Drupal::service('simple_sitemap.generator');
-
-  if (!empty($deleted_bundle_settings = $generator->getBundleSettings($entity_type_id, $bundle))) {
-    \Drupal::service('config.factory')->getEditable("simple_sitemap.bundle_settings.$entity_type_id.$bundle")->delete();
-
-    if (!empty($deleted_bundle_settings['index'])) {
-      $message = 'You may want to <a href="@url">regenerate</a> your XML sitemaps now.';
-      if ($generator->getSetting('cron_generate')) {
-        $message .= ' Otherwise the sitemaps will be regenerated during a future cron run.';
-      }
-      \Drupal::messenger()->addMessage(t($message, ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap']));
-    }
-  }
+  $generator->setVariants(TRUE)->removeBundleSettings('menu_link_content', $menu->id());
 }
 
 /**

@@ -152,7 +152,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     foreach ($this->generator->getSitemapManager()->getSitemapVariants(NULL, FALSE) as $name => $info) {
       $variants[$name] = $this->t($info['label']);
     }
-    $default_variant = $this->generator->getSetting('default_variant', SimplesitemapManager::DEFAULT_SITEMAP_VARIANT);
+    $default_variant = $this->generator->getSetting('default_variant');
 
     $form['simple_sitemap_settings']['advanced']['default_variant'] = [
       '#type' => 'select',
