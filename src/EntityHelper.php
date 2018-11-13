@@ -114,6 +114,32 @@ class EntityHelper {
   }
 
   /**
+   * @param string $entity_type_id
+   * @param string|null $bundle_name
+   * @return array|int
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
+  public function getEntityInstanceIds($entity_type_id, $bundle_name = NULL) {
+    $sitemap_entity_types = $this->getSupportedEntityTypes();
+    if (!isset($sitemap_entity_types[$entity_type_id])) {
+      return [];
+    }
+
+    $entity_query = $this->entityTypeManager->getStorage($entity_type_id)->getQuery();
+    if (!$this->entityTypeIsAtomic($entity_type_id) && NULL !== $bundle_name) {
+      $keys = $sitemap_entity_types[$entity_type_id]->getKeys();
+
+      // Menu fix.
+      $keys['bundle'] = $entity_type_id === 'menu_link_content' ? 'menu_name' : $keys['bundle'];
+
+      $entity_query->condition($keys['bundle'], $bundle_name);
+    }
+
+    return $entity_query->execute();
+  }
+
+  /**
    * @param $entity_type_name
    * @param $entity_id
    * @return array

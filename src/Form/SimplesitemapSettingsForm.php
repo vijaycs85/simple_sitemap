@@ -4,7 +4,7 @@ namespace Drupal\simple_sitemap\Form;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Component\Utility\UrlHelper;
-use Drupal\simple_sitemap\SimplesitemapManager;
+use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
 
 /**
  * Class SimplesitemapSettingsForm
@@ -26,31 +26,37 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
 
     $form['simple_sitemap_settings']['#prefix'] = $this->getDonationText();
 
-    $form['simple_sitemap_settings']['regenerate'] = [
+    $form['simple_sitemap_settings']['status'] = [
       '#type' => 'fieldset',
-      '#title' => $this->t('Generate sitemaps'),
+      '#title' => $this->t('Sitemap status'),
       '#markup' => '<p>' . $this->t('Sitemaps can be regenerated on demand here.') . '</p>',
+      '#description' => $this->t('Variants can be configured <a href="@url">here</a>.', ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap/variants']),
     ];
 
-    $form['simple_sitemap_settings']['regenerate']['regenerate_submit'] = [
+    $form['simple_sitemap_settings']['status']['regenerate_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Generate from queue'),
       '#submit' => ['::generateSitemap'],
       '#validate' => [],
     ];
 
-//    $form['simple_sitemap_settings']['regenerate']['regenerate_backend_submit'] = [
+//    $form['simple_sitemap_settings']['status']['regenerate_backend_submit'] = [
 //      '#type' => 'submit',
 //      '#value' => $this->t('Generate from queue (background)'),
 //      '#submit' => ['::generateSitemapBackend'],
 //      '#validate' => [],
 //    ];
 
-    $form['simple_sitemap_settings']['regenerate']['rebuild_queue_submit'] = [
+    $form['simple_sitemap_settings']['status']['rebuild_queue_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Rebuild queue'),
       '#submit' => ['::rebuildQueue'],
       '#validate' => [],
+    ];
+
+    $form['simple_sitemap_settings']['status']['progress'] = [
+      '#prefix' => '<div class="simple-sitemap-progress form-item clearfix">',
+      '#suffix' => '</div>',
     ];
 
     $queue_worker = $this->generator->getQueueWorker();
@@ -67,12 +73,73 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
         '#percent' => $percent,
         '#message' => t('@indexed out of @total items have been processed.', ['@indexed' => $indexed_count, '@total' => $total_count]),
       ];
-      $form['simple_sitemap_settings']['progress'] = [
-        '#markup' => render($index_progress),
-        '#prefix' => '<div class="simple-sitemap-progress clearfix">',
-        '#suffix' => '</div>',
-      ];
+      $form['simple_sitemap_settings']['status']['progress']['#markup'] = render($index_progress);
     }
+    else {
+      $form['simple_sitemap_settings']['status']['progress']['#markup'] = $this->t('There are no items to be indexed.');
+    }
+
+    $sitemap_manager = $this->generator->getSitemapManager();
+    $sitemap_statuses = $this->fetchSitemapInstanceStatuses();
+
+    foreach ($sitemap_manager->getSitemapTypes() as $type_name => $type_definition) {
+      if (!empty($variants = $sitemap_manager->getSitemapVariants($type_name, FALSE))) {
+        $form['simple_sitemap_settings']['status']['types'][$type_name] = [
+          '#type' => 'details',
+          '#title' => '<em>' . $type_definition['label'] . '</em> ' . $this->t('sitemaps'),
+          '#open' => !empty($variants) && count($variants) <= 5,
+        ];
+        $form['simple_sitemap_settings']['status']['types'][$type_name]['table'] = [
+          '#type' => 'table',
+          '#header' => [$this->t('Variant'), $this->t('Status'), /*$this->t('Actions')*/],
+        ];
+        foreach ($variants as $variant_name => $variant_definition) {
+          $row = [];
+          $row['name'] = $variant_definition['label'];
+          if (!isset($sitemap_statuses[$variant_name])) {
+            $row['status'] = $this->t('pending');
+          }
+          else {
+            $url = $GLOBALS['base_url'] . '/' . $variant_name . '/sitemap.xml';
+            switch ($sitemap_statuses[$variant_name]) {
+              case 0:
+                $row['status'] = $this->t('generating');
+                break;
+              case 1:
+                $row['status']['data']['#markup'] = $this->t('<a href="@url" target="_blank">published</a>', ['@url' => $url]);
+                break;
+              case 2:
+                $row['status'] = $this->t('<a href="@url" target="_blank">published</a> | regenerating', ['@url' => $url]);
+                break;
+            }
+          }
+
+//          $row['actions'] = '';
+          $form['simple_sitemap_settings']['status']['types'][$type_name]['table']['#rows'][$variant_name] = $row;
+          unset($sitemap_statuses[$variant_name]);
+        }
+      }
+    }
+
+/*    if (!empty($sitemap_statuses)) {
+      $form['simple_sitemap_settings']['status']['types']['&orphans'] = [
+        '#type' => 'details',
+        '#title' => $this->t('Orphans'),
+        '#open' => TRUE,
+      ];
+
+      $form['simple_sitemap_settings']['status']['types']['&orphans']['table'] = [
+        '#type' => 'table',
+        '#header' => [$this->t('Variant'), $this->t('Status'), $this->t('Actions')],
+      ];
+      foreach ($sitemap_statuses as $orphan_name => $orphan_info) {
+        $form['simple_sitemap_settings']['status']['types']['&orphans']['table']['#rows'][$orphan_name] = [
+          'name' => $orphan_name,
+          'status' => $this->t('orphaned'),
+          'actions' => '',
+        ];
+      }
+    }*/
 
     $form['simple_sitemap_settings']['settings'] = [
       '#type' => 'fieldset',
@@ -149,8 +216,8 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     ];
 
     $variants = [];
-    foreach ($this->generator->getSitemapManager()->getSitemapVariants(NULL, FALSE) as $name => $info) {
-      $variants[$name] = $this->t($info['label']);
+    foreach ($this->generator->getSitemapManager()->getSitemapVariants(NULL, FALSE) as $variant_name => $variant_definition) {
+      $variants[$variant_name] = $this->t($variant_definition['label']);
     }
     $default_variant = $this->generator->getSetting('default_variant');
 
@@ -197,6 +264,29 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     $this->formHelper->displayRegenerateNow($form['simple_sitemap_settings']);
 
     return parent::buildForm($form, $form_state);
+  }
+
+  /**
+   * @return array
+   *  Array of sitemap statuses keyed by variant name.
+   *  Status values:
+   *  0: Instance is unpublished
+   *  1: Instance is published
+   *  2: Instance is published but is being regenerated
+   */
+  protected function fetchSitemapInstanceStatuses() {
+    $results = \Drupal::database() //todo DI
+      ->query('SELECT type, status FROM {simple_sitemap} GROUP BY type, status')
+      ->fetchAll();
+
+    $instances = [];
+    foreach ($results as $i => $result) {
+      $instances[$result->type] = isset($instances[$result->type])
+        ? $result->status + 1
+        : (int) $result->status;
+    }
+
+    return $instances;
   }
 
   /**

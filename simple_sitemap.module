@@ -123,7 +123,7 @@ function simple_sitemap_entity_form_submit($form, FormStateInterface &$form_stat
     switch ($f->getEntityCategory()) {
 
       case 'bundle':
-        $generator->setVariants([$values['simple_sitemap_variant']])
+        $generator->setVariants($values['simple_sitemap_variant'])
           ->setBundleSettings($f->getEntityTypeId(),
             !empty($f->getBundleName()) ? $f->getBundleName() : $f->getFormEntityId(),
           $settings
@@ -131,7 +131,7 @@ function simple_sitemap_entity_form_submit($form, FormStateInterface &$form_stat
         break;
 
       case 'instance':
-        $generator->setVariants([$values['simple_sitemap_variant']])
+        $generator->setVariants($values['simple_sitemap_variant'])
           ->setEntityInstanceSettings($f->getEntityTypeId(),
             !empty($f->getInstanceId()) ? $f->getInstanceId() : $f->getFormEntityId(),
             $settings

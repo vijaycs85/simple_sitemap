@@ -465,7 +465,7 @@ class Simplesitemap {
       $bundle_settings->save();
 
       // Delete entity overrides which are identical to new bundle settings.
-      $entity_ids = $this->getEntityInstanceIds($entity_type_id, $bundle_name);
+      $entity_ids = $this->entityHelper->getEntityInstanceIds($entity_type_id, $bundle_name);
       $query = $this->db->select('simple_sitemap_entity_overrides', 'o')
         ->fields('o', ['id', 'inclusion_settings'])
         ->condition('o.entity_type', $entity_type_id)
@@ -496,28 +496,6 @@ class Simplesitemap {
     }
 
     return $this;
-  }
-
-  /**
-   * @todo Possibly move to EntityHelper
-   */
-  protected function getEntityInstanceIds($entity_type_id, $bundle_name = NULL) {
-    $sitemap_entity_types = $this->entityHelper->getSupportedEntityTypes();
-    if (!isset($sitemap_entity_types[$entity_type_id])) {
-      return [];
-    }
-
-    $entity_query = $this->entityTypeManager->getStorage($entity_type_id)->getQuery();
-    if (!$this->entityHelper->entityTypeIsAtomic($entity_type_id) && NULL !== $bundle_name) {
-      $keys = $sitemap_entity_types[$entity_type_id]->getKeys();
-
-      // Menu fix.
-      $keys['bundle'] = $entity_type_id === 'menu_link_content' ? 'menu_name' : $keys['bundle'];
-
-      $entity_query->condition($keys['bundle'], $bundle_name);
-    }
-
-    return $entity_query->execute();
   }
 
   /**
@@ -609,8 +587,11 @@ class Simplesitemap {
           ->getEditable("simple_sitemap.bundle_settings.$variant.$entity_type_id.$bundle_name")->delete();
       }
 
-      $ids = $this->getEntityInstanceIds($entity_type_id, $bundle_name);
-      $this->removeEntityInstanceSettings($entity_type_id, (empty($ids) ? NULL : $ids));
+      $this->removeEntityInstanceSettings($entity_type_id, (
+        empty($ids)
+          ? NULL
+          : $this->entityHelper->getEntityInstanceIds($entity_type_id, $bundle_name)
+      ));
     }
     else {
       foreach ($variants as $variant) {
@@ -747,7 +728,7 @@ class Simplesitemap {
    * @return $this
    */
   public function removeEntityInstanceSettings($entity_type_id = NULL, $entity_ids = NULL) {
-    if (empty($variants = $this->getVariants())) {
+    if (empty($variants = $this->getVariants(FALSE))) {
       return $this;
     }
 
