@@ -25,7 +25,7 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
     $form['simple_sitemap_custom'] = [
       '#title' => $this->t('Custom links'),
       '#type' => 'fieldset',
-      '#markup' => '<p>' . $this->t('Add custom internal drupal paths to the XML sitemap.') . '</p>',
+      '#markup' => '<div class="description">' . $this->t('Add custom internal drupal paths to the XML sitemap.') . '</div>',
       '#prefix' => $this->getDonationText(),
     ];
 

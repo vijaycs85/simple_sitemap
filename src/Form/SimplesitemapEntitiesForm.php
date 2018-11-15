@@ -27,7 +27,7 @@ class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
     $form['simple_sitemap_entities']['entities'] = [
       '#title' => $this->t('Sitemap entities'),
       '#type' => 'fieldset',
-      '#markup' => '<p>' . $this->t('Simple XML sitemap settings will be added only to entity forms of entity types enabled here. For all entity types featuring bundles (e.g. <em>node</em>) sitemap settings have to be set on their bundle pages (e.g. <em>page</em>).') . '</p>',
+      '#markup' => '<div class="description">' . $this->t('Simple XML sitemap settings will be added only to entity forms of entity types enabled here. For all entity types featuring bundles (e.g. <em>node</em>) sitemap settings have to be set on their bundle pages (e.g. <em>page</em>).') . '</div>',
     ];
 
     $form['#attached']['library'][] = 'simple_sitemap/sitemapEntities';

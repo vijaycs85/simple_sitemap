@@ -4,7 +4,6 @@ namespace Drupal\simple_sitemap\Form;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Component\Utility\UrlHelper;
-use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
 
 /**
  * Class SimplesitemapSettingsForm
@@ -29,25 +28,30 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     $form['simple_sitemap_settings']['status'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Sitemap status'),
-      '#markup' => '<p>' . $this->t('Sitemaps can be regenerated on demand here.') . '</p>',
+      '#markup' => '<div class="description">' . $this->t('Sitemaps can be regenerated on demand here.') . '</div>',
       '#description' => $this->t('Variants can be configured <a href="@url">here</a>.', ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap/variants']),
     ];
 
-    $form['simple_sitemap_settings']['status']['regenerate_submit'] = [
+    $form['simple_sitemap_settings']['status']['actions'] = [
+      '#prefix' => '<div class="clearfix"><div class="form-item">',
+      '#suffix' => '</div></div>',
+    ];
+
+    $form['simple_sitemap_settings']['status']['actions']['regenerate_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Generate from queue'),
       '#submit' => ['::generateSitemap'],
       '#validate' => [],
     ];
 
-//    $form['simple_sitemap_settings']['status']['regenerate_backend_submit'] = [
+//    $form['simple_sitemap_settings']['status']['actions']['regenerate_backend_submit'] = [
 //      '#type' => 'submit',
 //      '#value' => $this->t('Generate from queue (background)'),
 //      '#submit' => ['::generateSitemapBackend'],
 //      '#validate' => [],
 //    ];
 
-    $form['simple_sitemap_settings']['status']['rebuild_queue_submit'] = [
+    $form['simple_sitemap_settings']['status']['actions']['rebuild_queue_submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Rebuild queue'),
       '#submit' => ['::rebuildQueue'],
@@ -55,7 +59,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
     ];
 
     $form['simple_sitemap_settings']['status']['progress'] = [
-      '#prefix' => '<div class="simple-sitemap-progress form-item clearfix">',
+      '#prefix' => '<div class="clearfix">',
       '#suffix' => '</div>',
     ];
 
@@ -88,10 +92,12 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
           '#type' => 'details',
           '#title' => '<em>' . $type_definition['label'] . '</em> ' . $this->t('sitemaps'),
           '#open' => !empty($variants) && count($variants) <= 5,
+          '#description' => !empty($type_definition['description']) ? '<div class="description">' . $type_definition['description'] . '</div>' : '',
         ];
         $form['simple_sitemap_settings']['status']['types'][$type_name]['table'] = [
           '#type' => 'table',
           '#header' => [$this->t('Variant'), $this->t('Status'), /*$this->t('Actions')*/],
+          '#attributes' => ['class' => ['form-item', 'clearfix']],
         ];
         foreach ($variants as $variant_name => $variant_definition) {
           $row = [];

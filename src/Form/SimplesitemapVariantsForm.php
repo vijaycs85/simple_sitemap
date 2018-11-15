@@ -26,7 +26,7 @@ class SimplesitemapVariantsForm extends SimplesitemapFormBase {
     $form['simple_sitemap_variants'] = [
       '#title' => $this->t('Sitemap variants'),
       '#type' => 'fieldset',
-      '#markup' => '<p>' . $this->t('Define sitemap variants. A sitemap variant is a sitemap instance of a certain type (specific sitemap generator and URL generators) accessible under a certain URL.<br/>Each variant can have its own entity bundle settings (to be defined on bundle edit pages).') . '</p>',
+      '#markup' => '<div class="description">' . $this->t('Define sitemap variants. A sitemap variant is a sitemap instance of a certain type (specific sitemap generator and URL generators) accessible under a certain URL.<br/>Each variant can have its own entity bundle settings (to be defined on bundle edit pages).') . '</div>',
       '#prefix' => $this->getDonationText(),
     ];
 
