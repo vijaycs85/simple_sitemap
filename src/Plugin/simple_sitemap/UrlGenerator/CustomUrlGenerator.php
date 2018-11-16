@@ -100,7 +100,7 @@ class CustomUrlGenerator extends UrlGeneratorBase {
    */
   public function getDataSets() {
     $this->includeImages = $this->generator->getSetting('custom_links_include_images', FALSE);
-    return array_values($this->generator->getCustomLinks());
+    return array_values($this->generator->setVariants($this->sitemapVariant)->getCustomLinks());
   }
 
   /**
