@@ -299,25 +299,9 @@ class Simplesitemap {
   /**
    * @return $this
    * @throws \Drupal\Component\Plugin\Exception\PluginException
-   *
-   * @todo document
    */
   public function removeSitemap() {
-    $saved_variants = $this->manager->getSitemapVariants();
-    $this->moduleHandler->alter('simple_sitemap_variants', $saved_variants);
-    $remove_variants = NULL !== ($variants = $this->getVariants(FALSE))
-      ? array_intersect_key($saved_variants, array_flip((array) $variants))
-      : $saved_variants;
-
-    if (!empty($remove_variants)) {
-      $type_definitions = $this->manager->getSitemapTypes();
-      $this->moduleHandler->alter('simple_sitemap_types', $type_definitions);
-      foreach ($remove_variants as $variant_name => $variant_definition) {
-        $this->manager->getSitemapGenerator($type_definitions[$variant_definition['type']]['sitemapGenerator'])
-          ->setSitemapVariant($variant_name)
-          ->remove();
-      }
-    }
+    $this->manager->removeSitemap($this->getVariants(FALSE));
 
     return $this;
   }
@@ -326,6 +310,8 @@ class Simplesitemap {
    * @param string $from
    * @return $this
    * @throws \Drupal\Component\Plugin\Exception\PluginException
+   *
+   * @todo variants
    */
   public function generateSitemap($from = 'form') {
     switch($from) {

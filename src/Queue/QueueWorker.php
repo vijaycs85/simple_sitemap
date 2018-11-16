@@ -115,7 +115,7 @@ class QueueWorker {
    */
   public function deleteQueue() {
     $this->queue->deleteQueue();
-    SitemapGeneratorBase::removeSitemapVariants(NULL, 'unpublished'); //todo should call the remove() method of every plugin instead?
+    SitemapGeneratorBase::purgeSitemapVariants(NULL, 'unpublished');
     $this->variantProcessedNow = NULL;
     $this->generatorProcessedNow = NULL;
     $this->results = [];
@@ -136,7 +136,7 @@ class QueueWorker {
    * @todo Lock functionality
    */
   public function rebuildQueue($variants = NULL) {
-    $data_sets = [];
+    $all_data_sets = [];
     $sitemap_variants = $this->manager->getSitemapVariants();
     $this->moduleHandler->alter('simple_sitemap_variants', $sitemap_variants);
 
@@ -155,29 +155,37 @@ class QueueWorker {
       // Adding generate_sitemap operations for all data sets.
       foreach ($type_definitions[$type]['urlGenerators'] as $url_generator_id) {
 
-        foreach ($this->manager->getUrlGenerator($url_generator_id)
-                   ->setSitemapVariant($variant_name)
-                   ->getDataSets() as $data_set) {
+        $data_sets = $this->manager->getUrlGenerator($url_generator_id)
+          ->setSitemapVariant($variant_name)
+          ->getDataSets();
 
-          $data_sets[] = [
-            'data' => $data_set,
-            'sitemap_variant' => $variant_name,
-            'url_generator' => $url_generator_id,
-            'sitemap_generator' => $type_definitions[$type]['sitemapGenerator'],
-          ];
+        if (!empty($data_sets)) {
+          $sitemap_variants[$variant_name]['data'] = TRUE;
+          foreach ($data_sets as $data_set) {
+            $all_data_sets[] = [
+              'data' => $data_set,
+              'sitemap_variant' => $variant_name,
+              'url_generator' => $url_generator_id,
+              'sitemap_generator' => $type_definitions[$type]['sitemapGenerator'],
+            ];
 
-          if (count($data_sets) === self::REBUILD_QUEUE_CHUNK_ITEM_SIZE) {
-            $this->queueElements($data_sets);
-            $data_sets = [];
+            if (count($all_data_sets) === self::REBUILD_QUEUE_CHUNK_ITEM_SIZE) {
+              $this->queueElements($all_data_sets);
+              $all_data_sets = [];
+            }
           }
         }
       }
     }
 
-    if (!empty($data_sets)) {
-      $this->queueElements($data_sets);
+    if (!empty($all_data_sets)) {
+      $this->queueElements($all_data_sets);
     }
     $this->getQueuedElementCount(TRUE);
+
+    // todo: May not be clean to remove sitemap variants data when queuing elements.
+    // Remove all sitemap variant instances where no results have been queued.
+    $this->manager->removeSitemap(array_keys(array_filter($sitemap_variants, function($e) { return empty($e['data']); })));
 
     return $this;
   }
@@ -193,6 +201,7 @@ class QueueWorker {
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    *
    * @todo Lock functionality
+   * @todo Does not unpublish sitemaps were variant does not have links anymore.
    */
   public function generateSitemap($from = 'form') {
 

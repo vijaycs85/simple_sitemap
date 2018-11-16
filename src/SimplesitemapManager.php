@@ -133,7 +133,6 @@ class SimplesitemapManager {
    * @param null $sitemap_type
    * @return array
    *
-   * @todo document
    * @todo translate label
    */
   public function getSitemapVariants($sitemap_type = NULL, $attach_type_info = TRUE) {
@@ -210,9 +209,29 @@ class SimplesitemapManager {
     return $this;
   }
 
+  public function removeSitemap($variant_names = NULL) {
+    $saved_variants = $this->getSitemapVariants();
+    $remove_variants = NULL !== $variant_names && !empty((array) $variant_names)
+      ? array_intersect_key($saved_variants, array_flip((array) $variant_names))
+      : $saved_variants;
+
+    if (!empty($remove_variants)) {
+      $type_definitions = $this->getSitemapTypes();
+      foreach ($remove_variants as $variant_name => $variant_definition) {
+        $this->getSitemapGenerator($type_definitions[$variant_definition['type']]['sitemapGenerator'])
+          ->setSitemapVariant($variant_name)
+          ->remove();
+      }
+    }
+
+    return $this;
+  }
+
   public function removeSitemapVariants($variant_names = NULL) {
     if (NULL === $variant_names || !empty((array) $variant_names)) {
-      SitemapGeneratorBase::removeSitemapVariants($variant_names); //todo should call the remove() method of every plugin instead?
+
+      // Remove sitemap instances.
+      $this->removeSitemap($variant_names);
 
       if (NULL === $variant_names) {
         // Remove all variants and their bundle settings.

@@ -119,7 +119,6 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
 
   /**
    * @return bool
-   * @todo: Variant cannot be null
    */
   protected function isDefaultVariant() {
     return $this->sitemapVariant === $this->settings['default_variant'];
@@ -128,7 +127,6 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
   /**
    * @param array $links
    * @return string
-   * @todo: Variant cannot be null
    */
   abstract protected function getXml(array $links);
 
@@ -146,7 +144,6 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
    * Returns the sitemap index for all sitemap chunks of this type.
    *
    * @return string
-   * @todo: Variant cannot be null
    */
   protected function getIndexXml(array $chunk_info) {
     $this->writer->openMemory();
@@ -183,12 +180,12 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
    * @return $this
    */
   public function remove($mode = 'all') {
-    self::removeSitemapVariants($this->sitemapVariant, $mode);
+    self::purgeSitemapVariants($this->sitemapVariant, $mode);
 
     return $this;
   }
 
-  public static function removeSitemapVariants($variants = NULL, $mode = 'all') {
+  public static function purgeSitemapVariants($variants = NULL, $mode = 'all') {
     if (NULL === $variants || !empty((array) $variants)) {
       $delete_query = \Drupal::database()->delete('simple_sitemap');
 
@@ -223,7 +220,6 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
    * @param array $links
    *   All links with their multilingual versions and settings.
    *
-   * @todo Variant cannot be null
    */
   public function generate(array $links) {
     $highest_id = $this->db->query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField();
@@ -244,7 +240,6 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
 
   /**
    * @throws \Exception
-   * @todo: Variant cannot be null
    */
   public function generateIndex() {
     if (!empty($chunk_info = $this->getChunkInfo()) && count($chunk_info) > 1) {
