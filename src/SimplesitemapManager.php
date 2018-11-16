@@ -164,10 +164,9 @@ class SimplesitemapManager {
 
   /**
    * @param $name
-   * @param $definition
+   * @param array $definition
    * @return $this
-   *
-   * @todo document
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
   public function addSitemapVariant($name, $definition = []) {
     $all_variants = $this->getSitemapVariants();
@@ -209,24 +208,42 @@ class SimplesitemapManager {
     return $this;
   }
 
+  /**
+   * @param null|array|string $variant_names
+   *  null: Removes all sitemap instances
+   *  string|array: Removes specific instances
+   *
+   * @return $this
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   */
   public function removeSitemap($variant_names = NULL) {
-    $saved_variants = $this->getSitemapVariants();
-    $remove_variants = NULL !== $variant_names && !empty((array) $variant_names)
-      ? array_intersect_key($saved_variants, array_flip((array) $variant_names))
-      : $saved_variants;
+    if (NULL === $variant_names || !empty((array) $variant_names)) {
+      $saved_variants = $this->getSitemapVariants();
+      $remove_variants = NULL === $variant_names
+        ? $saved_variants
+        : array_intersect_key($saved_variants, array_flip((array) $variant_names));
 
-    if (!empty($remove_variants)) {
-      $type_definitions = $this->getSitemapTypes();
-      foreach ($remove_variants as $variant_name => $variant_definition) {
-        $this->getSitemapGenerator($type_definitions[$variant_definition['type']]['sitemapGenerator'])
-          ->setSitemapVariant($variant_name)
-          ->remove();
+      if (!empty($remove_variants)) {
+        $type_definitions = $this->getSitemapTypes();
+        foreach ($remove_variants as $variant_name => $variant_definition) {
+          $this->getSitemapGenerator($type_definitions[$variant_definition['type']]['sitemapGenerator'])
+            ->setSitemapVariant($variant_name)
+            ->remove();
+        }
       }
     }
 
     return $this;
   }
 
+  /**
+   * @param null|array|string $variant_names
+   *  null: Removes all sitemap variants
+   *  string|array: Removes specific variants
+   *
+   * @return $this
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   */
   public function removeSitemapVariants($variant_names = NULL) {
     if (NULL === $variant_names || !empty((array) $variant_names)) {
 

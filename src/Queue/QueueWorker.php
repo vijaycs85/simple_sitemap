@@ -184,6 +184,7 @@ class QueueWorker {
     $this->getQueuedElementCount(TRUE);
 
     // todo: May not be clean to remove sitemap variants data when queuing elements.
+    // todo: Add test.
     // Remove all sitemap variant instances where no results have been queued.
     $this->manager->removeSitemap(array_keys(array_filter($sitemap_variants, function($e) { return empty($e['data']); })));
 
