@@ -296,7 +296,6 @@ class Simplesitemap {
       [':id' => $id])->fetchObject();
   }
 
-
   /**
    * @return $this
    * @throws \Drupal\Component\Plugin\Exception\PluginException
@@ -304,10 +303,9 @@ class Simplesitemap {
    * @todo document
    */
   public function removeSitemap() {
-    $variants = $this->getVariants();
     $saved_variants = $this->manager->getSitemapVariants();
     $this->moduleHandler->alter('simple_sitemap_variants', $saved_variants);
-    $remove_variants = NULL !== $variants
+    $remove_variants = NULL !== ($variants = $this->getVariants(FALSE))
       ? array_intersect_key($saved_variants, array_flip((array) $variants))
       : $saved_variants;
 
@@ -323,7 +321,6 @@ class Simplesitemap {
 
     return $this;
   }
-
 
   /**
    * @param string $from
@@ -512,7 +509,7 @@ class Simplesitemap {
    *  or for all entity types and their bundles.
    *  False if entity type does not exist.
    */
-  public function getBundleSettings($entity_type_id = NULL, $bundle_name = NULL, $supplement_defaults = TRUE, $multipleVariants = FALSE) {
+  public function getBundleSettings($entity_type_id = NULL, $bundle_name = NULL, $supplement_defaults = TRUE, $multiple_variants = FALSE) {
 
     $all_bundle_settings = [];
 
@@ -556,7 +553,7 @@ class Simplesitemap {
           }
         }
       }
-      if ($multipleVariants) {
+      if ($multiple_variants) {
         if (!empty($bundle_settings)) {
           $all_bundle_settings[$variant] = $bundle_settings;
         }
@@ -782,9 +779,12 @@ class Simplesitemap {
    * @return $this
    *
    * @todo Validate $settings and throw exceptions
-   * @todo: variants
    */
   public function addCustomLink($path, $settings = []) {
+    if (empty($variants = $this->getVariants(FALSE))) {
+      return $this;
+    }
+
     if (!(bool) $this->pathValidator->getUrlIfValidWithoutAccessCheck($path)) {
       // todo: log error.
       return $this;
@@ -794,17 +794,25 @@ class Simplesitemap {
       return $this;
     }
 
-    $custom_links = $this->getCustomLinks(FALSE);
-    foreach ($custom_links as $key => $link) {
-      if ($link['path'] === $path) {
-        $link_key = $key;
-        break;
+    $variant_links = $this->getCustomLinks(NULL, FALSE, TRUE);
+    foreach ($variants as $variant) {
+      $links = [];
+      $link_key = 0;
+      if (isset($variant_links[$variant])) {
+        $links = $variant_links[$variant];
+        $link_key = count($links);
+        foreach ($links as $key => $link) {
+          if ($link['path'] === $path) {
+            $link_key = $key;
+            break;
+          }
+        }
       }
+
+      $links[$link_key] = ['path' => $path] + $settings;
+      $this->configFactory->getEditable("simple_sitemap.custom_links.$variant")
+        ->set('links', $links)->save();
     }
-    $link_key = isset($link_key) ? $link_key : count($custom_links);
-    $custom_links[$link_key] = ['path' => $path] + $settings;
-    $this->configFactory->getEditable('simple_sitemap.custom')
-      ->set('links', $custom_links)->save();
 
     return $this;
   }
@@ -812,70 +820,86 @@ class Simplesitemap {
   /**
    * Returns an array of custom paths and their sitemap settings.
    *
-   * @param bool $supplement_default_settings
+   * @param bool $supplement_defaults
    * @return array
-   *
-   * @todo: variants
    */
-  public function getCustomLinks($supplement_default_settings = TRUE) {
-    $custom_links = $this->configFactory
-      ->get('simple_sitemap.custom')
-      ->get('links');
+  public function getCustomLinks($path = NULL, $supplement_defaults = TRUE, $multiple_variants = FALSE) {
+    $all_custom_links = [];
+    foreach ($variants = $this->getVariants(FALSE) as $variant) {
+      $custom_links = $this->configFactory
+        ->get("simple_sitemap.custom_links.$variant")
+        ->get('links');
 
-    if ($supplement_default_settings) {
-      foreach ($custom_links as $i => $link_settings) {
-        self::supplementDefaultSettings('custom', $link_settings);
-        $custom_links[$i] = $link_settings;
+      $custom_links = !empty($custom_links) ? $custom_links : [];
+
+      if (!empty($custom_links) && $path !== NULL) {
+        foreach ($custom_links as $key => $link) {
+          if ($link['path'] !== $path) {
+            unset($custom_links[$key]);
+          }
+        }
+      }
+
+      if (!empty($custom_links) && $supplement_defaults) {
+        foreach ($custom_links as $i => $link_settings) {
+          self::supplementDefaultSettings('custom', $link_settings);
+          $custom_links[$i] = $link_settings;
+        }
+      }
+
+      $custom_links = $path !== NULL && !empty($custom_links)
+        ? array_values($custom_links)[0]
+        : array_values($custom_links);
+
+
+      if (!empty($custom_links)) {
+        if ($multiple_variants) {
+          $all_custom_links[$variant] = $custom_links;
+        }
+        else {
+          return $custom_links;
+        }
       }
     }
 
-    return !empty($custom_links) ? $custom_links : [];
-  }
-
-  /**
-   * Returns settings for a custom path added to the sitemap settings.
-   *
-   * @param string $path
-   *
-   * @return array|false
-   *
-   * @todo: variants
-   */
-  public function getCustomLink($path) {
-    foreach ($this->getCustomLinks() as $key => $link) {
-      if ($link['path'] === $path) {
-        return $link;
-      }
-    }
-    return FALSE;
+    return $all_custom_links;
   }
 
   /**
    * Removes all custom paths from the sitemap settings.
    *
    * @return $this
-   *
-   * @todo: variants
    */
   public function removeCustomLinks($paths = NULL) {
-    if (NULL === $paths) {
-      $custom_links = [];
-      $save = TRUE;
+    if (empty($variants = $this->getVariants(FALSE))) {
+      return $this;
     }
-    else {
-      $custom_links = $this->getCustomLinks(FALSE);
-      foreach ((array) $paths as $path) {
-        foreach ($custom_links as $key => $link) {
-          if ($link['path'] === $path) {
-            unset($custom_links[$key]);
-            $save = TRUE;
-          }
-        }
+
+    if (NULL === $paths) {
+      foreach ($variants as $variant) {
+        $this->configFactory
+          ->getEditable("simple_sitemap.custom_links.$variant")->delete();
       }
     }
-    if (!empty($save)) {
-      $this->configFactory->getEditable('simple_sitemap.custom')
-        ->set('links', array_values($custom_links))->save();
+    else {
+      $variant_links = $this->getCustomLinks(NULL, FALSE, TRUE);
+      foreach ($variant_links as $variant => $links) {
+        $custom_links = $links;
+        $save = FALSE;
+        foreach ((array) $paths  as $path) {
+          foreach ($custom_links as $key => $link) {
+            if ($link['path'] === $path) {
+              unset($custom_links[$key]);
+              $save = TRUE;
+              break 2;
+            }
+          }
+        }
+        if ($save) {
+          $this->configFactory->getEditable("simple_sitemap.custom_links.$variant")
+            ->set('links', array_values($custom_links))->save();
+        }
+      }
     }
 
     return $this;

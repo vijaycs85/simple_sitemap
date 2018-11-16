@@ -221,18 +221,14 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
       '#open' => TRUE,
     ];
 
-    $variants = [];
-    foreach ($this->generator->getSitemapManager()->getSitemapVariants(NULL, FALSE) as $variant_name => $variant_definition) {
-      $variants[$variant_name] = $this->t($variant_definition['label']);
-    }
+    $variants = $this->generator->getSitemapManager()->getSitemapVariants(NULL, FALSE);
     $default_variant = $this->generator->getSetting('default_variant');
-
     $form['simple_sitemap_settings']['advanced']['default_variant'] = [
       '#type' => 'select',
       '#title' => $this->t('Default sitemap variant'),
       '#description' => $this->t('This sitemap variant will be available under <em>/sitemap.xml</em> in addition to its default path <em>/variant-name/sitemap.xml</em>.<br/>Variants can be configured <a href="@url">here</a>.', ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap/variants']),
       '#default_value' => isset($variants[$default_variant]) ? $default_variant : '',
-      '#options' => ['' => $this->t('- None -')] + $variants,
+      '#options' => ['' => $this->t('- None -')] + array_map(function($variant) { return $this->t($variant['label']); }, $variants),
       ];
 
     $form['simple_sitemap_settings']['advanced']['base_url'] = [

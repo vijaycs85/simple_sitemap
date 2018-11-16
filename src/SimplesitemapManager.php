@@ -216,7 +216,7 @@ class SimplesitemapManager {
 
       if (NULL === $variant_names) {
         // Remove all variants and their bundle settings.
-        foreach(['variants', 'bundle_settings'] as $config_name_part) {
+        foreach(['variants', 'bundle_settings', 'custom_links'] as $config_name_part) {
           foreach ($this->configFactory->listAll("simple_sitemap.$config_name_part.") as $config_name) {
             $this->configFactory->getEditable($config_name)->delete();
           }
@@ -226,6 +226,13 @@ class SimplesitemapManager {
         // Remove bundle settings for specific variants.
         foreach ((array) $variant_names as $variant_name) {
           foreach ($this->configFactory->listAll("simple_sitemap.bundle_settings.$variant_name.") as $config_name) {
+            $this->configFactory->getEditable($config_name)->delete();
+          }
+        }
+
+        // Remove custom links for specific variants.
+        foreach ((array) $variant_names as $variant_name) {
+          foreach ($this->configFactory->listAll("simple_sitemap.custom_links.$variant_name") as $config_name) {
             $this->configFactory->getEditable($config_name)->delete();
           }
         }

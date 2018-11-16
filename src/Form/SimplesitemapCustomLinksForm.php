@@ -32,8 +32,23 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
     $form['simple_sitemap_custom']['custom_links'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Relative Drupal paths'),
-      '#default_value' => $this->customLinksToString($this->generator->getCustomLinks(FALSE)),
+      '#default_value' => $this->customLinksToString($this->generator->setVariants(TRUE)->getCustomLinks(NULL, FALSE)),
       '#description' => $this->t("Please specify drupal internal (relative) paths, one per line. Do not forget to prepend the paths with a '/'.<br/>Optionally link priority <em>(0.0 - 1.0)</em> can be added by appending it after a space.<br/> Optionally link change frequency <em>(always / hourly / daily / weekly / monthly / yearly / never)</em> can be added by appending it after a space.<br/><br/><strong>Examples:</strong><br/><em>/ 1.0 daily</em> -> home page with the highest priority and daily change frequency<br/><em>/contact</em> -> contact page with the default priority and no change frequency information"),
+    ];
+
+    $form['simple_sitemap_custom']['variants'] = [
+      '#type' => 'select',
+      '#multiple' => TRUE,
+      '#title' => $this->t('Sitemap variants'),
+      '#description' => $this->t('The sitemap variants to include the above links in.<br/>Variants can be configured <a href="@url">here</a>.', ['@url' => $GLOBALS['base_url'] . '/admin/config/search/simplesitemap/variants']),
+      '#options' => array_map(
+        function($variant) { return $this->t($variant['label']); },
+        $this->generator->getSitemapManager()->getSitemapVariants(NULL, FALSE)
+      ),
+      '#default_value' => array_keys(array_filter(
+          $this->generator->setVariants(TRUE)->getCustomLinks(NULL, FALSE, TRUE),
+          function($e) { return !empty($e);})
+      ),
     ];
 
     $form['simple_sitemap_custom']['include_images'] = [
@@ -49,10 +64,18 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
     return parent::buildForm($form, $form_state);
   }
 
+  protected function negotiateVariant() {
+
+  }
+
   /**
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
+    if (!empty($form_state->getValue('custom_links')) && empty($form_state->getValue('variants'))) {
+      $form_state->setErrorByName('variants', $this->t('Custom links must be assigned to at least one sitemap variant.'));
+    }
+
     foreach ($this->stringToCustomLinks($form_state->getValue('custom_links')) as $i => $link_config) {
       $placeholders = [
         '@line' => ++$i,
@@ -90,10 +113,14 @@ class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $this->generator->removeCustomLinks();
-    foreach ($this->stringToCustomLinks($form_state->getValue('custom_links')) as $link_config) {
-      $this->generator->addCustomLink($link_config['path'], $link_config);
+    $this->generator->setVariants(TRUE)->removeCustomLinks();
+    if (!empty($variants = $form_state->getValue('variants')) && !empty($links = $form_state->getValue('custom_links'))) {
+      $this->generator->setVariants(array_values($variants));
+      foreach ($this->stringToCustomLinks($links) as $link_config) {
+        $this->generator->addCustomLink($link_config['path'], $link_config);
+      }
     }
+
     $this->generator->saveSetting('custom_links_include_images', (bool) $form_state->getValue('include_images'));
     parent::submitForm($form, $form_state);
 

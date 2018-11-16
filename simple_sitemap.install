@@ -172,6 +172,26 @@ function simple_sitemap_schema() {
   return $schema;
 }
 
+function _simple_sitemap_update_8216_get_default_variant() {
+  $config_factory = \Drupal::service('config.factory');
+  $default_variant = $config_factory->get('simple_sitemap.settings')->get('default_variant');
+  if (empty($default_variant)) {
+    $default_variant = 'default';
+    $config_factory->getEditable('simple_sitemap.settings')
+      ->set('default_variant', $default_variant)
+      ->save();
+  }
+
+  /** @var \Drupal\simple_sitemap\SimplesitemapManager $manager */
+  $manager = \Drupal::service('simple_sitemap.manager');
+  $variants = $manager->getSitemapVariants();
+  if (!isset($variants[$default_variant])) {
+    $manager->addSitemapVariant($default_variant);
+  }
+
+  return $default_variant;
+}
+
 /**
  * Changing the data structure of the module's configuration.
  */
@@ -605,7 +625,6 @@ function simple_sitemap_update_8215() {
 
   $config_factory = \Drupal::service('config.factory');
   foreach ($config_factory->listAll('simple_sitemap.variants.') as $type) {
-    /** @var \Drupal\Core\Config\Config $type */
     $type = $config_factory->getEditable($type);
     $variants = $type->get('variants');
     foreach($variants as $i => $variant) {
@@ -620,27 +639,11 @@ function simple_sitemap_update_8215() {
  */
 function simple_sitemap_update_8216() {
   $config_factory = \Drupal::service('config.factory');
-  $default_variant = $config_factory->get('simple_sitemap.settings')->get('default_variant');
-  if (empty($default_variant)) {
-    $default_variant = 'default';
-    $config_factory->getEditable('simple_sitemap.settings')
-      ->set('default_variant', $default_variant)
-      ->save();
-  }
-
-  /** @var \Drupal\simple_sitemap\SimplesitemapManager $manager */
-  $manager = \Drupal::service('simple_sitemap.manager');
-  $variants = $manager->getSitemapVariants();
-  if (!isset($variants[$default_variant])) {
-    $manager->addSitemapVariant($default_variant);
-  }
-
   foreach ($config_factory->listAll('simple_sitemap.bundle_settings.') as $bundle_config_name) {
-    /** @var \Drupal\Core\Config\Config $config */
     $config = $config_factory->getEditable($bundle_config_name);
     $config_name_parts = explode('.', $bundle_config_name);
     $config_factory->getEditable($config_name_parts[0] . '.' . $config_name_parts[1]
-      . '.' . $default_variant . '.' . $config_name_parts[2] . '.' . $config_name_parts[3])
+      . '.' . _simple_sitemap_update_8216_get_default_variant() . '.' . $config_name_parts[2] . '.' . $config_name_parts[3])
       ->setData($config->get())->save();
 
     $config->delete();
@@ -659,6 +662,17 @@ function simple_sitemap_update_8216() {
       ]
     );
   }
+}
+
+/**
+ * Adding per-variant custom link configuration.
+ */
+function simple_sitemap_update_8217() {
+  $config_factory = \Drupal::service('config.factory');
+  $old_config = $config_factory->getEditable('simple_sitemap.custom');
+  $config_factory->getEditable('simple_sitemap.custom_links.' . _simple_sitemap_update_8216_get_default_variant())
+    ->setData($old_config->get())->save();
+  $old_config->delete();
 
   return t('The XML sitemaps need to be regenerated.');
 }

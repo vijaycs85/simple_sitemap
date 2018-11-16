@@ -280,14 +280,14 @@ class FormHelper {
     }
 
     // Variant
-    $variants = $this->generator->getSitemapManager()->getSitemapVariants(NULL, FALSE);
-    $variants = array_map(function($variant) { return $variant['label']; }, $variants);
-
     $form_fragment[$prefix . 'simple_sitemap_variant'] = [
       '#type' => 'select',
       '#title' => $this->t('Sitemap variant'),
       '#description' => $this->t('The sitemap variant entities of this type are to be indexed in.'),
-      '#options' => $variants,
+      '#options' => array_map(
+        function($variant) { return $this->t($variant['label']); },
+        $this->generator->getSitemapManager()->getSitemapVariants(NULL, FALSE)
+      ),
       '#default_value' => $this->variant,
       '#states' => [
         'visible' => !$multiple

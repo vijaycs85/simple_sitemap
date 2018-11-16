@@ -56,7 +56,7 @@ simple_sitemap.bundle_settings.*.*.*:
       label: 'Include images'
       type: boolean
 
-simple_sitemap.custom:
+simple_sitemap.custom_links.*:
   label: 'Custom links'
   type: config_object
   mapping:
