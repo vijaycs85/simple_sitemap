@@ -18,8 +18,6 @@
  *   Array containing multilingual links generated for each path to be indexed
  *
  * @param string|null $sitemap_variant
- *
- * @todo Make work for sitemap types.
  */
 function hook_simple_sitemap_links_alter(array &$links, $sitemap_variant) {
 
@@ -136,28 +134,6 @@ function hook_simple_sitemap_sitemap_generators_alter(array &$sitemap_generators
  * @param array $sitemap_types
  */
 function hook_simple_sitemap_sitemap_types_alter(array &$sitemap_types) {
-
-}
-
-/**
- * @param array $variants
- */
-function hook_simple_sitemap_variants_alter(array &$variants) {
-
-  // Add a new sitemap variant of the 'fight_club_sitemap_type' type.
-  $variants['fight_club'] = [
-    'type' => 'fight_club_sitemap_type',
-    'label' => t('Fight Club'),
-  ];
-
-}
-
-/**
- * @param array $bundle_settings
- * @param array $bundle_context
- * @param string|null $sitemap_variant
- */
-function hook_simple_sitemap_bundle_settings_alter(array &$bundle_settings, $bundle_context, $sitemap_variant) {
 
 }
 

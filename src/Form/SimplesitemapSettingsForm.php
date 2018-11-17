@@ -115,7 +115,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
                 $row['status']['data']['#markup'] = $this->t('<a href="@url" target="_blank">published</a>', ['@url' => $url]);
                 break;
               case 2:
-                $row['status'] = $this->t('<a href="@url" target="_blank">published</a> | regenerating', ['@url' => $url]);
+                $row['status'] = $this->t('<a href="@url" target="_blank">published</a>, regenerating', ['@url' => $url]);
                 break;
             }
           }

@@ -115,21 +115,6 @@ class EntityUrlGenerator extends UrlGeneratorBase {
         $keys = $sitemap_entity_types[$entity_type_name]->getKeys();
 
         foreach ($bundles as $bundle_name => $bundle_settings) {
-
-          // Skip this bundle if it is to be generated in a different sitemap variant.
-          if (NULL !== $this->sitemapVariant && isset($bundle_settings['variant'])
-            && $bundle_settings['variant'] !== $this->sitemapVariant) {
-            $bundle_settings['index'] = FALSE;
-          }
-          unset($bundle_settings['variant']);
-
-          $bundle_context = [
-            'entity_type_id' => $entity_type_name,
-            'bundle_name' => $bundle_name,
-          ];
-          $sitemap_variant = $this->sitemapVariant;
-          $this->moduleHandler->alter('simple_sitemap_bundle_settings', $bundle_settings, $bundle_context, $sitemap_variant);
-
           if (!empty($bundle_settings['index'])) {
             $query = $entityTypeStorage->getQuery();
 

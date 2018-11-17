@@ -110,21 +110,6 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
       ->getBundleSettings();
     if (!empty($bundle_settings['menu_link_content'])) {
       foreach ($bundle_settings['menu_link_content'] as $bundle_name => $bundle_settings) {
-
-        // Skip this bundle if it is to be generated in a different sitemap variant.
-        if (NULL !== $this->sitemapVariant && isset($bundle_settings['variant'])
-          && $bundle_settings['variant'] !== $this->sitemapVariant) {
-          $bundle_settings['index'] = FALSE;
-        }
-        unset($bundle_settings['variant']);
-
-        $bundle_context = [
-          'entity_type_id' => 'menu_link_content',
-          'bundle_name' => $bundle_name,
-        ];
-        $sitemap_variant = $this->sitemapVariant;
-        $this->moduleHandler->alter('simple_sitemap_bundle_settings', $bundle_settings, $bundle_context, $sitemap_variant);
-
         if (!empty($bundle_settings['index'])) {
 
           // Retrieve the expanded tree.
