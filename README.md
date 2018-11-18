@@ -1,5 +1,4 @@
-CONTENTS OF THIS FILE
----------------------
+## CONTENTS OF THIS FILE ##
 
  * Introduction
  * Installation
@@ -9,15 +8,13 @@ CONTENTS OF THIS FILE
  * How Can You Contribute?
  * Maintainers
 
-
-INTRODUCTION
-------------
+## INTRODUCTION ##
 
 Author and maintainer: Pawel Ginalski (gbyte.co)
 https://www.drupal.org/u/gbyte.co
 
-The module generates a multilingual XML sitemap which adheres to Google's new
-hreflang standard. Out of the box the sitemap is able to index most of Drupal's
+The module generates multilingual XML sitemaps which adhere to Google's new
+hreflang standard. Out of the box the sitemaps index most of Drupal's
 content entity types including:
 
  * nodes
@@ -31,19 +28,19 @@ as well. On top of that custom links can be added to the sitemap.
 
 To learn about XML sitemaps, see https://en.wikipedia.org/wiki/Sitemaps.
 
-
-INSTALLATION
-------------
+## INSTALLATION ##
 
 See https://www.drupal.org/documentation/install/modules-themes/modules-8
 for instructions on how to install or update Drupal modules.
 
+## CONFIGURATION ##
 
-CONFIGURATION
--------------
+### PERMISSIONS ###
 
 The module permission 'administer sitemap settings' can be configured under
 /admin/people/permissions.
+
+### ENTITIES ###
 
 Initially only the home page is indexed in the sitemap. To include content into
 the sitemap, visit /admin/config/search/simplesitemap/entities to enable support
@@ -73,96 +70,156 @@ As the sitemap is accessible to anonymous users, bear in mind that only links
 will be included which are accessible to anonymous users. There are no access
 checks for links added through the module's hooks (see below).
 
+### CUSTOM LINKS ###
+
 To include custom links into the sitemap, visit
 /admin/config/search/simplesitemap/custom.
+
+### SETTINGS ###
 
 The settings page can be found under admin/config/search/simplesitemap.
 Here the module can be configured and the sitemaps can be manually regenerated.
 
+#### VARIANTS ####
 
-USAGE
------
+It is possible to have several sitemap instances of different sitemap types with
+specific links accessible under certain URLs. These sitemap variants can be
+configured under admin/config/search/simplesitemap/variants.
 
-The sitemap is accessible to the whole world under /sitemap.xml.
+## USAGE ## 
+
+The sitemaps are accessible to the whole world under [variant name]/sitemap.xml.
+In addition to that, the default sitemap is accessible under /sitemap.xml.
 
 If the cron generation is turned on, the sitemaps will be regenerated according
-to the 'Sitemap generation interval' setting ranging from 'On every cron run' to
-'Once a week'.
+to the 'Sitemap generation interval' setting.
 
-A manual generation is possible on admin/config/search/simplesitemap.
+A manual generation is possible on admin/config/search/simplesitemap. This is
+also the place that shows the overall and variant specific generation status.
 
 The sitemap can be also generated via drush: Use the command
-'drush simple_sitemap-generate'.
+'drush simple-sitemap:generate' ('ssg'), or 'drush simple-sitemap:rebuild-queue'
+('ssr').
+
+Generation of hundreds of thousands of links can take time. Each variant gets
+published as soon as all of its links have been generated. The previous version
+of the sitemap variant is accessible during the generation process.
+
+## EXTENDING THE MODULE ##
+
+### API ###
+
+There are API methods for altering stored inclusion settings, status queries and
+programmatic sitemap generation. These include:
+
+ * getSetting
+ * saveSetting
+ * setVariants
+ * getSitemap
+ * removeSitemap
+ * generateSitemap
+ * rebuildQueue
+ * enableEntityType
+ * disableEntityType
+ * setBundleSettings
+ * getBundleSettings
+ * removeBundleSettings
+ * supplementDefaultSettings
+ * setEntityInstanceSettings
+ * getEntityInstanceSettings
+ * removeEntityInstanceSettings
+ * bundleIsIndexed
+ * entityTypeIsEnabled
+ * addCustomLink
+ * getCustomLinks
+ * removeCustomLinks
+ * getSitemapManager
+    * getSitemapVariants
+    * addSitemapVariant
+    * removeSitemapVariants
+ * getQueueWorker
+    * deleteQueue
+    * rebuildQueue
+    * getInitialElementCount
+    * getQueuedElementCount
+    * getStashedResultCount
+    * getProcessedElementCount
+    * generationInProgress
 
 
-EXTENDING THE MODULE
---------------------
+These service methods can be chained like so:
+
+```php
+$generator = \Drupal::service('simple_sitemap.generator');
+
+$generator
+  ->getSitemapManager()
+  ->addSitemapVariant('test');
+  
+$generator
+  ->saveSetting('remove_duplicates', TRUE)
+  ->enableEntityType('node')
+  ->setVariants(['default', 'test'])
+  ->setBundleSettings('node', 'page', ['index' => TRUE, 'priority' = 0.5])
+  ->removeCustomLinks()
+  ->addCustomLink('/some/view/page', ['priority' = 0.5])
+  ->generateSitemap();
+```
+
+### API HOOKS ###
 
 It is possible to hook into link generation by implementing
-hook_simple_sitemap_links_alter(&$links){} in a custom module and altering the
+`hook_simple_sitemap_links_alter(&$links){}` in a custom module and altering the
 link array shortly before it is transformed to XML.
 
 Adding arbitrary links is possible through the use of
-hook_simple_sitemap_arbitrary_links_alter(&$arbitrary_links){}. There are no
+`hook_simple_sitemap_arbitrary_links_alter(&$arbitrary_links){}`. There are no
 checks performed on these links (i.e. if they are internal/valid/accessible)
 and parameters like priority/lastmod/changefreq have to be added manually.
 
 Altering sitemap attributes and sitemap index attributes is possible through the
-use of hook_simple_sitemap_attributes_alter(&$attributes){} and
-hook_simple_sitemap_index_attributes_alter(&$index_attributes){}.
+use of `hook_simple_sitemap_attributes_alter(&$attributes){}` and
+`hook_simple_sitemap_index_attributes_alter(&$index_attributes){}`.
 
-Altering URL generator plugins is possible through
-the use of hook_simple_sitemap_url_generators_alter(&$generators){}.
+Altering URL generators is possible through
+the use of `hook_simple_sitemap_url_generators_alter(&$generators){}`.
 
-In case this module's URL generators do not cover your use case, it is possible
-to implement new generator plugins in a custom module. To do it, simply extend
-the Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorBase
-class. See the generator plugins included in this module and check the API docs
+Altering sitemap generators is possible through
+the use of `hook_simple_sitemap_sitemap_generators_alter(&$generators){}`.
+
+Altering sitemap types is possible through
+the use of `hook_simple_sitemap_sitemap_types_alter(&$generators){}`.
+
+### WRITING PLUGINS ###
+
+There are three types of plugins that allow to create any type of sitemap. See
+the generator plugins included in this module and check the API docs
 (https://www.drupal.org/docs/8/api/plugin-api/plugin-api-overview) to learn how
 to implement plugins.
 
+#### SITEMAP TYPE PLUGINS ####
+
+This plugin defines a sitemap type. A sitemap type consists of a sitemap
+generator and several URL generators. This plugin is very simple, as it
+only requires some class annotation to define which sitemap/URL plugins to use.
+
+#### SITEMAP GENERATOR PLUGINS ####
+
+This plugin defines how a sitemap type is supposed to look. It handles all
+aspects of the sitemap except its links/URLs.
+
+#### URL GENERATOR PLUGINS ####
+
+This plugin defines a way of generating URLs for one or more sitemap types.
+
+Note:
 Overwriting the default EntityUrlGenerator for a single entity type is possible
 through the flag "overrides_entity_type" = "[entity_type_to_be_overwritten]" in
 the settings array of the new generator plugin's annotation. See how the
 EntityUrlGenerator is overwritten by the EntityMenuLinkContentUrlGenerator to
 facilitate a different logic for menu links.
 
-There are API methods for altering stored inclusion settings, status queries and
-programmatic sitemap generation. These include:
-
- * getSetting()
- * saveSetting()
- * getSitemap()
- * generateSitemap()
- * getGeneratedAgo()
- * enableEntityType()
- * disableEntityType()
- * setBundleSettings()
- * getBundleSettings()
- * setEntityInstanceSettings()
- * getEntityInstanceSettings()
- * removeEntityInstanceSettings()
- * bundleIsIndexed()
- * entityTypeIsEnabled()
- * addCustomLink()
- * getCustomLinks()
- * getCustomLink()
- * removeCustomLink()
- * removeCustomLinks()
-
-These service methods can be chained like so:
-
-\Drupal::service('simple_sitemap.generator')
-  ->saveSetting('remove_duplicates', TRUE)
-  ->enableEntityType('node')
-  ->setBundleSettings('node', 'page', ['index' => TRUE, 'priority' = 0.5])
-  ->removeCustomLinks()
-  ->addCustomLink('/some/view/page', ['priority' = 0.5])
-  ->generateSitemap();
-
-
-HOW CAN YOU CONTRIBUTE?
------------------------
+## HOW CAN YOU CONTRIBUTE? ##
 
  * Report any bugs, feature or support requests in the issue tracker, if
    possible help out by submitting patches.
@@ -175,9 +232,7 @@ HOW CAN YOU CONTRIBUTE?
    donation will be much appreciated.
    https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5AFYRSBLGSC3W
 
-
-MAINTAINERS
------------
+## MAINTAINERS ##
 
 Current maintainers:
  * Pawel Ginalski (gbyte.co) - https://www.drupal.org/u/gbyte.co
