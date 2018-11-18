@@ -11,7 +11,8 @@
 ## INTRODUCTION ##
 
 Author and maintainer: Pawel Ginalski (gbyte.co)
-https://www.drupal.org/u/gbyte.co
+ * Drupal: https://www.drupal.org/u/gbyte.co
+ * Personal: https://gbyte.co/
 
 The module generates multilingual XML sitemaps which adhere to Google's new
 hreflang standard. Out of the box the sitemaps index most of Drupal's
@@ -166,6 +167,9 @@ $generator
   ->generateSitemap();
 ```
 
+See https://gbyte.co/projects/simple-xml-sitemap and code documentation in 
+Drupal\simple_sitemap\Simplesitemap for further details.
+
 ### API HOOKS ###
 
 It is possible to hook into link generation by implementing
@@ -219,9 +223,11 @@ the settings array of the new generator plugin's annotation. See how the
 EntityUrlGenerator is overwritten by the EntityMenuLinkContentUrlGenerator to
 facilitate a different logic for menu links.
 
+See https://gbyte.co/projects/simple-xml-sitemap for further details.
+
 ## HOW CAN YOU CONTRIBUTE? ##
 
- * Report any bugs, feature or support requests in the issue tracker, if
+ * Report any bugs, feature or support requests in the issue tracker; if
    possible help out by submitting patches.
    http://drupal.org/project/issues/simple_sitemap
 
@@ -231,6 +237,8 @@ facilitate a different logic for menu links.
  * If you would like to say thanks and support the development of this module, a
    donation will be much appreciated.
    https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5AFYRSBLGSC3W
+   
+ * Feel free to contact me for paid support: https://gbyte.co/contact
 
 ## MAINTAINERS ##
 

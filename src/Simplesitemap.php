@@ -167,6 +167,7 @@ class Simplesitemap {
    *
    * @param string $name
    *  Setting name, like 'max_links'.
+   *
    * @param mixed $setting
    *  The setting to be saved.
    *
@@ -216,7 +217,12 @@ class Simplesitemap {
   }
 
   /**
+   * Gets the currently set variants, the default variant, or all variants.
+   *
    * @param bool $default_get_all
+   *  If true and no variants are set, all variants are returned. If false and
+   *  no variants are set, only the default variant is returned.
+   *
    * @return array
    */
   protected function getVariants($default_get_all = TRUE) {
@@ -268,7 +274,8 @@ class Simplesitemap {
    *
    * @return array
    *  An array containing all published sitemap chunk IDs, deltas and creation
-   * timestamps keyed by their variant ID.
+   *  timestamps keyed by the currently set variants, or in case of only one
+   *  variant set the above keyed by sitemap delta.
    */
   protected function fetchSitemapVariantInfo() {
     $result = $this->db->select('simple_sitemap', 's')
@@ -297,6 +304,8 @@ class Simplesitemap {
   }
 
   /**
+   * Removes sitemap instances for the currently set variants.
+   *
    * @return $this
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
@@ -307,11 +316,17 @@ class Simplesitemap {
   }
 
   /**
+   * Generates all sitemaps.
+   *
    * @param string $from
+   *  Can be 'form', 'drush', 'cron' and 'backend'.
+   *
    * @return $this
+   *
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    *
-   * @todo variants
+   * @todo Respect $this->variants and generate for specific variants.
+   * @todo Implement lock functionality.
    */
   public function generateSitemap($from = 'form') {
     switch($from) {
@@ -329,6 +344,12 @@ class Simplesitemap {
     return $this;
   }
 
+  /**
+   * Rebuilds the queue for the currently set variants.
+   *
+   * @return $this
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   */
   public function rebuildQueue() {
     $this->queueWorker->rebuildQueue($this->getVariants());
 
@@ -342,17 +363,15 @@ class Simplesitemap {
    *
    * @return string|array|false
    *  Formatted timestamp of last sitemap generation, otherwise FALSE.
-   *
-   * @todo: variants
    */
-  public function getGeneratedAgo() {
+/*  public function getGeneratedAgo() {
     $chunks = $this->fetchSitemapVariantInfo();
     return isset($chunks[DefaultSitemapGenerator::FIRST_CHUNK_DELTA]->sitemap_created)
       ? $this->dateFormatter
         ->formatInterval($this->time->getRequestTime() - $chunks[DefaultSitemapGenerator::FIRST_CHUNK_DELTA]
             ->sitemap_created)
       : FALSE;
-  }
+  }*/
 
   /**
    * Enables sitemap support for an entity type. Enabled entity types show
@@ -380,7 +399,6 @@ class Simplesitemap {
    * settings from entity forms.
    *
    * @param string $entity_type_id
-   *  Entity type id like 'node'.
    *
    * @return $this
    */
@@ -409,18 +427,17 @@ class Simplesitemap {
   }
 
   /**
-   * Sets sitemap settings for a non-bundle entity type (e.g. user) or a bundle
-   * of an entity type (e.g. page).
+   * Sets settings for bundle or non-bundle entity types. This is done for the
+   * currently set variant.
    *
-   * @param string $entity_type_id
-   *  Entity type id like 'node' the bundle belongs to.
-   * @param string $bundle_name
-   *  Name of the bundle. NULL if entity type has no bundles.
+   * @param $entity_type_id
+   * @param null $bundle_name
    * @param array $settings
-   *  An array of sitemap settings for this bundle/entity type.
-   *  Example: ['index' => TRUE, 'priority' => 0.5, 'changefreq' => 'never', 'include_images' => FALSE].
    *
    * @return $this
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    *
    * @todo: enableEntityType automatically
    * @todo multiple variants
@@ -482,18 +499,18 @@ class Simplesitemap {
   }
 
   /**
-   * Gets sitemap settings for an entity bundle, a non-bundle entity type or for
-   * all entity types and their bundles.
+   * Gets settings for bundle or non-bundle entity types. This is done for the
+   * currently set variants.
    *
    * @param string|null $entity_type_id
-   *  If set to null, sitemap settings for all entity types and their bundles
-   *  are fetched.
+   *  Limit the result set to a specific entity type.
+   *
    * @param string|null $bundle_name
+   *  Limit the result set to a specific bundle name.
    *
    * @return array|false
-   *  Array of sitemap settings for an entity bundle, a non-bundle entity type
-   *  or for all entity types and their bundles.
-   *  False if entity type does not exist.
+   *  Array of settings or array of settings keyed by variant name. False if
+   *  entity type does not exist.
    */
   public function getBundleSettings($entity_type_id = NULL, $bundle_name = NULL, $supplement_defaults = TRUE, $multiple_variants = FALSE) {
 
@@ -553,9 +570,19 @@ class Simplesitemap {
   }
 
   /**
+   * Removes settings for bundle or a non-bundle entity types. This is done for
+   * the currently set variants.
+   *
    * @param string|null $entity_type_id
+   *  Limit the removal to a specific entity type.
+   *
    * @param string|null $bundle_name
+   *  Limit the removal to a specific bundle name.
+   *
    * @return $this
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function removeBundleSettings($entity_type_id = NULL, $bundle_name = NULL) {
     if (empty($variants = $this->getVariants(FALSE))) {
@@ -593,7 +620,8 @@ class Simplesitemap {
    * Supplements all missing link setting with default values.
    *
    * @param string $type
-   *  'entity'|'custom'
+   *  Can be 'entity' or 'custom'.
+   *
    * @param array &$settings
    * @param array $overrides
    */
@@ -609,13 +637,17 @@ class Simplesitemap {
   }
 
   /**
-   * Overrides entity bundle/entity type sitemap settings for a single entity.
+   * Overrides sitemap settings for a single entity for the currently set
+   * variants.
    *
    * @param string $entity_type_id
-   * @param int $id
+   * @param string $id
    * @param array $settings
    *
    * @return $this
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function setEntityInstanceSettings($entity_type_id, $id, $settings) {
     if (empty($variants = $this->getVariants(FALSE))) {
@@ -665,13 +697,19 @@ class Simplesitemap {
   }
 
   /**
-   * Gets sitemap settings for an entity instance which overrides the sitemap
-   * settings of its bundle, or bundle settings, if they are not overridden.
+   * Gets sitemap settings for an entity instance which overrides bundle
+   * settings, or gets bundle settings, if they are not overridden. This is
+   * done for the currently set variant.
    *
    * @param string $entity_type_id
-   * @param int $id
+   * @param string $id
    *
    * @return array|false
+   *  Array of entity instance settings or the settings of its bundle. False if
+   *  entity type does not exist.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    *
    * @todo multiple variants
    */
@@ -702,11 +740,14 @@ class Simplesitemap {
   }
 
   /**
-   * Removes sitemap settings for an entity that overrides the sitemap settings
-   * of its bundle.
+   * Removes sitemap settings for entities that override bundle settings. This
+   * is done for the currently set variants.
    *
-   * @param string $entity_type_id
+   * @param string|null $entity_type_id
+   *  Limits the removal to a certain entity type.
+   *
    * @param string|null $entity_ids
+   *  Limits the removal to entities with certain IDs.
    *
    * @return $this
    */
@@ -733,12 +774,14 @@ class Simplesitemap {
 
   /**
    * Checks if an entity bundle (or a non-bundle entity type) is set to be
-   * indexed in the sitemap settings.
+   * indexed for the currently set variant.
    *
    * @param string $entity_type_id
    * @param string|null $bundle_name
    *
    * @return bool
+   *
+   * @todo multiple variants?
    */
   public function bundleIsIndexed($entity_type_id, $bundle_name = NULL) {
     $settings = $this->getBundleSettings($entity_type_id, $bundle_name);
@@ -757,10 +800,13 @@ class Simplesitemap {
   }
 
   /**
-   * Stores a custom path along with its sitemap settings to configuration.
+   * Stores a custom path along with its settings to configuration for the
+   * currently set variants.
    *
    * @param string $path
+   *
    * @param array $settings
+   *  Settings that are not provided are supplemented by defaults.
    *
    * @return $this
    *
@@ -804,10 +850,19 @@ class Simplesitemap {
   }
 
   /**
-   * Returns an array of custom paths and their sitemap settings.
+   * Gets custom link settings for the currently set variants.
+   *
+   * @param string|null $path
+   *  Limits the result set by an internal path.
    *
    * @param bool $supplement_defaults
-   * @return array
+   *  Supplements the result set with default custom link settings.
+   *
+   * @param bool $multiple_variants
+   *  If true, returns an array of results keyed by variant name, otherwise it
+   *  returns the result set for the first variant only.
+   *
+   * @return array|mixed|null
    */
   public function getCustomLinks($path = NULL, $supplement_defaults = TRUE, $multiple_variants = FALSE) {
     $all_custom_links = [];
@@ -852,7 +907,10 @@ class Simplesitemap {
   }
 
   /**
-   * Removes all custom paths from the sitemap settings.
+   * Removes custom links from currently set variants.
+   *
+   * @param array|null $paths
+   *  Limits the removal to certain paths.
    *
    * @return $this
    */

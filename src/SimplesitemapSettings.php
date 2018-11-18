@@ -7,8 +7,6 @@ use Drupal\Core\Config\ConfigFactory;
 /**
  * Class SimplesitemapSettings
  * @package Drupal\simple_sitemap
- *
- * @todo use this in other services instead of SimpleSitemap::get|setSetting
  */
 class SimplesitemapSettings {
 

@@ -17,10 +17,8 @@ trait BatchTrait {
 
   /**
    * @param string $from
-   * @param null $variants
+   * @param array|null $variants
    * @return bool
-   *
-   * @todo Implement generating for certain variants only.
    */
   public function batchGenerateSitemap($from = 'form', $variants = NULL) {
     $this->batch = [
@@ -56,6 +54,7 @@ trait BatchTrait {
 
   /**
    * @param $context
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
    *
    * @todo Make sure batch does not run at the same time as cron.
    * @todo Variants into generateSitemap().

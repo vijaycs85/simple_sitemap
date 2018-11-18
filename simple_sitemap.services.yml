@@ -42,7 +42,6 @@ services:
     - '@state'
     - '@module_handler'
     - '@simple_sitemap.queue'
-    - '@lock'
 
   simple_sitemap.queue:
     class: Drupal\simple_sitemap\Queue\SimplesitemapQueue

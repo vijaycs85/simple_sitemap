@@ -12,14 +12,13 @@ use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Language\Language;
+use Drupal\Core\Session\AnonymousUserSession;
 
 /**
  * Class UrlGeneratorBase
  * @package Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator
  */
 abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGeneratorInterface {
-
-  const ANONYMOUS_USER_ID = 0;
 
   /**
    * @var \Drupal\simple_sitemap\Simplesitemap
@@ -76,8 +75,6 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    * @param \Drupal\simple_sitemap\Logger $logger
    * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function __construct(
     array $configuration,
@@ -94,8 +91,7 @@ abstract class UrlGeneratorBase extends SimplesitemapPluginBase implements UrlGe
     $this->languages = $language_manager->getLanguages();
     $this->defaultLanguageId = $language_manager->getDefaultLanguage()->getId();
     $this->entityTypeManager = $entity_type_manager;
-    $this->anonUser = $this->entityTypeManager->getStorage('user')
-      ->load(self::ANONYMOUS_USER_ID);
+    $this->anonUser = new AnonymousUserSession();
     $this->logger = $logger;
     $this->entityHelper = $entityHelper;
   }

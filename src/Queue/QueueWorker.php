@@ -8,7 +8,6 @@ use Drupal\simple_sitemap\SimplesitemapSettings;
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\simple_sitemap\SimplesitemapManager;
 use Drupal\Core\State\State;
-use Drupal\Core\Lock\LockBackendInterface;
 
 
 class QueueWorker {
@@ -36,11 +35,6 @@ class QueueWorker {
    * @var \Drupal\Core\Extension\ModuleHandler
    */
   protected $moduleHandler;
-
-  /**
-   * @var \Drupal\Core\ProxyClass\Lock\DatabaseLockBackend
-   */
-  protected $lock;
 
   /**
    * @var \Drupal\simple_sitemap\Queue\SimplesitemapQueue
@@ -94,20 +88,17 @@ class QueueWorker {
    * @param \Drupal\Core\State\State $state
    * @param \Drupal\Core\Extension\ModuleHandler $module_handler
    * @param \Drupal\simple_sitemap\Queue\SimplesitemapQueue $element_queue
-   * @param \Drupal\Core\Lock\LockBackendInterface $lock
    */
   public function __construct(SimplesitemapSettings $settings,
                               SimplesitemapManager $manager,
                               State $state,
                               ModuleHandler $module_handler,
-                              SimplesitemapQueue $element_queue,
-                              LockBackendInterface $lock) {
+                              SimplesitemapQueue $element_queue) {
     $this->settings = $settings;
     $this->manager = $manager;
     $this->state = $state;
     $this->moduleHandler = $module_handler;
     $this->queue = $element_queue;
-    $this->lock = $lock;
   }
 
   /**
@@ -129,11 +120,9 @@ class QueueWorker {
   }
 
   /**
-   * @param null $variants
+   * @param array|null $variants
    * @return $this
    * @throws \Drupal\Component\Plugin\Exception\PluginException
-   *
-   * @todo Lock functionality
    */
   public function rebuildQueue($variants = NULL) {
     $all_data_sets = [];
@@ -199,9 +188,6 @@ class QueueWorker {
    * @param string $from
    * @return $this
    * @throws \Drupal\Component\Plugin\Exception\PluginException
-   *
-   * @todo Lock functionality
-   * @todo Does not unpublish sitemaps were variant does not have links anymore.
    */
   public function generateSitemap($from = 'form') {
 
@@ -266,6 +252,10 @@ class QueueWorker {
     return $this;
   }
 
+  /**
+   * @param $element
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   */
   protected function generateResultsFromElement($element) {
     $results = $this->manager->getUrlGenerator($element->data['url_generator'])
       ->setSitemapVariant($this->variantProcessedNow)
@@ -276,6 +266,9 @@ class QueueWorker {
     $this->results = array_merge($this->results, $results);
   }
 
+  /**
+   * @param array $results
+   */
   protected function removeDuplicates(&$results) {
     if ($this->generatorSettings['remove_duplicates']
       && !empty($results)
@@ -289,6 +282,10 @@ class QueueWorker {
     }
   }
 
+  /**
+   * @param bool $complete
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   */
   protected function generateVariantChunksFromResults($complete = FALSE) {
     if (!empty($this->results)) {
       $generator = $this->manager->getSitemapGenerator($this->generatorProcessedNow)
@@ -351,6 +348,10 @@ class QueueWorker {
     return $this->elementsTotal;
   }
 
+  /**
+   * @param bool $force_recount
+   * @return int
+   */
   public function getQueuedElementCount($force_recount = FALSE) {
     if ($force_recount || NULL === $this->elementsRemaining) {
       $this->elementsRemaining = $this->queue->numberOfItems();
@@ -359,10 +360,16 @@ class QueueWorker {
     return $this->elementsRemaining;
   }
 
+  /**
+   * @return int
+   */
   public function getStashedResultCount() {
     return count($this->state->get('simple_sitemap.queue_stashed_results', ['results' => []])['results']);
   }
 
+  /**
+   * @return int
+   */
   public function getProcessedElementCount() {
     $initial = $this->getInitialElementCount();
     $remaining = $this->getQueuedElementCount();
@@ -370,6 +377,9 @@ class QueueWorker {
     return $initial > $remaining ? ($initial - $remaining) : 0;
   }
 
+  /**
+   * @return bool
+   */
   public function generationInProgress() {
     return 0 < ($this->getQueuedElementCount() + $this->getStashedResultCount());
   }

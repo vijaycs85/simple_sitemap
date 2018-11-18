@@ -101,8 +101,10 @@ class EntityHelper {
   }
 
   /**
-   * @param $url_object
-   * @return object|null
+   * @param \Drupal\Core\Url $url_object
+   * @return \Drupal\Core\Entity\EntityInterface|null
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function getEntityFromUrlObject(Url $url_object) {
     return $url_object->isRouted()
@@ -140,8 +142,8 @@ class EntityHelper {
   }
 
   /**
-   * @param $entity_type_name
-   * @param $entity_id
+   * @param string $entity_type_name
+   * @param string $entity_id
    * @return array
    */
   public function getEntityImageUrls($entity_type_name, $entity_id) {

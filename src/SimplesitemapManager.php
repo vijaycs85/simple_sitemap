@@ -91,7 +91,7 @@ class SimplesitemapManager {
   }
 
   /**
-   * @param $sitemap_generator_id
+   * @param string $sitemap_generator_id
    * @return \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
@@ -105,7 +105,7 @@ class SimplesitemapManager {
   }
 
   /**
-   * @param $url_generator_id
+   * @param string $url_generator_id
    * @return \Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorBase
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
@@ -119,7 +119,7 @@ class SimplesitemapManager {
   }
 
   /**
-   * @return array
+   * @return \Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapType\SitemapTypeBase[]
    */
   public function getSitemapTypes() {
     if (empty($this->sitemapTypes)) {
@@ -130,10 +130,9 @@ class SimplesitemapManager {
   }
 
   /**
-   * @param null $sitemap_type
+   * @param string|null $sitemap_type
+   * @param bool $attach_type_info
    * @return array
-   *
-   * @todo translate label
    */
   public function getSitemapVariants($sitemap_type = NULL, $attach_type_info = TRUE) {
     if (NULL === $sitemap_type) {
@@ -154,16 +153,25 @@ class SimplesitemapManager {
     return $variants;
   }
 
+  /**
+   * @param array $variants
+   * @param string $type
+   * @return array
+   */
   protected function attachSitemapTypeToVariants(array $variants, $type) {
     return array_map(function($variant) use ($type) { return $variant + ['type' => $type]; }, $variants);
   }
 
+  /**
+   * @param array $variants
+   * @return array
+   */
   protected function detachSitemapTypeFromVariants(array $variants) {
     return array_map(function($variant) { unset($variant['type']); return $variant; }, $variants);
   }
 
   /**
-   * @param $name
+   * @param string $name
    * @param array $definition
    * @return $this
    * @throws \Drupal\Component\Plugin\Exception\PluginException
@@ -210,10 +218,10 @@ class SimplesitemapManager {
 
   /**
    * @param null|array|string $variant_names
-   *  null: Removes all sitemap instances
-   *  string|array: Removes specific instances
+   *  Limit removal by specific variants.
    *
    * @return $this
+   *
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
   public function removeSitemap($variant_names = NULL) {
@@ -238,10 +246,10 @@ class SimplesitemapManager {
 
   /**
    * @param null|array|string $variant_names
-   *  null: Removes all sitemap variants
-   *  string|array: Removes specific variants
+   *  Limit removal by specific variants.
    *
    * @return $this
+   *
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
   public function removeSitemapVariants($variant_names = NULL) {
