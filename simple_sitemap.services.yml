@@ -18,7 +18,7 @@ services:
 
   simple_sitemap.manager:
     class: Drupal\simple_sitemap\SimplesitemapManager
-    public: false
+    public: true
     arguments:
     - '@config.factory'
     - '@database'
