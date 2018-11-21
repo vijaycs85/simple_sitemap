@@ -63,6 +63,8 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
       '#suffix' => '</div>',
     ];
 
+    $form['simple_sitemap_settings']['status']['progress']['title']['#markup'] = $this->t('Progress of sitemap regeneration');
+
     $queue_worker = $this->generator->getQueueWorker();
     $total_count = $queue_worker->getInitialElementCount();
     if (!empty($total_count)) {
@@ -77,10 +79,10 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
         '#percent' => $percent,
         '#message' => t('@indexed out of @total items have been processed.', ['@indexed' => $indexed_count, '@total' => $total_count]),
       ];
-      $form['simple_sitemap_settings']['status']['progress']['#markup'] = render($index_progress);
+      $form['simple_sitemap_settings']['status']['progress']['bar']['#markup'] = render($index_progress);
     }
     else {
-      $form['simple_sitemap_settings']['status']['progress']['#markup'] = $this->t('There are no items to be indexed.');
+      $form['simple_sitemap_settings']['status']['progress']['bar']['#markup'] = '<div class="description">' . $this->t('There are no items to be indexed.') . '</div>';
     }
 
     $sitemap_manager = $this->generator->getSitemapManager();
@@ -101,7 +103,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
         ];
         foreach ($variants as $variant_name => $variant_definition) {
           $row = [];
-          $row['name'] = $variant_definition['label'];
+          $row['name']['data']['#markup'] = '<span title="' . $variant_name . '">' . $variant_definition['label'] . '</span>';
           if (!isset($sitemap_statuses[$variant_name])) {
             $row['status'] = $this->t('pending');
           }
@@ -125,6 +127,9 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
           unset($sitemap_statuses[$variant_name]);
         }
       }
+    }
+    if (empty($form['simple_sitemap_settings']['status']['types'])) {
+      $form['simple_sitemap_settings']['status']['types']['#markup'] = $this->t('No variants have been defined');
     }
 
 /*    if (!empty($sitemap_statuses)) {
@@ -258,7 +263,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
       '#type' => 'number',
       '#title' => $this->t('Sitemap generation max duration'),
       '#min' => 1,
-      '#description' => $this->t('The maximum duration in seconds the generation task can run during a single cron run or during one batch process iteration.<br/>The higher the number, the quicker the generation process, but higher the risk of PHP timeout errors.'),
+      '#description' => $this->t('The maximum duration <strong>in seconds</strong> the generation task can run during a single cron run or during one batch process iteration.<br/>The higher the number, the quicker the generation process, but higher the risk of PHP timeout errors.'),
       '#default_value' => $this->generator->getSetting('generate_duration', 10000) / 1000,
       '#required' => TRUE,
     ];
