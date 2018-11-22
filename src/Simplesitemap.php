@@ -5,13 +5,11 @@ namespace Drupal\simple_sitemap;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Extension\ModuleHandler;
 use Drupal\simple_sitemap\Queue\QueueWorker;
 use Drupal\Core\Path\PathValidator;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Datetime\DateFormatter;
 use Drupal\Component\Datetime\Time;
-use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\DefaultSitemapGenerator;
 use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
 
 /**
@@ -70,11 +68,6 @@ class Simplesitemap {
   protected $time;
 
   /**
-   * @var \Drupal\Core\Extension\ModuleHandler
-   */
-  protected $moduleHandler;
-
-  /**
    * @var \Drupal\simple_sitemap\Queue\QueueWorker
    */
   protected $queueWorker;
@@ -114,7 +107,6 @@ class Simplesitemap {
    * @param \Drupal\Core\Path\PathValidator $path_validator
    * @param \Drupal\Core\Datetime\DateFormatter $date_formatter
    * @param \Drupal\Component\Datetime\Time $time
-   * @param \Drupal\Core\Extension\ModuleHandler $module_handler
    * @param \Drupal\simple_sitemap\Queue\QueueWorker $queue_worker
    */
   public function __construct(
@@ -128,7 +120,6 @@ class Simplesitemap {
     PathValidator $path_validator,
     DateFormatter $date_formatter,
     Time $time,
-    ModuleHandler $module_handler,
     QueueWorker $queue_worker
   ) {
     $this->entityHelper = $entity_helper;
@@ -141,7 +132,6 @@ class Simplesitemap {
     $this->pathValidator = $path_validator;
     $this->dateFormatter = $date_formatter;
     $this->time = $time;
-    $this->moduleHandler = $module_handler;
     $this->queueWorker = $queue_worker;
   }
 

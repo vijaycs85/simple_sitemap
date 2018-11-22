@@ -8,7 +8,6 @@ use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Extension\ModuleHandler;
 
 /**
  * Class EntityUrlGenerator
@@ -28,11 +27,6 @@ class EntityUrlGenerator extends UrlGeneratorBase {
   protected $urlGeneratorManager;
 
   /**
-   * @var \Drupal\Core\Extension\ModuleHandler
-   */
-  protected $moduleHandler;
-
-  /**
    * EntityUrlGenerator constructor.
    * @param array $configuration
    * @param $plugin_id
@@ -43,9 +37,6 @@ class EntityUrlGenerator extends UrlGeneratorBase {
    * @param \Drupal\simple_sitemap\Logger $logger
    * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
    * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager $url_generator_manager
-   * @param \Drupal\Core\Extension\ModuleHandler $module_handler
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function __construct(
     array $configuration,
@@ -56,8 +47,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
     EntityTypeManagerInterface $entity_type_manager,
     Logger $logger,
     EntityHelper $entityHelper,
-    UrlGeneratorManager $url_generator_manager,
-    ModuleHandler $module_handler
+    UrlGeneratorManager $url_generator_manager
   ) {
     parent::__construct(
       $configuration,
@@ -70,7 +60,6 @@ class EntityUrlGenerator extends UrlGeneratorBase {
       $entityHelper
     );
     $this->urlGeneratorManager = $url_generator_manager;
-    $this->moduleHandler = $module_handler;
   }
 
   public static function create(
@@ -87,8 +76,7 @@ class EntityUrlGenerator extends UrlGeneratorBase {
       $container->get('entity_type.manager'),
       $container->get('simple_sitemap.logger'),
       $container->get('simple_sitemap.entity_helper'),
-      $container->get('plugin.manager.simple_sitemap.url_generator'),
-      $container->get('module_handler')
+      $container->get('plugin.manager.simple_sitemap.url_generator')
     );
   }
 

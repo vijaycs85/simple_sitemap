@@ -13,7 +13,6 @@ services:
       - '@path.validator'
       - '@date.formatter'
       - '@datetime.time'
-      - '@module_handler'
       - '@simple_sitemap.queue_worker'
 
   simple_sitemap.manager:
@@ -40,7 +39,6 @@ services:
     - '@simple_sitemap.settings'
     - '@simple_sitemap.manager'
     - '@state'
-    - '@module_handler'
     - '@simple_sitemap.queue'
 
   simple_sitemap.queue:

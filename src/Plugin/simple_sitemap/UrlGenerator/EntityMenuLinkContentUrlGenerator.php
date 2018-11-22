@@ -2,7 +2,6 @@
 
 namespace Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator;
 
-use Drupal\Core\Extension\ModuleHandler;
 use Drupal\simple_sitemap\EntityHelper;
 use Drupal\simple_sitemap\Logger;
 use Drupal\simple_sitemap\Simplesitemap;
@@ -36,11 +35,6 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
   protected $menuLinkTree;
 
   /**
-   * @var \Drupal\Core\Extension\ModuleHandler
-   */
-  protected $moduleHandler;
-
-  /**
    * EntityMenuLinkContentUrlGenerator constructor.
    * @param array $configuration
    * @param $plugin_id
@@ -51,9 +45,6 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
    * @param \Drupal\simple_sitemap\Logger $logger
    * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
    * @param \Drupal\Core\Menu\MenuLinkTree $menu_link_tree
-   * @param \Drupal\Core\Extension\ModuleHandler $module_handler
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function __construct(
     array $configuration,
@@ -64,8 +55,7 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
     EntityTypeManagerInterface $entity_type_manager,
     Logger $logger,
     EntityHelper $entityHelper,
-    MenuLinkTree $menu_link_tree,
-    ModuleHandler $module_handler
+    MenuLinkTree $menu_link_tree
   ) {
     parent::__construct(
       $configuration,
@@ -78,7 +68,6 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
       $entityHelper
     );
     $this->menuLinkTree = $menu_link_tree;
-    $this->moduleHandler = $module_handler;
   }
 
   public static function create(
@@ -95,8 +84,7 @@ class EntityMenuLinkContentUrlGenerator extends UrlGeneratorBase {
       $container->get('entity_type.manager'),
       $container->get('simple_sitemap.logger'),
       $container->get('simple_sitemap.entity_helper'),
-      $container->get('menu.link_tree'),
-      $container->get('module_handler')
+      $container->get('menu.link_tree')
     );
   }
 

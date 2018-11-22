@@ -5,7 +5,6 @@ namespace Drupal\simple_sitemap\Queue;
 use Drupal\Component\Utility\Timer;
 use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
 use Drupal\simple_sitemap\SimplesitemapSettings;
-use Drupal\Core\Extension\ModuleHandler;
 use Drupal\simple_sitemap\SimplesitemapManager;
 use Drupal\Core\State\State;
 
@@ -30,11 +29,6 @@ class QueueWorker {
    * @var \Drupal\Core\State\State
    */
   protected $state;
-
-  /**
-   * @var \Drupal\Core\Extension\ModuleHandler
-   */
-  protected $moduleHandler;
 
   /**
    * @var \Drupal\simple_sitemap\Queue\SimplesitemapQueue
@@ -86,18 +80,15 @@ class QueueWorker {
    * @param \Drupal\simple_sitemap\SimplesitemapSettings $settings
    * @param \Drupal\simple_sitemap\SimplesitemapManager $manager
    * @param \Drupal\Core\State\State $state
-   * @param \Drupal\Core\Extension\ModuleHandler $module_handler
    * @param \Drupal\simple_sitemap\Queue\SimplesitemapQueue $element_queue
    */
   public function __construct(SimplesitemapSettings $settings,
                               SimplesitemapManager $manager,
                               State $state,
-                              ModuleHandler $module_handler,
                               SimplesitemapQueue $element_queue) {
     $this->settings = $settings;
     $this->manager = $manager;
     $this->state = $state;
-    $this->moduleHandler = $module_handler;
     $this->queue = $element_queue;
   }
 
@@ -270,14 +261,15 @@ class QueueWorker {
    * @param array $results
    */
   protected function removeDuplicates(&$results) {
-    if ($this->generatorSettings['remove_duplicates']
-      && !empty($results)
-      && !empty($path = $results[key($results)]['meta']['path'])) {
-      if (in_array($path, $this->processedPaths)) {
-        $results = [];
-      }
-      else {
-        $this->processedPaths[] = $path;
+    if ($this->generatorSettings['remove_duplicates'] && !empty($results)) {
+      $result = $results[key($results)];
+      if (!empty($result['meta']['path'])) {
+        if (in_array($result['meta']['path'], $this->processedPaths)) {
+          $results = [];
+        }
+        else {
+          $this->processedPaths[] = $result['meta']['path'];
+        }
       }
     }
   }
