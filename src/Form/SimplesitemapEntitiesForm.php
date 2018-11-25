@@ -2,13 +2,50 @@
 
 namespace Drupal\simple_sitemap\Form;
 
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\simple_sitemap\Simplesitemap;
+use Drupal\simple_sitemap\EntityHelper;
 
 /**
  * Class SimplesitemapEntitiesForm
  * @package Drupal\simple_sitemap\Form
  */
 class SimplesitemapEntitiesForm extends SimplesitemapFormBase {
+
+  /**
+   * @var \Drupal\simple_sitemap\EntityHelper
+   */
+  protected $entityHelper;
+
+  /**
+   * SimplesitemapEntitiesForm constructor.
+   * @param \Drupal\simple_sitemap\Simplesitemap $generator
+   * @param \Drupal\simple_sitemap\Form\FormHelper $form_helper
+   * @param \Drupal\simple_sitemap\EntityHelper $entity_helper
+   */
+  public function __construct(
+    Simplesitemap $generator,
+    FormHelper $form_helper,
+    EntityHelper $entity_helper
+  ) {
+    parent::__construct(
+      $generator,
+      $form_helper
+    );
+    $this->entityHelper = $entity_helper;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('simple_sitemap.generator'),
+      $container->get('simple_sitemap.form_helper'),
+      $container->get('simple_sitemap.entity_helper')
+    );
+  }
 
   /**
    * {@inheritdoc}

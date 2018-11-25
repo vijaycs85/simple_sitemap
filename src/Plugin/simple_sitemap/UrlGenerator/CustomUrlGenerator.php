@@ -93,8 +93,6 @@ class CustomUrlGenerator extends EntityUrlGeneratorBase {
 
   /**
    * @inheritdoc
-   *
-   * @todo Support sitemap variants.
    */
   public function getDataSets() {
     $this->includeImages = $this->generator->getSetting('custom_links_include_images', FALSE);

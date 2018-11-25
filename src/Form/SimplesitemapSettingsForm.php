@@ -2,14 +2,61 @@
 
 namespace Drupal\simple_sitemap\Form;
 
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\simple_sitemap\Simplesitemap;
 use Drupal\Component\Utility\UrlHelper;
+use Drupal\Core\Language\LanguageManager;
+use Drupal\Core\Database\Connection;
 
 /**
  * Class SimplesitemapSettingsForm
  * @package Drupal\simple_sitemap\Form
  */
 class SimplesitemapSettingsForm extends SimplesitemapFormBase {
+
+  /**
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
+  protected $languageManager;
+
+  /**
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected $db;
+
+  /**
+   * SimplesitemapSettingsForm constructor.
+   * @param \Drupal\simple_sitemap\Simplesitemap $generator
+   * @param \Drupal\simple_sitemap\Form\FormHelper $form_helper
+   * @param \Drupal\Core\Language\LanguageManager $language_manager
+   * @param \Drupal\Core\Database\Connection $database
+   */
+  public function __construct(
+    Simplesitemap $generator,
+    FormHelper $form_helper,
+    LanguageManager $language_manager,
+    Connection $database
+  ) {
+    parent::__construct(
+      $generator,
+      $form_helper
+    );
+    $this->languageManager = $language_manager;
+    $this->db = $database;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('simple_sitemap.generator'),
+      $container->get('simple_sitemap.form_helper'),
+      $container->get('language_manager'),
+      $container->get('database')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -282,7 +329,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
    *  2: Instance is published but is being regenerated
    */
   protected function fetchSitemapInstanceStatuses() {
-    $results = \Drupal::database() //todo DI
+    $results = $this->db
       ->query('SELECT type, status FROM {simple_sitemap} GROUP BY type, status')
       ->fetchAll();
 

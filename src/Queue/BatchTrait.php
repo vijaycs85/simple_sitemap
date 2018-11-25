@@ -45,7 +45,6 @@ trait BatchTrait {
         $this->batch =& batch_get();
         $this->batch['progressive'] = FALSE;
 
-        drush_log($this->batch['init_message'], 'status');
         drush_backend_batch_process();
         return TRUE;
     }
@@ -83,15 +82,11 @@ trait BatchTrait {
    * @return bool
    *
    * @see https://api.drupal.org/api/drupal/core!includes!form.inc/group/batch/8
-   *
-   * @todo Display success/failure message in Drush > 9.
    */
   public static function finishGeneration($success, $results, $operations) {
     if ($success) {
       \Drupal::service('simple_sitemap.logger')
         ->m('The XML sitemaps have been regenerated.')
-//        ['@url' => $this->sitemapGenerator->getCustomBaseUrl() . '/sitemap.xml']) //todo: Use actual base URL for message.
-        ->display('status')
         ->log('info');
     }
     else {

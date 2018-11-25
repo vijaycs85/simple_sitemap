@@ -40,6 +40,7 @@ services:
     - '@simple_sitemap.manager'
     - '@state'
     - '@simple_sitemap.queue'
+    - '@simple_sitemap.logger'
 
   simple_sitemap.queue:
     class: Drupal\simple_sitemap\Queue\SimplesitemapQueue

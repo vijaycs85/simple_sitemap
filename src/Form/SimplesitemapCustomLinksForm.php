@@ -2,13 +2,50 @@
 
 namespace Drupal\simple_sitemap\Form;
 
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\simple_sitemap\Simplesitemap;
+use Drupal\Core\Path\PathValidator;
 
 /**
  * Class SimplesitemapCustomLinksForm
  * @package Drupal\simple_sitemap\Form
  */
 class SimplesitemapCustomLinksForm extends SimplesitemapFormBase {
+
+  /**
+   * @var \Drupal\Core\Path\PathValidator
+   */
+  protected $pathValidator;
+
+  /**
+   * SimplesitemapCustomLinksForm constructor.
+   * @param \Drupal\simple_sitemap\Simplesitemap $generator
+   * @param \Drupal\simple_sitemap\Form\FormHelper $form_helper
+   * @param \Drupal\Core\Path\PathValidator $path_validator
+   */
+  public function __construct(
+    Simplesitemap $generator,
+    FormHelper $form_helper,
+    PathValidator $path_validator
+  ) {
+    parent::__construct(
+      $generator,
+      $form_helper
+    );
+    $this->pathValidator = $path_validator;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('simple_sitemap.generator'),
+      $container->get('simple_sitemap.form_helper'),
+      $container->get('path.validator')
+    );
+  }
 
   /**
    * {@inheritdoc}

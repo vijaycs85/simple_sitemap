@@ -7,6 +7,7 @@ use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGenerato
 use Drupal\simple_sitemap\SimplesitemapSettings;
 use Drupal\simple_sitemap\SimplesitemapManager;
 use Drupal\Core\State\State;
+use Drupal\simple_sitemap\Logger;
 
 
 class QueueWorker {
@@ -34,6 +35,11 @@ class QueueWorker {
    * @var \Drupal\simple_sitemap\Queue\SimplesitemapQueue
    */
   protected $queue;
+
+  /**
+   * @var \Drupal\simple_sitemap\Logger
+   */
+  protected $logger;
 
   /**
    * @var string|null
@@ -81,15 +87,18 @@ class QueueWorker {
    * @param \Drupal\simple_sitemap\SimplesitemapManager $manager
    * @param \Drupal\Core\State\State $state
    * @param \Drupal\simple_sitemap\Queue\SimplesitemapQueue $element_queue
+   * @param \Drupal\simple_sitemap\Logger $logger
    */
   public function __construct(SimplesitemapSettings $settings,
                               SimplesitemapManager $manager,
                               State $state,
-                              SimplesitemapQueue $element_queue) {
+                              SimplesitemapQueue $element_queue,
+                              Logger $logger) {
     $this->settings = $settings;
     $this->manager = $manager;
     $this->state = $state;
     $this->queue = $element_queue;
+    $this->logger = $logger;
   }
 
   /**
