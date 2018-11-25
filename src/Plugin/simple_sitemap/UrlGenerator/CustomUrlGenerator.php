@@ -23,7 +23,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  *
  */
-class CustomUrlGenerator extends UrlGeneratorBase {
+class CustomUrlGenerator extends EntityUrlGeneratorBase {
 
   const PATH_DOES_NOT_EXIST_MESSAGE = 'The custom path @path has been omitted from the XML sitemaps as it does not exist. You can review custom paths <a href="@custom_paths_url">here</a>.';
 
@@ -44,22 +44,20 @@ class CustomUrlGenerator extends UrlGeneratorBase {
    * @param $plugin_id
    * @param $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
+   * @param \Drupal\simple_sitemap\Logger $logger
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
-   * @param \Drupal\simple_sitemap\Logger $logger
    * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
    * @param \Drupal\Core\Path\PathValidator $path_validator
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function __construct(
     array $configuration,
     $plugin_id,
     $plugin_definition,
     Simplesitemap $generator,
+    Logger $logger,
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
-    Logger $logger,
     EntityHelper $entityHelper,
     PathValidator $path_validator) {
     parent::__construct(
@@ -67,9 +65,9 @@ class CustomUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $generator,
+      $logger,
       $language_manager,
       $entity_type_manager,
-      $logger,
       $entityHelper
     );
     $this->pathValidator = $path_validator;
@@ -85,9 +83,9 @@ class CustomUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $container->get('simple_sitemap.generator'),
+      $container->get('simple_sitemap.logger'),
       $container->get('language_manager'),
       $container->get('entity_type.manager'),
-      $container->get('simple_sitemap.logger'),
       $container->get('simple_sitemap.entity_helper'),
       $container->get('path.validator')
     );

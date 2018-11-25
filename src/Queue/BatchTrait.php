@@ -76,9 +76,9 @@ trait BatchTrait {
   /**
    * Callback function called by the batch API when all operations are finished.
    *
-   * @param $success
-   * @param $results
-   * @param $operations
+   * @param bool $success
+   * @param array $results
+   * @param array $operations
    *
    * @return bool
    *

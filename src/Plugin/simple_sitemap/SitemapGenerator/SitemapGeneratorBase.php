@@ -109,7 +109,7 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
   }
 
   /**
-   * @param $sitemap_variant
+   * @param string $sitemap_variant
    * @return $this
    */
   public function setSitemapVariant($sitemap_variant) {
@@ -141,8 +141,7 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
   }
 
   /**
-   * Returns the sitemap index for all sitemap chunks of this type.
-   *
+   * @param array $chunk_info
    * @return string
    */
   protected function getIndexXml(array $chunk_info) {
@@ -214,12 +213,9 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
   }
 
   /**
-   * Takes links along with their options and then generates and saves the
-   * sitemap.
-   *
    * @param array $links
-   *   All links with their multilingual versions and settings.
-   *
+   * @return $this
+   * @throws \Exception
    */
   public function generate(array $links) {
     $highest_id = $this->db->query('SELECT MAX(id) FROM {simple_sitemap}')->fetchField();
@@ -239,6 +235,7 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
   }
 
   /**
+   * @return $this
    * @throws \Exception
    */
   public function generateIndex() {
@@ -269,6 +266,9 @@ abstract class SitemapGeneratorBase extends SimplesitemapPluginBase implements S
     return $this;
   }
 
+  /**
+   * @return $this
+   */
   public function publish() {
     $unpublished_chunk = $this->db->query('SELECT MAX(id) FROM {simple_sitemap} WHERE type = :type AND status = :status', [':type' => $this->sitemapVariant, ':status' => 0])
       ->fetchField();

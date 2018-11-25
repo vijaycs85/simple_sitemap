@@ -19,7 +19,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   description = @Translation("Generates URLs for entity bundles and bundle overrides."),
  * )
  */
-class EntityUrlGenerator extends UrlGeneratorBase {
+class EntityUrlGenerator extends EntityUrlGeneratorBase {
 
   /**
    * @var \Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager
@@ -32,9 +32,9 @@ class EntityUrlGenerator extends UrlGeneratorBase {
    * @param $plugin_id
    * @param $plugin_definition
    * @param \Drupal\simple_sitemap\Simplesitemap $generator
+   * @param \Drupal\simple_sitemap\Logger $logger
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
-   * @param \Drupal\simple_sitemap\Logger $logger
    * @param \Drupal\simple_sitemap\EntityHelper $entityHelper
    * @param \Drupal\simple_sitemap\Plugin\simple_sitemap\UrlGenerator\UrlGeneratorManager $url_generator_manager
    */
@@ -43,9 +43,9 @@ class EntityUrlGenerator extends UrlGeneratorBase {
     $plugin_id,
     $plugin_definition,
     Simplesitemap $generator,
+    Logger $logger,
     LanguageManagerInterface $language_manager,
     EntityTypeManagerInterface $entity_type_manager,
-    Logger $logger,
     EntityHelper $entityHelper,
     UrlGeneratorManager $url_generator_manager
   ) {
@@ -54,9 +54,9 @@ class EntityUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $generator,
+      $logger,
       $language_manager,
       $entity_type_manager,
-      $logger,
       $entityHelper
     );
     $this->urlGeneratorManager = $url_generator_manager;
@@ -72,9 +72,9 @@ class EntityUrlGenerator extends UrlGeneratorBase {
       $plugin_id,
       $plugin_definition,
       $container->get('simple_sitemap.generator'),
+      $container->get('simple_sitemap.logger'),
       $container->get('language_manager'),
       $container->get('entity_type.manager'),
-      $container->get('simple_sitemap.logger'),
       $container->get('simple_sitemap.entity_helper'),
       $container->get('plugin.manager.simple_sitemap.url_generator')
     );
@@ -91,9 +91,8 @@ class EntityUrlGenerator extends UrlGeneratorBase {
       if (isset($sitemap_entity_types[$entity_type_name])) {
 
         // Skip this entity type if another plugin is written to override its generation.
-        // todo needs to be adjusted for variants
         foreach ($this->urlGeneratorManager->getDefinitions() as $plugin) {
-          if (!empty($plugin['settings']['overrides_entity_type'])
+          if (isset($plugin['settings']['overrides_entity_type'])
             && $plugin['settings']['overrides_entity_type'] === $entity_type_name) {
             continue 2;
           }
