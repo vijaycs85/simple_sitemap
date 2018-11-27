@@ -381,6 +381,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
   /**
    * @param array $form
    * @param \Drupal\Core\Form\FormStateInterface $form_state
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
   public function generateSitemap(array &$form, FormStateInterface $form_state) {
     $this->generator->generateSitemap();
@@ -389,6 +390,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
   /**
    * @param array $form
    * @param \Drupal\Core\Form\FormStateInterface $form_state
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
   public function generateSitemapBackend (array &$form, FormStateInterface $form_state) {
     $this->generator->generateSitemap('backend');
@@ -398,6 +400,7 @@ class SimplesitemapSettingsForm extends SimplesitemapFormBase {
   /**
    * @param array $form
    * @param \Drupal\Core\Form\FormStateInterface $form_state
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
   public function rebuildQueue(array &$form, FormStateInterface $form_state) {
     $this->generator->rebuildQueue();
