@@ -9,16 +9,18 @@
  * Implements hook_drush_command().
  */
 function simple_sitemap_drush_command() {
-  $items['simple_sitemap-generate'] = [
+  $items['simple-sitemap-generate'] = [
     'description' => 'Regenerate the XML sitemaps according to the module settings.',
     'callback' => 'drush_simple_sitemap_generate',
     'drupal dependencies' => ['simple_sitemap'],
+    'aliases' => ['ssg'],
   ];
 
-  $items['simple_sitemap-rebuild-queue'] = [
+  $items['simple-sitemap-rebuild-queue'] = [
     'description' => 'Rebuild the sitemap queue for all sitemap variants.',
     'callback' => 'drush_simple_sitemap_rebuild_queue',
     'drupal dependencies' => ['simple_sitemap'],
+    'aliases' => ['ssr'],
   ];
 
   return $items;
@@ -27,7 +29,7 @@ function simple_sitemap_drush_command() {
 /**
  * Callback function for hook_drush_command().
  *
- * Regenerate the XML sitemaps.
+ * Regenerate the XML sitemaps according to the module settings.
  */
 function drush_simple_sitemap_generate() {
   \Drupal::service('simple_sitemap.generator')->generateSitemap('drush');

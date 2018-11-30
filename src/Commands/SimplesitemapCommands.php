@@ -28,8 +28,13 @@ class SimplesitemapCommands extends DrushCommands {
    * Regenerate the XML sitemaps according to the module settings.
    *
    * @command simple-sitemap:generate
+   *
+   * @usage drush simple-sitemap:generate
+   *   Regenerate the XML sitemaps according to the module settings.
+   *
    * @validate-module-enabled simple_sitemap
-   * @aliases ss:generate, ssg, simple_sitemap:generate, simple_sitemap-generate
+   *
+   * @aliases ssg, simple-sitemap-generate
    */
   public function generate() {
     $this->generator->generateSitemap('drush');
@@ -39,8 +44,13 @@ class SimplesitemapCommands extends DrushCommands {
    * Rebuild the sitemap queue for all sitemap variants.
    *
    * @command simple-sitemap:rebuild-queue
+   *
+   * @usage drush simple-sitemap:rebuild-queue
+   *   Rebuild the sitemap queue for all sitemap variants.
+   *
    * @validate-module-enabled simple_sitemap
-   * @aliases ss:rebuild-queue, ssr, simple_sitemap:rebuild-queue, simple_sitemap-rebuild-queue
+   *
+   * @aliases ssr, simple-sitemap-rebuild-queue
    */
   public function rebuildQueue() {
     $this->generator->rebuildQueue();
