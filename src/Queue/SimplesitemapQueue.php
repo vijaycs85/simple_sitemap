@@ -28,6 +28,7 @@ class SimplesitemapQueue extends DatabaseQueue {
     catch (\Exception $e) {
       $this->catchException($e);
     }
+
     return FALSE;
   }
 
@@ -48,6 +49,7 @@ class SimplesitemapQueue extends DatabaseQueue {
     if ($try_again) {
       $id = $this->doCreateItems($data_sets);
     }
+
     return $id;
   }
 
@@ -59,7 +61,7 @@ class SimplesitemapQueue extends DatabaseQueue {
       $query->values([
         $this->name,
         serialize($data),
-        'created' => time(),
+        time(),
       ]);
     }
 
