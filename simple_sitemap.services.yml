@@ -76,7 +76,7 @@ services:
       - '@messenger'
       - '@current_user'
 
-  simple_sitemap.variant:
+  simple_sitemap.path_processor_variant:
     class: Drupal\simple_sitemap\PathProcessor\PathProcessorSitemapVariant
     tags:
       - { name: path_processor_inbound, priority: 300 }

@@ -234,10 +234,3 @@ function simple_sitemap_menu_delete(MenuInterface $menu) {
   $generator = \Drupal::service('simple_sitemap.generator');
   $generator->setVariants(TRUE)->removeBundleSettings('menu_link_content', $menu->id());
 }
-
-/**
- * Implements hook_language_negotiation_info_alter().
- */
-function simple_sitemap_language_negotiation_info_alter(&$negotiation_info) {
-  $negotiation_info['language-url']['class'] = 'Drupal\simple_sitemap\Plugin\LanguageNegotiation\SimplesitemapLanguageNegotiationUrl';
-}
