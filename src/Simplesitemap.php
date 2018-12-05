@@ -498,6 +498,13 @@ class Simplesitemap {
    * @param string|null $bundle_name
    *  Limit the result set to a specific bundle name.
    *
+   * @param bool $supplement_defaults
+   *  Supplements the result set with default custom link settings.
+   *
+   * @param bool $multiple_variants
+   *  If true, returns an array of results keyed by variant name, otherwise it
+   *  returns the result set for the first variant only.
+   *
    * @return array|false
    *  Array of settings or array of settings keyed by variant name. False if
    *  entity type does not exist.

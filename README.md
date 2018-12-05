@@ -29,6 +29,9 @@ as well. On top of that custom links can be added to the sitemap.
 
 To learn about XML sitemaps, see https://en.wikipedia.org/wiki/Sitemaps.
 
+The module also provides an API allowing to create any type of sitemap (not
+necessary an XML one) holding links to a local or remote source.
+
 ## INSTALLATION ##
 
 See https://www.drupal.org/documentation/install/modules-themes/modules-8
