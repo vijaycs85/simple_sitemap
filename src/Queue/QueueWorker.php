@@ -6,7 +6,7 @@ use Drupal\Component\Utility\Timer;
 use Drupal\simple_sitemap\Plugin\simple_sitemap\SitemapGenerator\SitemapGeneratorBase;
 use Drupal\simple_sitemap\SimplesitemapSettings;
 use Drupal\simple_sitemap\SimplesitemapManager;
-use Drupal\Core\State\State;
+use Drupal\Core\State\StateInterface;
 use Drupal\simple_sitemap\Logger;
 
 
@@ -27,7 +27,7 @@ class QueueWorker {
   protected $manager;
 
   /**
-   * @var \Drupal\Core\State\State
+   * @var \Drupal\Core\State\StateInterface
    */
   protected $state;
 
@@ -85,13 +85,13 @@ class QueueWorker {
    * QueueWorker constructor.
    * @param \Drupal\simple_sitemap\SimplesitemapSettings $settings
    * @param \Drupal\simple_sitemap\SimplesitemapManager $manager
-   * @param \Drupal\Core\State\State $state
+   * @param \Drupal\Core\State\StateInterface $state
    * @param \Drupal\simple_sitemap\Queue\SimplesitemapQueue $element_queue
    * @param \Drupal\simple_sitemap\Logger $logger
    */
   public function __construct(SimplesitemapSettings $settings,
                               SimplesitemapManager $manager,
-                              State $state,
+                              StateInterface $state,
                               SimplesitemapQueue $element_queue,
                               Logger $logger) {
     $this->settings = $settings;
